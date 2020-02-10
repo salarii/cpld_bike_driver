@@ -18,19 +18,26 @@ entity motor_driver is
 		clk : in std_logic;		
 		speed : in std_logic_vector(7 downto 0);
 		imp_cover : in std_logic_vector(7 downto 0);
-		A_n : out std_logic;
-		A_p : out std_logic;
-		B_n : out std_logic;
-		B_p : out std_logic;
-		C_n : out std_logic;
-		C_p : out std_logic
+		A_n_out : out std_logic;
+		A_p_out : out std_logic;
+		B_n_out : out std_logic;
+		B_p_out : out std_logic;
+		C_n_out : out std_logic;
+		C_p_out : out std_logic
 		);
 end motor_driver;
 
 
 
 architecture behaviour of motor_driver is
-
+		signal A_n : std_logic;
+		signal B_n : std_logic;
+		signal C_n : std_logic;
+		signal A_p : std_logic;
+		signal B_p : std_logic;
+		signal C_p : std_logic;
+		signal allow : std_logic;
+		
 begin	
 
 
@@ -46,27 +53,24 @@ process(clk)
 		variable imp_cover_internal : unsigned(7 downto 0);
 
 
-		variable A_p : std_logic;
-		variable A_n : std_logic;
-		variable B_p : std_logic;
-		variable B_n : std_logic;
-		variable C_p : std_logic;
-		variable C_n : std_logic;
 
 
 begin
 		
- shift_right(speed_internal - imp_cover_internal );
+
 	
 		if res = '1' then
 			state := Idle;
 		elsif rising_edge(clk)  then
 			
 			cnt = cnt - 1;
+			cntSmall = cntSmall -1;
+			
 			
 			if  cnt = 0 then
+				allow := 0;
 				cnt := to_integer( speed );
-			
+				cntSmall := shift_right(speed_internal - imp_cover_internal,1 );
 				if A_p = '1' and B_n = '1' then
 					C_n := '1';
 					B_n := '0';
@@ -87,52 +91,20 @@ begin
 					A_p = '1';		
 				end if;
 			
-				case  &  A_n & B_p & B_n & C_p & C_n is
-  when "1000" =>   Z <= A;
-  when "10" =>   Z <= B;
-  when others => Z <= 'X';
-end case;
-			
-			
-			
+				
 			end if;
 			
-				if transaction.enable = '1' and  state = Idle then
-					bus_clk_internal := '0';
-				
-					state = Exchange;
-					if transaction.transaction = write then
-						shift_reg_mosi(size -1  downto  0) := unsigned(transaction.data);				
-					
-					end
-					state := Data_out;
-					
-					
+			if cntSmall = '0'  then
+				if  allow = '0' then
+					allow = '1';
+					cntSmall := imp_cover_internal;
+				elsif allow = '1' then
+					allow = '0';					
+					cntSmall :=cnt + 1;
 				end if;
-						
-				if cnt = 0 and  then
-	 
-					shift_reg_mosi := shift_right(shift_reg_rx, 1);
-					shift_reg_miso := shift_right(shift_reg_tx, 1);
-					
-					if bus_clk_internal = '0' then
-					
-					
-					end if;
-					
-					
-				end if;
-				
-				if transaction.transaction = write then 
-					miso_internal <= shift_reg_miso(0);
-					
-				end if;
-				
-				shift_reg_mosi(0) <= mosi_internal;
+			end  if;
+			
 
-			else
-				miso_internal <= 'Z';
-			end if;
 			
 		end if;
 	
@@ -140,7 +112,16 @@ end case;
 end  process;
 
 
+process(A_n,B_n,C_n,A_p,B_p,C_p,allow)
+begin
+		A_n_out <= A_n;
+		B_n_out <= B_n;
+		C_n_out <= C_n; 
+		A_p_out <= A_p and allow;
+		B_p_out <= B_p and allow;
+		C_p_out <= C_p and allow;
 
 
+end  process;
 
 end behaviour;
