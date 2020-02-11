@@ -11,6 +11,9 @@ entity wire is
 		);
 end wire;
 
+
+
+
 architecture t_behaviour of wire is
 	
 begin
@@ -52,14 +55,32 @@ architecture t_behaviour of prot_tb is
 	end component wire;
 	
 	component uart is
+		generic ( 
+			freq : integer;
+			bound : integer
+			);
 		port(
-			transaction : inout transaction_simp_data; 
+			data : inout std_logic_vector(7 downto 0);
+			enable : in std_logic;		
 			res : in std_logic;		
 			clk : in std_logic;	
 			rx : in std_logic;		
+			error : out std_logic;
+			busy	: out std_logic;
 			tx	: out  std_logic
 			);
 	end  component uart;
+	
+	component comunication is
+	generic (delay : integer);
+	port(
+		data : inout std_logic_vector(7 downto 0);
+		enable : out std_logic;		
+		busy : in std_logic;
+		res : in std_logic;		
+		clk : in std_logic
+		);
+	end component comunication;
 	
 		signal transaction :  transaction_data; 
 		signal res : std_logic;	
@@ -69,6 +90,8 @@ architecture t_behaviour of prot_tb is
 		signal data1 :  std_logic;
 		signal data2 :  std_logic;
 		signal simp_transaction : transaction_simp_data;
+		signal simp_transaction_rec : transaction_simp_data;
+
 		
 		constant clk_period : time := 100 ns;
 		
@@ -80,6 +103,8 @@ architecture t_behaviour of prot_tb is
 		signal error : std_logic;
 		signal transaction_intern : transaction_type;
 		
+		signal busy2	: std_logic;
+		signal data2out : std_logic_vector(7 downto 0);
 			
 	begin	
 
@@ -99,22 +124,53 @@ architecture t_behaviour of prot_tb is
 		--		);
 
 		uart_module : uart 
+		generic map (
+		 	freq => 95,
+			bound => 10 )
+		
 		port map (
-				transaction => simp_transaction,
-				res => res,
-				clk => clk,
-				rx => data1,
-				tx => data2
-				);
+			data => transaction.data,
+			enable => transaction.enable,		
+			res => res,		
+			clk => clk,
+			rx => data1,	
+			error => transaction.error,
+			busy => transaction.busy,
+			tx => data2
+			);
+
+		comunication_module: comunication 
+		generic map  (delay =>10)
+		port map(
+		data => transaction.data,
+		enable => transaction.enable,		
+		busy => transaction.busy,
+		res => res,		
+		clk => clk
+		);
+
+		--uart_module_pyk : uart 
+		--generic map (
+		-- 	freq => 95,
+		--	bound => 10 )
+		--port map (
+		--		transaction => simp_transaction_rec,
+		--		res => res,
+		--		clk => clk,
+		--		rx => data2,
+		--		tx => data1
+		--		);
+
 
 		process
 			begin
 				
 				-- inputs which produce '1' on the output
 				
-				simp_transaction.transaction <= Write;
+		
+				
 				wait for 1 us;
-				simp_transaction.enable <= '1';
+				wait for 1 us;
 				wait for 16.5 us;
 				--bus_data <= '0';
 				
@@ -132,11 +188,14 @@ begin
 	wait  for clk_period/2;
 end  process;
 
-		data <= transaction.data;
+		data <= simp_transaction.data;
 		address <= transaction.address;
-		enable <= transaction.enable;		
+		enable <= simp_transaction.enable;		
 		busy	<= transaction.busy;
 		error <= transaction.error;
 			
-
+		data2out <= simp_transaction_rec.data;
+		busy2 <= simp_transaction_rec.busy;
+		
+		
 end t_behaviour;

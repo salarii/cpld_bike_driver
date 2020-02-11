@@ -1,4 +1,4 @@
-ghdl -a interface_data.vhd  i2c_master.vhd  uart.vhd prot_tb.vhd
-#ghdl -e prot_tb
-#ghdl -r prot_tb --vcd=func.vcd  --stop-time=60us --ieee-asserts=disable-at-0
-#gtkwave func.vcd
+ghdl -a interface_data.vhd  i2c_master.vhd  uart.vhd comunication.vhd prot_tb.vhd
+ghdl -e prot_tb
+ghdl -r prot_tb --vcd=func.vcd  --stop-time=80us --ieee-asserts=disable-at-0
+gtkwave func.vcd
