@@ -80,86 +80,90 @@ process(clk)
 
 begin
 		
-		if res = '1' then
-			state := Idle;
-		elsif rising_edge(clk)  then
-			cnt := cnt - 1;
 		
-		
-			if enable = '1' or busy_internal = '1' then	
+
+		if rising_edge(clk)  then
+			if res = '0' then
+				state := Idle;
+				busy_internal <= '0';
+			else
+				cnt := cnt - 1;
 			
-				busy_internal <= '1';
+			
+				if enable = '1' or busy_internal = '1' then	
 				
-				if enable = '1' and  state = Idle then
-				
-					parity := parity_check(data,8);
-		
-				
-					seq := 0;
-					cnt := period;
-					state := Data_out;
-					shift_reg(0) := '0'; 
-					shift_reg(size -2  downto  1) := unsigned(data);				
+					busy_internal <= '1';
 					
-					shift_reg(size -1 ) := parity;
-				end if;
-				
-				if cnt = 0  then 
-					if state = Data_out then
-						
-				    	
-						shift_reg(size -1) := '1';
-						if seq = size + 3 then
-							busy_internal <= '0';
-							state := Idle;
-						end if;
-						shift_reg := shift_right(shift_reg, 1);
-					elsif state = Data_in then
-						
-						if seq = size - 2 then
-						
-							parity := parity_check(std_logic_vector(shift_reg(size - 1 downto 2)),8); 
-							if rx = parity then
-							
-							
-							end if;
-							busy_internal <= '0';
-							state := Idle;
-						else
-							shift_reg := shift_right(shift_reg, 1);
-						end if;					
+					if enable = '1' and  state = Idle then
 					
+						parity := parity_check(data,8);
+			
+					
+						seq := 0;
+						cnt := period;
+						state := Data_out;
+						shift_reg(0) := '0'; 
+						shift_reg(size -2  downto  1) := unsigned(data);				
+						
+						shift_reg(size -1 ) := parity;
 					end if;
 					
-					cnt := period;	
-					seq :=  seq +1;
+					if cnt = 0  then 
+						if state = Data_out then
+							
+							
+							shift_reg(size -1) := '1';
+							if seq = size + 3 then
+								busy_internal <= '0';
+								state := Idle;
+							end if;
+							shift_reg := shift_right(shift_reg, 1);
+						elsif state = Data_in then
+							
+							if seq = size - 2 then
+							
+								parity := parity_check(std_logic_vector(shift_reg(size - 1 downto 2)),8); 
+								if rx = parity then
+								
+								
+								end if;
+								busy_internal <= '0';
+								state := Idle;
+							else
+								shift_reg := shift_right(shift_reg, 1);
+							end if;					
+						
+						end if;
+						
+						cnt := period;	
+						seq :=  seq +1;
 
+					end if;
+					
+					if state = Data_out then
+						tx_internal <= shift_reg(0);
+					elsif state = Data_in then
+						shift_reg(size - 1) := rx;
+					end if;
+					
+				else
+					tx_internal <= '1';
 				end if;
 				
-				if state = Data_out then
-					tx_internal <= shift_reg(0);
-				elsif state = Data_in then
-					shift_reg(size - 1) := rx;
+				if state = Data_in then
+					data <= std_logic_vector(shift_reg(size - 2 downto 1));
+				else
+					data <= "ZZZZZZZZ";
 				end if;
-				
-			else
-				tx_internal <= '1';
-			end if;
-			
-			if state = Data_in then
-			 	data <= std_logic_vector(shift_reg(size - 2 downto 1));
-			else
-				data <= "ZZZZZZZZ";
-			end if;
 
-			if rx = '0' and state = Idle then
-				
-					seq := 0;
-					state := Data_in;
-					cnt := period + half;
-					busy_internal <= '1';
+				if rx = '0' and state = Idle then
+					
+						seq := 0;
+						state := Data_in;
+						cnt := period + half;
+						busy_internal <= '1';
+				end if;
 			end if;
-
 
 		end if;
 	
