@@ -31,7 +31,6 @@ end parity_check;
 end  auxiliary;
 
 
-use work.interface_data.all;
 use work.auxiliary.all;
 library IEEE;
 use IEEE.std_logic_1164.all;
