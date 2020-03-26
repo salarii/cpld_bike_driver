@@ -44,14 +44,16 @@ begin
 		elsif falling_edge(bus_data)  then
 			if stage = Idle and (bus_clk = '1' or bus_clk = 'H' ) then
 				cnt := 0;
-				report integer'image(cnt);
+				bus_data_internal <= 'Z';
 				stage := Address;
 			elsif (bus_clk = '1' or bus_clk = 'H' ) then
 				stage := Idle;	
-				cnt := 0;	
-				report integer'image(cnt);	
+				cnt := 0;
+					
+				--report integer'image(cnt);	
 			end if; 
-			bus_data_internal <= 'Z';
+			report integer'image(cnt);
+			
 			
 		elsif rising_edge(bus_clk)  then
 			cnt := cnt + 1;
@@ -76,7 +78,7 @@ begin
 					report integer'image(cnt);
 					bus_data_internal <= '0';
 				elsif cnt = 9 then
-					report integer'image(cnt);
+					report integer'image(cnt);	
  					bus_data_internal <= 'Z';
  					cnt :=  0;
 			

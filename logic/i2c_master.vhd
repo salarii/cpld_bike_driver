@@ -21,7 +21,7 @@ architecture behaviour of i2c_master is
 	signal busy_internal	: std_logic;
 	signal bus_clk_internal	: std_logic;
 	signal bus_data_internal : std_logic;
-
+	signal debug : unsigned(9 downto 0);
 begin	
 
 
@@ -40,7 +40,7 @@ process(clk)
 		variable seq : transaction_seq := Inactive;		
 begin
 		
-	
+		debug <= shiftReg;
 		if res = '1' then
 			stage := Idle;
 			shiftReg := to_unsigned(0,size + 1);
@@ -97,13 +97,25 @@ begin
 					if shiftReg = "1000000000" and  bus_clk /= '0' then
 						
 						if bus_data = '0' then	
-							stage := Data;
+							
+							if stage = Address then
+								stage := Reg_Addr;
+							elsif stage = Reg_Addr then
+								stage := Data_H;
+							end if;
 							cnt := longerSlide -1;
 							if  transaction.transaction = write then 
-								shiftReg(size -1 downto 1) := unsigned(transaction.data);
+							 
+								if stage = Reg_Addr then
+									shiftReg(2 downto 1) := unsigned(transaction.reg_addr);
+								elsif stage = Data_H then
+									shiftReg(size -1 downto 1) := unsigned(transaction.data);
+								elsif Data_L
+								end if;
 								shiftReg(size) := '0';
 								shiftReg(0) := '1';
 							elsif transaction.transaction = read then
+								shiftReg(0) := '1';
 							end if;
 							--report integer'image(cnt);
 							--report integer'image(to_integer(shiftReg));
@@ -130,7 +142,7 @@ begin
 				end if;
 				
 				
-				if stage = Address then --or transaction.transaction = write then 
+				if stage = Address or transaction.transaction = write then 
 					if shiftReg(size) = '1'  then
 						bus_data_internal <= 'Z';
 					else

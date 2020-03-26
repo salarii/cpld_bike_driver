@@ -41,6 +41,8 @@ begin
 			else
 
 				if  state = Setup then
+					i2c.reg_addr <= "11";
+				
 					data(15 downto 8) <= std_logic_vector(config_register_h);
 					i2c.transaction <= Write;
 
