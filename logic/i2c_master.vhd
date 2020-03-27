@@ -22,6 +22,7 @@ architecture behaviour of i2c_master is
 	signal bus_clk_internal	: std_logic;
 	signal bus_data_internal : std_logic;
 	signal debug : unsigned(9 downto 0);
+	signal done : std_logic;
 begin	
 
 
@@ -52,6 +53,7 @@ begin
 				
 				if stage = Idle then
 					stage := Address;
+					done <= '0';
 					shiftReg(size -1 downto 2) := unsigned(transaction.address);
 					shiftReg(size) := '0';
 					
@@ -84,10 +86,23 @@ begin
 							bus_data_internal <= 'Z';
 							cnt := longerSlide -1;
 						end if;  
-				
+					elsif  stage = Conclude then
+					
+						if seq = Active then
+							seq := DataActive; 
+							bus_clk_internal <= 'Z';
+						elsif seq = DataActive then
+							seq := Inactive;
+							bus_data_internal <= 'Z';
+							busy_internal <= '0';
+							stage := Idle; 
+							done <= '1';
+						end if;
+						
 					elsif  bus_clk_internal /= '0' then
 						bus_clk_internal <= '0';
 						seq := Active;
+						
 					else
 						
 						bus_clk_internal <= 'Z';
@@ -102,19 +117,26 @@ begin
 								stage := Reg_Addr;
 							elsif stage = Reg_Addr then
 								stage := Data_H;
+							elsif stage = Data_H then
+								stage := Data_L; 
+							elsif stage = Data_L then
+								stage := Conclude; 
+								bus_data_internal <= '0';
+								shiftReg(size  downto 0) := (others=>'0');	
 							end if;
 							cnt := longerSlide -1;
-							if  transaction.transaction = write then 
+							if  transaction.transaction = write and stage /= Conclude then 
 							 
 								if stage = Reg_Addr then
 									shiftReg(2 downto 1) := unsigned(transaction.reg_addr);
 								elsif stage = Data_H then
-									shiftReg(size -1 downto 1) := unsigned(transaction.data);
-								elsif Data_L
+									shiftReg(size -1 downto 1) := unsigned(transaction.data(15 downto 8));
+								elsif stage = Data_L then
+									shiftReg(size -1 downto 1) := unsigned(transaction.data(7 downto 0));
 								end if;
 								shiftReg(size) := '0';
 								shiftReg(0) := '1';
-							elsif transaction.transaction = read then
+							elsif transaction.transaction = read and stage /= Conclude then
 								shiftReg(0) := '1';
 							end if;
 							--report integer'image(cnt);
@@ -163,11 +185,12 @@ begin
 end  process;
 
 	
-process(busy_internal,bus_clk_internal,bus_data_internal)
+process(busy_internal,bus_clk_internal,bus_data_internal,done)
 begin
 		transaction.busy <= busy_internal;
 		bus_clk <= bus_clk_internal;
 		bus_data <= bus_data_internal;
+		transaction.done <= done;
 end  process;	
 
 

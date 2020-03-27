@@ -52,7 +52,7 @@ begin
 					
 				--report integer'image(cnt);	
 			end if; 
-			report integer'image(cnt);
+			--report integer'image(cnt);
 			
 			
 		elsif rising_edge(bus_clk)  then
@@ -75,10 +75,10 @@ begin
 			
 				
 				if cnt = 8 then 
-					report integer'image(cnt);
+					--report integer'image(cnt);
 					bus_data_internal <= '0';
 				elsif cnt = 9 then
-					report integer'image(cnt);	
+					--report integer'image(cnt);	
  					bus_data_internal <= 'Z';
  					cnt :=  0;
 			

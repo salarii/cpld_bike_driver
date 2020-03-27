@@ -49,11 +49,15 @@ begin
 					i2c.enable <= '1';
 					data(7 downto 0) <= std_logic_vector(config_register_l);
 					
+					if i2c.done = '1' then
+						state := Active;
+						data <=  (others=>'Z');	
+						i2c.enable <= '0';				
+					end if;
+					
 					if i2c.busy = '1' then
 						i2c.enable <= '0';
-					elsif i2c.done = '1' then
-						state := Active;
-						data <=  (others=>'Z');
+
 					end if;
 				
 					cnt := period;

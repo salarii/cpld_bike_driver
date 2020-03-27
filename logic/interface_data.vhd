@@ -6,7 +6,7 @@ package interface_data is
 
 type transaction_type is (Read, Write);
 
-type transaction_stage is ( Idle, Address, Reg_Addr, Data_H, Data_L, Repeat);
+type transaction_stage is ( Idle, Address, Reg_Addr, Data_H, Data_L, Repeat, Conclude );
 
 type transaction_data is record
 	data : std_logic_vector(15 downto 0);
