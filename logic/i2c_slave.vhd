@@ -45,6 +45,7 @@ begin
 			if stage = Idle and (bus_clk = '1' or bus_clk = 'H' ) then
 				cnt := 0;
 				bus_data_internal <= 'Z';
+				shiftReg  := (others=>'Z');
 				stage := Address;
 			elsif (bus_clk = '1' or bus_clk = 'H' ) then
 				--stage := Idle;	
@@ -76,25 +77,23 @@ begin
 		 elsif falling_edge(bus_clk)  then
 			
  				if seq_type = Read_data then
- 						bus_data_internal <= shiftReg(8);
+ 						--bus_data_internal <= shiftReg(8);
  				elsif seq_type = Write_data then
  						bus_data_internal <= 'Z';
  				end  if;
 				
-				
+				bus_data_internal <= 'Z';
 				if cnt = 8 then 
 					--report integer'image(cnt);
 					if (bus_data = '1' or bus_data = 'H' ) then
-						shiftReg := "010101010";	
-						seq_type := Read_data; 
+						seq_type := Write_data; 
 						bus_data_internal <= '0';
-					elsif bus_data = '0' then	
-						seq_type := Write_data;
+					elsif bus_data = '0' then
+						shiftReg := "010101010";	
+						seq_type := Read_data;
+						bus_data_internal <= '0';
 					end if;
 
- 					if seq_type = Write_data then
- 						bus_data_internal <= '0';
- 					end  if;
 				elsif cnt = 9 then
 					--report integer'image(cnt);	
 

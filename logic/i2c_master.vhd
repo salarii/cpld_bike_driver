@@ -21,7 +21,7 @@ architecture behaviour of i2c_master is
 	signal busy_internal	: std_logic;
 	signal bus_clk_internal	: std_logic;
 	signal bus_data_internal : std_logic;
-	signal debug : unsigned(9 downto 0);
+	signal debug : unsigned(8 downto 0);
 	signal done : std_logic;
 begin	
 
@@ -33,7 +33,7 @@ process(clk)
 		constant clk_reduction : integer := 10;
 		constant longerSlide : integer := 20;
 		constant clk_half : integer := clk_reduction/2;
-		constant size : integer := 9;
+		constant size : integer := 8;
 		variable cnt : integer;
 		
 		variable shiftReg : unsigned(size downto 0);
@@ -45,24 +45,23 @@ begin
 		if res = '1' then
 			stage := Idle;
 			shiftReg := to_unsigned(0,size + 1);
+			seq := Inactive;
 		elsif rising_edge(clk)  then
 		
 			--report "cnt:  " & integer'image(cnt);
 			
 			if transaction.enable = '1' or busy_internal = '1' then
 				
-				if stage = Idle then
-					stage := Address;
-					done <= '0';
-					shiftReg(size -1 downto 2) := unsigned(transaction.address);
-					shiftReg(size) := '0';
+				if stage = Idle and seq = Inactive then
 					
+					done <= '0';
+					shiftReg(size  downto 2) := unsigned(transaction.address);
+
 					if transaction.transaction = Write or transaction.transaction = Index then
 						shiftReg(1) := '0';
 					elsif transaction.transaction = Read then
 						shiftReg(1) := '1';
 					end if;
-					
 					shiftReg(0) := '1';
 					
 					cnt := slide; 
@@ -75,7 +74,10 @@ begin
 				if cnt = 0 then
 				
 					cnt := clk_reduction -1;
-					if stage = Repeat then 
+					if seq = Active and stage = Idle then
+						stage := Address;
+					
+					elsif stage = Repeat then 
 						if seq = Inactive then
 							stage := Idle;
 						elsif seq = Active then
@@ -110,7 +112,7 @@ begin
 					end if;
 					
 					
-					if shiftReg = "1000000000" and  bus_clk /= '0' then
+					if shiftReg = "000000000" and  bus_clk /= '0' then
 						
 						if bus_data = '0' then	
 							if transaction.transaction = Write then
@@ -118,16 +120,15 @@ begin
 									stage := Reg_Addr;
 									shiftReg(2 downto 1) := unsigned(transaction.reg_addr);
 								elsif stage = Reg_Addr then
-									shiftReg(size -1 downto 1) := unsigned(transaction.data(15 downto 8));									
+									shiftReg(size downto 1) := unsigned(transaction.data(15 downto 8));									
 									stage := Data_H;
 								elsif stage = Data_H then
-									shiftReg(size -1 downto 1) := unsigned(transaction.data(7 downto 0));
+									--shiftReg(size downto 1) := unsigned(transaction.data(7 downto 0));
 									stage := Data_L; 
 								elsif stage = Data_L then
 									stage := Conclude; 	
 								end if;
 								
-								shiftReg(size) := '0';
 								shiftReg(0) := '1';
 								
 							elsif transaction.transaction = Index then
@@ -142,18 +143,14 @@ begin
 									stage := Conclude; 
 
 								end if;
-								shiftReg(size) := '0';
 							elsif transaction.transaction = Read and stage = Address then
 							
 									bus_data_internal <= 'Z';
 									shiftReg(size  downto 0) := (others=>'0');
-									shiftReg(1) = '1';
+									shiftReg(1) := '1';
 							end if;
 							cnt := longerSlide -1;
-							--report integer'image(cnt);
-							--report integer'image(to_integer(shiftReg));
-								
-							-- handle  error  somehow
+							
 						else
 							if stage = Address then 
 								bus_data_internal <= '0';
@@ -165,26 +162,26 @@ begin
 					
 				else 
 
-					if cnt = clk_half and seq = Active and bus_clk = '0' then
-				
-						shiftReg := shift_left(shiftReg, 1);
-						
-					end if;
-					
 					cnt := cnt -1;
+					if cnt = clk_half and stage /= Idle and seq = Active and bus_clk = '0' then
+						
+						if stage = Address or transaction.transaction = Write or transaction.transaction = Index then 
+							if shiftReg(size) = '1'  then
+								bus_data_internal <= 'Z';
+							else
+								bus_data_internal <= '0';					
+							end if;				
+						elsif transaction.transaction = Read then
+							shiftReg(0) := bus_data_internal;
+						end if;
+						
+					
+						shiftReg := shift_left(shiftReg, 1);
+											
+					
+					end if;
 				end if;
-				
-				
-				if stage = Address or transaction.transaction = Write or transaction.transaction = Index then 
-					if shiftReg(size) = '1'  then
-						bus_data_internal <= 'Z';
-					else
-						bus_data_internal <= '0';					
-					end if;				
-				elsif transaction.transaction = Read then
-					shiftReg(0) := bus_data_internal;
-				end if;
-				
+						
 			else
 				bus_data_internal <= 'Z';
 				bus_clk_internal <= 'Z';
