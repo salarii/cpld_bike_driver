@@ -57,9 +57,9 @@ begin
 					shiftReg(size -1 downto 2) := unsigned(transaction.address);
 					shiftReg(size) := '0';
 					
-					if transaction.transaction = write then
+					if transaction.transaction = Write or transaction.transaction = Index then
 						shiftReg(1) := '0';
-					elsif transaction.transaction = read then
+					elsif transaction.transaction = Read then
 						shiftReg(1) := '1';
 					end if;
 					
@@ -86,7 +86,8 @@ begin
 							bus_data_internal <= 'Z';
 							cnt := longerSlide -1;
 						end if;  
-					elsif  stage = Conclude then
+						
+					elsif stage = Conclude then
 					
 						if seq = Active then
 							seq := DataActive; 
@@ -112,33 +113,43 @@ begin
 					if shiftReg = "1000000000" and  bus_clk /= '0' then
 						
 						if bus_data = '0' then	
-							
-							if stage = Address then
-								stage := Reg_Addr;
-							elsif stage = Reg_Addr then
-								stage := Data_H;
-							elsif stage = Data_H then
-								stage := Data_L; 
-							elsif stage = Data_L then
-								stage := Conclude; 
-								bus_data_internal <= '0';
-								shiftReg(size  downto 0) := (others=>'0');	
-							end if;
-							cnt := longerSlide -1;
-							if  transaction.transaction = write and stage /= Conclude then 
-							 
-								if stage = Reg_Addr then
+							if transaction.transaction = Write then
+								if stage = Address then
+									stage := Reg_Addr;
 									shiftReg(2 downto 1) := unsigned(transaction.reg_addr);
+								elsif stage = Reg_Addr then
+									shiftReg(size -1 downto 1) := unsigned(transaction.data(15 downto 8));									
+									stage := Data_H;
 								elsif stage = Data_H then
-									shiftReg(size -1 downto 1) := unsigned(transaction.data(15 downto 8));
-								elsif stage = Data_L then
 									shiftReg(size -1 downto 1) := unsigned(transaction.data(7 downto 0));
+									stage := Data_L; 
+								elsif stage = Data_L then
+									stage := Conclude; 	
 								end if;
+								
 								shiftReg(size) := '0';
 								shiftReg(0) := '1';
-							elsif transaction.transaction = read and stage /= Conclude then
-								shiftReg(0) := '1';
+								
+							elsif transaction.transaction = Index then
+								
+								if stage = Address then
+							
+									stage := Reg_Addr;
+									shiftReg(2 downto 1) := unsigned(transaction.reg_addr);
+									
+									shiftReg(0) := '1';
+								elsif stage = Reg_Addr then
+									stage := Conclude; 
+
+								end if;
+								shiftReg(size) := '0';
+							elsif transaction.transaction = Read and stage = Address then
+							
+									bus_data_internal <= 'Z';
+									shiftReg(size  downto 0) := (others=>'0');
+									shiftReg(1) = '1';
 							end if;
+							cnt := longerSlide -1;
 							--report integer'image(cnt);
 							--report integer'image(to_integer(shiftReg));
 								
@@ -164,13 +175,13 @@ begin
 				end if;
 				
 				
-				if stage = Address or transaction.transaction = write then 
+				if stage = Address or transaction.transaction = Write or transaction.transaction = Index then 
 					if shiftReg(size) = '1'  then
 						bus_data_internal <= 'Z';
 					else
 						bus_data_internal <= '0';					
 					end if;				
-				elsif transaction.transaction = read then
+				elsif transaction.transaction = Read then
 					shiftReg(0) := bus_data_internal;
 				end if;
 				

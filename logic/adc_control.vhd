@@ -28,7 +28,7 @@ begin
 		
 		constant config_register_h : unsigned(7 downto 0) := "11111111";
 		constant config_register_l : unsigned(7 downto 0) := "00001111";
-		variable state : state_type := Setup;
+		variable state : state_type := Active;
 		variable cnt : integer;	
 
 	begin
@@ -62,6 +62,21 @@ begin
 				
 					cnt := period;
 				elsif state = Active then		
+						
+					i2c.transaction <= Read;
+					i2c.enable <= '1';
+					i2c.reg_addr <= "11";
+				
+					if i2c.done = '1' then
+						i2c.enable <= '0';				
+					end if;
+					
+					if i2c.busy = '1' then
+						i2c.enable <= '0';
+
+					end if;
+				
+					cnt := period;
 						
 					cnt := cnt - 1;	
 					if cnt = period then
