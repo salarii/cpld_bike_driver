@@ -97,6 +97,8 @@ begin
 						elsif stage = Data_H then
 							shiftReg := "01010101";
 							stage := Data_L;
+						elsif stage = Data_L then	
+							stage := Idle;
 						end if;
 					end if;
 					
