@@ -22,6 +22,7 @@ architecture behaviour of i2c_master is
 	signal bus_clk_internal	: std_logic;
 	signal bus_data_internal : std_logic;
 	signal debug : unsigned(8 downto 0);
+	signal data_out : signed(15 downto 0);
 	signal done : std_logic;
 begin	
 
@@ -123,7 +124,7 @@ begin
 									shiftReg(size downto 1) := unsigned(transaction.data(15 downto 8));									
 									stage := Data_H;
 								elsif stage = Data_H then
-									--shiftReg(size downto 1) := unsigned(transaction.data(7 downto 0));
+									shiftReg(size downto 1) := unsigned(transaction.data(7 downto 0));
 									stage := Data_L; 
 								elsif stage = Data_L then
 									stage := Conclude; 	
@@ -143,12 +144,20 @@ begin
 									stage := Conclude; 
 
 								end if;
-							elsif transaction.transaction = Read and stage = Address then
-							
-									bus_data_internal <= 'Z';
-									shiftReg(size  downto 0) := (others=>'0');
-									shiftReg(1) := '1';
+							elsif transaction.transaction = Read then
+								
+								if stage = Address then
+									stage := Reg_Addr;
+									shiftReg(2 downto 1) := unsigned(transaction.reg_addr);
+								elsif stage = Data_H then
+
+								elsif stage = Data_L then
+									stage := Conclude; 	
+								end if;
+									--shiftReg(size  downto 0) := (others=>'0');
+								shiftReg(0) := '1';
 							end if;
+							bus_data_internal <= '0';
 							cnt := longerSlide -1;
 							
 						else
@@ -160,6 +169,18 @@ begin
 						end if;
 					end if;
 					
+					if (stage = Data_H or stage = Data_L) and  transaction.transaction = Read then
+						if bus_clk /= '0' then
+							if stage = Data_H then
+								shiftReg := (others=>'0');
+								shiftReg(0) := '0';
+							elsif stage = Data_L then
+									stage := Conclude; 	
+							end if;
+						else
+							shiftReg(0) := bus_data;
+						end if;
+					end if;
 				else 
 
 					cnt := cnt -1;
@@ -172,10 +193,14 @@ begin
 								bus_data_internal <= '0';					
 							end if;				
 						elsif transaction.transaction = Read then
-							shiftReg(0) := bus_data_internal;
+							if shiftReg(size) = '1' then
+								bus_data_internal <= '0';
+							else 
+								bus_data_internal <= 'Z';
+							end if;
 						end if;
 						
-					
+						-- shiftReg(0) := bus_data_internal;
 						shiftReg := shift_left(shiftReg, 1);
 											
 					

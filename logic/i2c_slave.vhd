@@ -16,7 +16,7 @@ end i2c_slave;
 
 architecture behaviour of i2c_slave is
 	signal bus_data_internal : std_logic := 'Z';
-
+	signal debug : unsigned(7 downto 0);
 begin	
 
 
@@ -29,7 +29,7 @@ process(bus_clk,bus_data)
 
 		variable cnt : integer;
 		
-		variable shiftReg : unsigned(8 downto 0);
+		variable shiftReg : unsigned(7 downto 0);
 		variable seq_type : transaction_type;
 		variable stage : operation_stage := Idle;		
 begin
@@ -60,36 +60,26 @@ begin
 			end if;
 		elsif rising_edge(bus_clk)  then
 			cnt := cnt + 1;
-			if stage = Address then
-				shiftReg(0) := bus_data;
-			
 
-			end if;
 
 			if cnt = 9 and seq_type = Read_data then
  						
 				assert bus_data = '0' report "Master no ack.";
 					
 			end if;
-			
+			--report integer'image(1);
 			shiftReg := shift_left(shiftReg, 1);
 			
 		 elsif falling_edge(bus_clk)  then
 			
- 				if seq_type = Read_data then
- 						--bus_data_internal <= shiftReg(8);
- 				elsif seq_type = Write_data then
- 						bus_data_internal <= 'Z';
- 				end  if;
+
 				
-				bus_data_internal <= 'Z';
-				if cnt = 8 then 
-					--report integer'image(cnt);
-					if (bus_data = '1' or bus_data = 'H' ) then
+				if cnt = 8 and stage = Address then 
+
+					if bus_data = '0'  then
 						seq_type := Write_data; 
 						bus_data_internal <= '0';
-					elsif bus_data = '0' then
-						shiftReg := "010101010";	
+					elsif ( bus_data = '1' or bus_data = 'H' ) then	
 						seq_type := Read_data;
 						bus_data_internal <= '0';
 					end if;
@@ -98,24 +88,45 @@ begin
 					--report integer'image(cnt);	
 
  					cnt :=  0;
- 					
-					if stage = Address then
-						stage := Index;
-					elsif stage = Index then
-						stage := Data_H;					
-					elsif stage = Data_H then
-						stage := Data_L;
+ 					if seq_type = Read_data then
+
+						if stage = Address then
+								
+							shiftReg := "10101010";
+							stage := Data_H;					
+						elsif stage = Data_H then
+							shiftReg := "01010101";
+							stage := Data_L;
+						end if;
 					end if;
 					
 				end if;
+				
+ 				if seq_type = Read_data and ( stage = Data_H or stage = Data_L ) then
+					if cnt = 8 then
+					 	bus_data_internal <= 'Z';
+					else
+	 					if shiftReg(7) = '1'  then
+							bus_data_internal <= 'Z';
+						else
+							bus_data_internal <= '0';					
+						end if;					
+					end if;
+ 				elsif seq_type = Write_data then
+ 						bus_data_internal <= 'Z';
+ 				end  if;
+				
+				
+				
 		 end if;	
-	
+		debug <= shiftReg;
 
 end  process;
 
 	
 process(bus_data_internal)
 begin
+		
 		bus_data <= bus_data_internal;
 end  process;	
 
