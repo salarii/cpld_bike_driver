@@ -153,14 +153,15 @@ begin
 								end if;
 								
 							end if;
-							bus_data_internal <= '0';
+							if  stage /= Repeat  then
+								bus_data_internal <= '0';
+							end if;
 							cnt := longerSlide -1;
 							
 						else
-							if stage = Address then 
 								bus_data_internal <= '0';
 								stage := Repeat;
-							end if;
+							
 							
 						end if;
 					end if;
@@ -181,7 +182,7 @@ begin
 									
 								end if; 
 									
-						elsif shiftReg(0) /= '1' and shiftReg /= "000000000" then
+						elsif shiftReg(0) /= '1' and shiftReg /= "000000000"  then
 							shiftReg(0) := bus_data;
 						end if;
 					end if;
@@ -204,7 +205,6 @@ begin
 							end if;
 						end if;
 						
-						-- shiftReg(0) := bus_data_internal;
 						shiftReg := shift_left(shiftReg, 1);
 											
 					

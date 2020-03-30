@@ -31,7 +31,7 @@ begin
 
 
 	process(clk)
-		type state_type is (Setup, Standby, Cycle);
+		type state_type is (Setup, Index,Standby, Cycle, Empty);
 		
 		constant config_register_h : unsigned(7 downto 0) := "11111111";
 		constant config_register_l : unsigned(7 downto 0) := "00001111";
@@ -58,7 +58,7 @@ begin
 					data(7 downto 0) <= std_logic_vector(config_register_l);
 					
 					if i2c.done = '1' then
-						state := Standby;
+						state := Empty;
 						data <=  (others=>'Z');	
 						i2c.enable <= '0';				
 					end if;

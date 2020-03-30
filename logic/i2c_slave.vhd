@@ -78,7 +78,6 @@ begin
 
 					if bus_data = '0'  then
 						seq_type := Write_data; 
-						bus_data_internal <= '0';
 					elsif ( bus_data = '1' or bus_data = 'H' ) then	
 						seq_type := Read_data;
 						bus_data_internal <= '0';
@@ -97,9 +96,17 @@ begin
 						elsif stage = Data_H then
 							shiftReg := "01010101";
 							stage := Data_L;
+						end if;
+					elsif seq_type = Write_data then
+						if stage = Address then
+							stage := Index;
+						elsif stage = Index then		
+							stage := Data_H;					
+						elsif stage = Data_H then
+							stage := Data_L;
 						elsif stage = Data_L then	
 							stage := Idle;
-						end if;
+						end if;	
 					end if;
 					
 				end if;
@@ -115,7 +122,11 @@ begin
 						end if;					
 					end if;
  				elsif seq_type = Write_data then
+ 					if  cnt = 8 and stage = Address then
+						--bus_data_internal <= '0';
+					else
  						bus_data_internal <= 'Z';
+ 					end if;
  				end  if;
 				
 				
