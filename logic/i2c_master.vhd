@@ -51,11 +51,15 @@ begin
 		
 			--report "cnt:  " & integer'image(cnt);
 			
+			if done  = '1' then
+				done <= '0';
+			end if;	
+			
 			if transaction.enable = '1' or busy_internal = '1' then
 				
 				if stage = Idle and seq = Inactive then
 					
-					done <= '0';
+					
 					shiftReg(size  downto 2) := unsigned(transaction.address);
 
 					if transaction.transaction = Write or transaction.transaction = Index then

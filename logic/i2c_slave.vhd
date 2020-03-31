@@ -122,8 +122,8 @@ begin
 						end if;					
 					end if;
  				elsif seq_type = Write_data then
- 					if  cnt = 8 and stage = Address then
-						--bus_data_internal <= '0';
+ 					if  cnt = 8  then
+						bus_data_internal <= '0';
 					else
  						bus_data_internal <= 'Z';
  					end if;
