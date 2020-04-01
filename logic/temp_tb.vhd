@@ -61,7 +61,7 @@ architecture t_behaviour of temp_tb is
 		i2c : inout  transaction_data;
 		ready : in  std_logic;
 		
-		o_uart : out unsigned(7 downto 0);
+		o_uart : out std_logic_vector(7 downto 0);
 		busy_uart : in std_logic;
 		en_uart : out std_logic
 		);
@@ -74,6 +74,24 @@ architecture t_behaviour of temp_tb is
 			bus_data : inout std_logic
 			);
 	end component i2c_slave;
+	
+	component uart is
+		generic ( 
+			freq : integer;
+			bound : integer
+			);
+			
+		port(
+			data : inout std_logic_vector(7 downto 0);
+			enable : in std_logic;		
+			res : in std_logic;		
+			clk : in std_logic;	
+			rx : in std_logic;		
+			error : out std_logic;
+			busy	: out std_logic;
+			tx	: out  std_logic
+			);
+	end component uart;
 	
 	
 		signal transaction :  transaction_data; 
@@ -97,9 +115,13 @@ architecture t_behaviour of temp_tb is
 		signal error : std_logic;
 			
 			
-		signal o_uart : unsigned(7 downto 0);
+		signal o_uart : std_logic_vector(7 downto 0);
 		signal busy_uart : std_logic;
 		signal en_uart : std_logic;
+		signal tx_uart : std_logic;
+		signal rx_uart : std_logic;
+		signal err_uart : std_logic;		
+		
 	begin	
 
 		module_master: i2c_master
@@ -136,6 +158,22 @@ architecture t_behaviour of temp_tb is
 				busy_uart => busy_uart,
 				en_uart => en_uart
 				);
+
+		to_display : uart
+		generic map (
+		 	freq => 95,
+			bound => 10 )
+			
+		port map (
+			data => o_uart,
+			enable => en_uart,		
+			res => res,		
+			clk => clk,
+			rx => rx_uart,	
+			error => err_uart,
+			busy => busy_uart,
+			tx => tx_uart
+			);
 
 		process
 			begin

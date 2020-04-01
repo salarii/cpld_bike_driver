@@ -58,7 +58,7 @@ end uart;
 
 architecture behaviour of uart is
 	signal tx_internal : std_logic;
-	signal  busy_internal : std_logic; 
+	signal  busy_internal : std_logic := '0'; 
 begin	
 
 

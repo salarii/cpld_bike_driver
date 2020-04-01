@@ -7,14 +7,14 @@ use std.textio.all;
 use work.interface_data.all;
 
 entity adc_control is
-	generic (CONSTANT period : integer := 100);
+	generic (CONSTANT period : integer := 1000);
 
 	port(
 		clk : in  std_logic;
 		res : in  std_logic;
 		i2c : inout  transaction_data;
 		
-		o_uart : out unsigned(7 downto 0);
+		o_uart : out std_logic_vector(7 downto 0);
 		busy_uart : in std_logic;
 		en_uart : out std_logic;
 		
@@ -23,10 +23,10 @@ entity adc_control is
 end adc_control;
 
 architecture behaviour of adc_control is
-		signal data : std_logic_vector(15 downto 0);	
+		signal data : std_logic_vector(15 downto 0) := x"ABCD";	
 		signal address : unsigned(6 downto 0) := "1001000";
 		signal enable_uart  : std_logic;
-		signal out_uart : unsigned(7 downto 0);
+		signal out_uart : std_logic_vector(7 downto 0);
 begin	
 
 
@@ -36,10 +36,10 @@ begin
 		constant config_register_h : unsigned(7 downto 0) := "11111111";
 		constant config_register_l : unsigned(7 downto 0) := "00001111";
 		constant short_break : integer := 10;
-		variable state : state_type := Setup;
+		variable state : state_type := Standby;
 		variable cnt : integer := 0;		
-		variable time : unsigned(15 downto 0);		
-		variable val_cnt : integer  range 3 downto 0 := 0;
+		variable time : unsigned(15 downto 0) := x"1234";		
+		variable val_cnt : integer  range 4 downto 0 := 0;
 	begin
 	
 		if rising_edge(clk)  then
@@ -83,6 +83,7 @@ begin
 				elsif state = Standby then		
 						
 					if cnt = 0 then
+						data <= x"ABCD";
 						state := Cycle;
 						i2c.transaction <= Read;
 						i2c.enable <= '1';
@@ -106,24 +107,24 @@ begin
 				elsif state = Cycle then
 					
 					
-					if busy_uart = '0' then
+					if busy_uart = '0' and enable_uart = '0' then
 						
 						case val_cnt is
-						  when 0 =>   out_uart <= unsigned(data(15 downto 8));
-						  when 1 =>   out_uart <= unsigned(data(7 downto 0));
-						  when 2 =>   out_uart <= time(15 downto 8);
-						  when 3 =>   out_uart <= time(7 downto 0);
+						  when 0 =>   out_uart <= data(15 downto 8);
+						  when 1 =>   out_uart <= data(7 downto 0);
+						  when 2 =>   out_uart <= std_logic_vector(time(15 downto 8));
+						  when 3 =>   out_uart <= std_logic_vector(time(7 downto 0));
 						  when others => out_uart <=  (others=>'0');
 						end case;
 					
-						if val_cnt = 3 then
+						if val_cnt = 4 then
 							val_cnt := 0;
-							cnt := period;
 							state := Standby;
 						else
-							enable_uart <= '1';
 							val_cnt := val_cnt + 1;
+							enable_uart <= '1';
 						end if;
+						
 					else
 						enable_uart <= '0';
 							
