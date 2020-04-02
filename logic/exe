@@ -8,4 +8,4 @@ ghdl -a interface_data.vhd  i2c_master.vhd i2c_slave.vhd adc_control.vhd
 ghdl -a uart.vhd temp_tb.vhd
 ghdl -e temp_tb
 ghdl -r temp_tb --vcd=func.vcd  --stop-time=520us --ieee-asserts=disable-at-0
-gtkwave func.vcd
+#gtkwave func.vcd

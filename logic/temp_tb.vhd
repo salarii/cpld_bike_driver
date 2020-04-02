@@ -37,49 +37,55 @@ end temp_tb;
 
 architecture t_behaviour of temp_tb is
 
-	component i2c_master is
-		port(
-		transaction : inout transaction_data; 
-		res : in std_logic;
-		clk : in std_logic;			
-		bus_clk	: inout  std_logic;
-		bus_data : inout std_logic
-		);
-	end component i2c_master;
-	
-	component wire is
-		port(
-		bus_clk	: inout  std_logic;
-		bus_data : inout std_logic
-		);
-	end component wire;
-	
-	component adc_control is
-		port(
-		clk : in  std_logic;
-		res : in  std_logic;
-		i2c : inout  transaction_data;
-		ready : in  std_logic;
-		
-		o_uart : out std_logic_vector(7 downto 0);
-		busy_uart : in std_logic;
-		en_uart : out std_logic
-		);
-	end component adc_control;
-
-	component i2c_slave is
-		port(
-			res : in std_logic;		
-			bus_clk	: in  std_logic;
+		component i2c_master is
+			port(
+			i_to_i2c : in type_to_i2c;
+			o_from_i2c : out type_from_i2c;
+			i2c_bus : inout std_logic_vector(15 downto 0);
+			
+			res : in std_logic;
+			clk : in std_logic;			
+			bus_clk	: inout  std_logic;
 			bus_data : inout std_logic
 			);
-	end component i2c_slave;
-	
-	component uart is
-		generic ( 
-			freq : integer;
-			bound : integer
+		end component i2c_master;
+		
+		component wire is
+			port(
+			bus_clk	: inout  std_logic;
+			bus_data : inout std_logic
 			);
+		end component wire;
+		
+		component adc_control is
+			port(
+			o_to_i2c : out type_to_i2c;
+			i_from_i2c : in type_from_i2c;
+			i2c_bus : inout std_logic_vector(15 downto 0);
+	
+			clk : in  std_logic;
+			res : in  std_logic;
+			ready : in  std_logic;
+			
+			o_uart : inout std_logic_vector(7 downto 0);
+			busy_uart : in std_logic;
+			en_uart : out std_logic
+			);
+		end component adc_control;
+	
+		component i2c_slave is
+			port(
+				res : in std_logic;		
+				bus_clk	: in  std_logic;
+				bus_data : inout std_logic
+				);
+		end component i2c_slave;
+	
+		component uart is
+			generic ( 
+				freq : integer;
+				bound : integer
+				);
 			
 		port(
 			data : inout std_logic_vector(7 downto 0);
@@ -91,10 +97,12 @@ architecture t_behaviour of temp_tb is
 			busy	: out std_logic;
 			tx	: out  std_logic
 			);
-	end component uart;
-	
-	
-		signal transaction :  transaction_data; 
+		end component uart;
+	 
+		signal to_i2c : type_to_i2c;
+		signal from_i2c : type_from_i2c;
+		signal i2c_bus : std_logic_vector(15 downto 0);
+		
 		signal res : std_logic;	
 		signal clk : std_logic;		
 		signal bus_clk	: std_logic;
@@ -126,7 +134,9 @@ architecture t_behaviour of temp_tb is
 
 		module_master: i2c_master
 		port map (
-				transaction => transaction,
+				i_to_i2c => to_i2c,
+				o_from_i2c => from_i2c,
+				i2c_bus => i2c_bus,
 				res => res,
 				clk => clk,
 				bus_clk => bus_clk,
@@ -147,12 +157,13 @@ architecture t_behaviour of temp_tb is
 				bus_data => bus_data
 				);
 
-
 		control_func: adc_control
 		port map (
+				o_to_i2c => to_i2c,
+				i_from_i2c => from_i2c,
+				i2c_bus => i2c_bus,
 				res => res,
 				clk => clk,
-				i2c => transaction,
 				ready => ready,
 				o_uart => o_uart,
 				busy_uart => busy_uart,
@@ -201,12 +212,11 @@ begin
 	wait  for clk_period/2;
 end  process;
 
-	data <= transaction.data;
-	address <= transaction.address;
-	reg_addr <= transaction.reg_addr;
-	enable <= transaction.enable;		
-	busy <= transaction.busy;
-	done <= transaction.done;
-	error <= transaction.error;
+	address <= to_i2c.address;
+	reg_addr <= to_i2c.reg_addr;
+	enable <= to_i2c.enable;		
+	busy <= from_i2c.busy;
+	done <= from_i2c.done;
+	error <= from_i2c.error;
 		
 end t_behaviour;

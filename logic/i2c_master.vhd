@@ -9,7 +9,11 @@ use ieee.numeric_std.all;
 
 entity i2c_master is
 	port(
-		transaction : inout transaction_data; 
+		i_to_i2c : in type_to_i2c;
+		o_from_i2c : out type_from_i2c;
+			
+		i2c_bus : inout std_logic_vector(15 downto 0);
+			
 		res : in std_logic;		
 		clk : in std_logic;		
 		bus_clk	: inout  std_logic;
@@ -55,16 +59,16 @@ begin
 				done <= '0';
 			end if;	
 			
-			if transaction.enable = '1' or busy_internal = '1' then
+			if i_to_i2c.enable = '1' or busy_internal = '1' then
 				
 				if stage = Idle and seq = Inactive then
 					
 					
-					shiftReg(size  downto 2) := unsigned(transaction.address);
+					shiftReg(size  downto 2) := unsigned(i_to_i2c.address);
 
-					if transaction.transaction = Write or transaction.transaction = Index then
+					if i_to_i2c.transaction = Write or i_to_i2c.transaction = Index then
 						shiftReg(1) := '0';
-					elsif transaction.transaction = Read then
+					elsif i_to_i2c.transaction = Read then
 						shiftReg(1) := '1';
 					end if;
 					shiftReg(0) := '1';
@@ -120,15 +124,15 @@ begin
 					if shiftReg = "000000000" and  bus_clk /= '0' then
 						
 						if bus_data = '0' then	
-							if transaction.transaction = Write then
+							if i_to_i2c.transaction = Write then
 								if stage = Address then
 									stage := Reg_Addr;
-									shiftReg(2 downto 1) := unsigned(transaction.reg_addr);
+									shiftReg(2 downto 1) := unsigned(i_to_i2c.reg_addr);
 								elsif stage = Reg_Addr then
-									shiftReg(size downto 1) := unsigned(transaction.data(15 downto 8));									
+									shiftReg(size downto 1) := unsigned(i2c_bus(15 downto 8));									
 									stage := Data_H;
 								elsif stage = Data_H then
-									shiftReg(size downto 1) := unsigned(transaction.data(7 downto 0));
+									shiftReg(size downto 1) := unsigned(i2c_bus(7 downto 0));
 									stage := Data_L; 
 								elsif stage = Data_L then
 									stage := Conclude; 	
@@ -136,19 +140,19 @@ begin
 								
 								shiftReg(0) := '1';
 								
-							elsif transaction.transaction = Index then
+							elsif i_to_i2c.transaction = Index then
 								
 								if stage = Address then
 							
 									stage := Reg_Addr;
-									shiftReg(2 downto 1) := unsigned(transaction.reg_addr);
+									shiftReg(2 downto 1) := unsigned(i_to_i2c.reg_addr);
 									
 									shiftReg(0) := '1';
 								elsif stage = Reg_Addr then
 									stage := Conclude; 
 
 								end if;
-							elsif transaction.transaction = Read then
+							elsif i_to_i2c.transaction = Read then
 								
 								if stage = Address then
 									stage := Data_H;
@@ -170,7 +174,7 @@ begin
 						end if;
 					end if;
 					
-					if (stage = Data_H or stage = Data_L) and  transaction.transaction = Read then
+					if (stage = Data_H or stage = Data_L) and  i_to_i2c.transaction = Read then
 						if bus_clk /= '0' then
 								if shiftReg = "000000000" then
 									if stage = Data_H  then
@@ -195,13 +199,13 @@ begin
 					cnt := cnt -1;
 					if cnt = clk_half and stage /= Idle and seq = Active and bus_clk = '0' then
 						
-						if stage = Address or transaction.transaction = Write or transaction.transaction = Index then 
+						if stage = Address or i_to_i2c.transaction = Write or i_to_i2c.transaction = Index then 
 							if shiftReg(size) = '1'  then
 								bus_data_internal <= 'Z';
 							else
 								bus_data_internal <= '0';					
 							end if;				
-						elsif transaction.transaction = Read then
+						elsif i_to_i2c.transaction = Read then
 							if shiftReg = "000000000"  then
 								bus_data_internal <= '0';
 							else 
