@@ -7,14 +7,14 @@ use std.textio.all;
 use work.interface_data.all;
 
 entity adc_control is
-	generic (CONSTANT period : integer := 1000);
+	generic (CONSTANT period : integer := 1000000);
 
 	port(
 		clk : in  std_logic;
 		res : in  std_logic;
 		i2c : inout  transaction_data;
 		
-		o_uart : out std_logic_vector(7 downto 0);
+		o_uart : inout std_logic_vector(7 downto 0);
 		busy_uart : in std_logic;
 		en_uart : out std_logic;
 		
@@ -26,7 +26,6 @@ architecture behaviour of adc_control is
 		signal data : std_logic_vector(15 downto 0) := x"ABCD";	
 		signal address : unsigned(6 downto 0) := "1001000";
 		signal enable_uart  : std_logic;
-		signal out_uart : std_logic_vector(7 downto 0);
 begin	
 
 
@@ -44,9 +43,9 @@ begin
 	
 		if rising_edge(clk)  then
 			if res = '0' then
-				state := Setup;
-				
-				
+				state := Standby;
+				cnt :=0;
+				val_cnt := 0;
 			else
 
 				if  state = Setup then
@@ -110,11 +109,11 @@ begin
 					if busy_uart = '0' and enable_uart = '0' then
 						
 						case val_cnt is
-						  when 0 =>   out_uart <= data(15 downto 8);
-						  when 1 =>   out_uart <= data(7 downto 0);
-						  when 2 =>   out_uart <= std_logic_vector(time(15 downto 8));
-						  when 3 =>   out_uart <= std_logic_vector(time(7 downto 0));
-						  when others => out_uart <=  (others=>'0');
+						  when 0 =>   o_uart <= data(15 downto 8);
+						  when 1 =>   o_uart <= data(7 downto 0);
+						  when 2 =>   o_uart <= std_logic_vector(time(15 downto 8));
+						  when 3 =>   o_uart <= std_logic_vector(time(7 downto 0));
+						  when others => o_uart <=  (others=>'Z');
 						end case;
 					
 						if val_cnt = 4 then
@@ -142,10 +141,9 @@ begin
 
 	end process;
 	
-	process(out_uart, data, address, enable_uart )
+	process( data, address, enable_uart )
 	begin
 		en_uart <= enable_uart;
-		o_uart <= out_uart;
 		i2c.data <= data;
 		i2c.address <= std_logic_vector(address);	
 	end process;

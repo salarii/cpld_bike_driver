@@ -228,10 +228,10 @@ end  process;
 	
 process(busy_internal,bus_clk_internal,bus_data_internal,done)
 begin
-		transaction.busy <= busy_internal;
+		--transaction.busy <= busy_internal;
 		bus_clk <= bus_clk_internal;
 		bus_data <= bus_data_internal;
-		transaction.done <= done;
+		--transaction.done <= done;
 end  process;	
 
 
