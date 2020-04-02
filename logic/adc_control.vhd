@@ -12,7 +12,10 @@ entity adc_control is
 	port(
 		clk : in  std_logic;
 		res : in  std_logic;
-		i2c : inout  transaction_data;
+		
+		o_to_i2c : out type_to_i2c;
+		i_from_i2c : in type_from_i2c;
+		i2c_bus : inout std_logic_vector(15 downto 0);
 		
 		o_uart : inout std_logic_vector(7 downto 0);
 		busy_uart : in std_logic;
@@ -23,19 +26,21 @@ entity adc_control is
 end adc_control;
 
 architecture behaviour of adc_control is
-		signal data : std_logic_vector(15 downto 0) := x"ABCD";	
-		signal address : unsigned(6 downto 0) := "1001000";
+		--signal data : std_logic_vector(15 downto 0) := x"ABCD";	
+		--signal address : unsigned(6 downto 0) := "";
 		signal enable_uart  : std_logic;
 begin	
 
-
+	o_to_i2c.address <= "1001000";
 	process(clk)
 		type state_type is (Setup, Index_Read,Standby, Cycle, Empty);
 		
+		type type_i2c_operations is ( i2c_address, i2c_index, i2c_data_H, i2c_data_L );
+		
 		constant config_register_h : unsigned(7 downto 0) := "11111111";
 		constant config_register_l : unsigned(7 downto 0) := "00001111";
-		constant short_break : integer := 10;
-		variable state : state_type := Standby;
+		constant short_break : integer := 50;
+		variable state : state_type := Setup;
 		variable cnt : integer := 0;		
 		variable time : unsigned(15 downto 0) := x"1234";		
 		variable val_cnt : integer  range 4 downto 0 := 0;
@@ -43,57 +48,59 @@ begin
 	
 		if rising_edge(clk)  then
 			if res = '0' then
-				state := Standby;
+				state := Setup;
 				cnt :=0;
 				val_cnt := 0;
 			else
 
 				if  state = Setup then
-					i2c.reg_addr <= "11";
+					o_to_i2c.reg_addr <= "11";
 				
-					data(15 downto 8) <= std_logic_vector(config_register_h);
-					i2c.transaction <= Write;
+					i2c_bus(15 downto 8) <= std_logic_vector(config_register_h);
+					o_to_i2c.transaction <= Write;
 
 					
-					data(7 downto 0) <= std_logic_vector(config_register_l);
+					i2c_bus(7 downto 0) <= std_logic_vector(config_register_l);
 					
-					if i2c.done = '1' then
+					if i_from_i2c.done = '1' then
 						state := Index_Read;
-						data <=  (others=>'Z');		
+						i2c_bus <=  (others=>'Z');		
 						cnt := short_break;	
-					else 
-						i2c.enable <= '1';
+					elsif i_from_i2c.busy = '1' then
+						o_to_i2c.enable <= '0';
+					else
+						o_to_i2c.enable <= '1';
 					end if;
 					
 					
 				elsif state = Index_Read then
 
 					if cnt = 0 then
-						i2c.transaction <= Index;
-						i2c.reg_addr <= "10";
-						i2c.enable <= '1';
+						
+						o_to_i2c.reg_addr <= "10";
+						o_to_i2c.enable <= '1';
 						
 					end if;
 					
-					if i2c.done = '1' then
+					if i_from_i2c.done = '1' then
 						cnt := short_break;
 						state := Standby;
 					end if;
 				elsif state = Standby then		
 						
 					if cnt = 0 then
-						data <= x"ABCD";
+						i2c_bus <= x"ABCD";
 						state := Cycle;
-						i2c.transaction <= Read;
-						i2c.enable <= '1';
-						i2c.reg_addr <= "11";
+						o_to_i2c.transaction <= Read;
+						o_to_i2c.enable <= '1';
+						o_to_i2c.reg_addr <= "11";
 					
-						if i2c.done = '1' then
-							i2c.enable <= '0';				
+						if i_from_i2c.done = '1' then
+							o_to_i2c.enable <= '0';				
 						end if;
 						
-						if i2c.busy = '1' then
-							i2c.enable <= '0';
+						if i_from_i2c.busy = '1' then
+							o_to_i2c.enable <= '0';
 	
 						end if;
 					
@@ -109,8 +116,8 @@ begin
 					if busy_uart = '0' and enable_uart = '0' then
 						
 						case val_cnt is
-						  when 0 =>   o_uart <= data(15 downto 8);
-						  when 1 =>   o_uart <= data(7 downto 0);
+						  when 0 =>   o_uart <= i2c_bus(15 downto 8);
+						  when 1 =>   o_uart <= i2c_bus(7 downto 0);
 						  when 2 =>   o_uart <= std_logic_vector(time(15 downto 8));
 						  when 3 =>   o_uart <= std_logic_vector(time(7 downto 0));
 						  when others => o_uart <=  (others=>'Z');
@@ -131,8 +138,8 @@ begin
 				end if;	
 				cnt := cnt - 1;	
 					
-				if i2c.busy = '1' then
-						i2c.enable <= '0';
+				if i_from_i2c.busy = '1' then
+						o_to_i2c.enable <= '0';
 
 				end if;
 			end if;
@@ -141,11 +148,9 @@ begin
 
 	end process;
 	
-	process( data, address, enable_uart )
+	process(  enable_uart )
 	begin
 		en_uart <= enable_uart;
-		i2c.data <= data;
-		i2c.address <= std_logic_vector(address);	
 	end process;
 
 	
