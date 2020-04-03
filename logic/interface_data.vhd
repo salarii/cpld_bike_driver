@@ -6,11 +6,10 @@ package interface_data is
 
 type transaction_type is (Read, Write);
 
-type transaction_stage is ( Idle, Address, Reg_Addr, Data_H, Data_L, Repeat, Conclude );
+type transaction_stage is ( t_Idle, t_Address, t_Data, t_Repeat, t_Conclude, t_Continue );
 
 type type_to_i2c is record
 	address : std_logic_vector(6 downto 0);
-	reg_addr : std_logic_vector(1 downto 0);
 	enable : std_logic;		
 	continue : std_logic;
 	transaction : transaction_type;

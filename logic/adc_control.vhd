@@ -15,7 +15,7 @@ entity adc_control is
 		
 		o_to_i2c : out type_to_i2c;
 		i_from_i2c : in type_from_i2c;
-		i2c_bus : inout std_logic_vector(15 downto 0);
+		i2c_bus : inout std_logic_vector(7 downto 0);
 		
 		o_uart : inout std_logic_vector(7 downto 0);
 		busy_uart : in std_logic;
@@ -35,15 +35,17 @@ begin
 	process(clk)
 		type state_type is (Setup, Index_Read,Standby, Cycle, Empty);
 		
-		type type_i2c_operations is ( i2c_address, i2c_index, i2c_data_H, i2c_data_L );
+		type type_i2c_operations is ( i2c_index, i2c_data_H, i2c_data_L );
 		
 		constant config_register_h : unsigned(7 downto 0) := "11111111";
 		constant config_register_l : unsigned(7 downto 0) := "00001111";
 		constant short_break : integer := 50;
-		variable state : state_type := Setup;
 		variable cnt : integer := 0;		
 		variable time : unsigned(15 downto 0) := x"1234";		
 		variable val_cnt : integer  range 4 downto 0 := 0;
+		variable state : state_type := Setup;
+		variable i2c_state : type_i2c_operations;
+		
 	begin
 	
 		if rising_edge(clk)  then
@@ -54,19 +56,30 @@ begin
 			else
 
 				if  state = Setup then
-					o_to_i2c.reg_addr <= "11";
+					i2c_bus <= x"03";
 				
-					i2c_bus(15 downto 8) <= std_logic_vector(config_register_h);
 					o_to_i2c.transaction <= Write;
-
 					
-					i2c_bus(7 downto 0) <= std_logic_vector(config_register_l);
+					i2c_state :=  i2c_index;
 					
 					if i_from_i2c.done = '1' then
-						state := Index_Read;
-						i2c_bus <=  (others=>'Z');		
-						cnt := short_break;	
+						if i2c_state = i2c_index then
+						
+							i2c_bus <= std_logic_vector(config_register_h);	
+						elsif i2c_state = i2c_data_H then
+						
+							i2c_bus <= std_logic_vector(config_register_l);
+					
+							i2c_state := i2c_data_L;
+						elsif i2c_state = i2c_data_L then
+							state := Index_Read;
+							i2c_bus <=  (others=>'Z');		
+							cnt := short_break;	
+						
+						end if;
+						
 					elsif i_from_i2c.busy = '1' then
+						o_to_i2c.continue <= '1';
 						o_to_i2c.enable <= '0';
 					else
 						o_to_i2c.enable <= '1';
@@ -77,7 +90,6 @@ begin
 
 					if cnt = 0 then
 						
-						o_to_i2c.reg_addr <= "10";
 						o_to_i2c.enable <= '1';
 						
 					end if;
@@ -89,11 +101,10 @@ begin
 				elsif state = Standby then		
 						
 					if cnt = 0 then
-						i2c_bus <= x"ABCD";
+						i2c_bus <= x"AB";
 						state := Cycle;
 						o_to_i2c.transaction <= Read;
 						o_to_i2c.enable <= '1';
-						o_to_i2c.reg_addr <= "11";
 					
 						if i_from_i2c.done = '1' then
 							o_to_i2c.enable <= '0';				
@@ -116,8 +127,8 @@ begin
 					if busy_uart = '0' and enable_uart = '0' then
 						
 						case val_cnt is
-						  when 0 =>   o_uart <= i2c_bus(15 downto 8);
-						  when 1 =>   o_uart <= i2c_bus(7 downto 0);
+						  when 0 =>   o_uart <= i2c_bus;
+						  when 1 =>   o_uart <= i2c_bus;
 						  when 2 =>   o_uart <= std_logic_vector(time(15 downto 8));
 						  when 3 =>   o_uart <= std_logic_vector(time(7 downto 0));
 						  when others => o_uart <=  (others=>'Z');

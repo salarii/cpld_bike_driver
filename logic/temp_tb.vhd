@@ -41,7 +41,7 @@ architecture t_behaviour of temp_tb is
 			port(
 			i_to_i2c : in type_to_i2c;
 			o_from_i2c : out type_from_i2c;
-			i2c_bus : inout std_logic_vector(15 downto 0);
+			i2c_bus : inout std_logic_vector(7 downto 0);
 			
 			res : in std_logic;
 			clk : in std_logic;			
@@ -61,7 +61,7 @@ architecture t_behaviour of temp_tb is
 			port(
 			o_to_i2c : out type_to_i2c;
 			i_from_i2c : in type_from_i2c;
-			i2c_bus : inout std_logic_vector(15 downto 0);
+			i2c_bus : inout std_logic_vector(7 downto 0);
 	
 			clk : in  std_logic;
 			res : in  std_logic;
@@ -101,7 +101,7 @@ architecture t_behaviour of temp_tb is
 	 
 		signal to_i2c : type_to_i2c;
 		signal from_i2c : type_from_i2c;
-		signal i2c_bus : std_logic_vector(15 downto 0);
+		signal i2c_bus : std_logic_vector(7 downto 0);
 		
 		signal res : std_logic;	
 		signal clk : std_logic;		
@@ -116,12 +116,13 @@ architecture t_behaviour of temp_tb is
 		
 		signal data : std_logic_vector(15 downto 0);
 		signal address : std_logic_vector(6 downto 0);
-		signal reg_addr : std_logic_vector(1 downto 0);
+		
 		signal enable : std_logic;		
 		signal busy	: std_logic;
 		signal done	: std_logic;
 		signal error : std_logic;
-			
+		signal continue : std_logic;
+					
 			
 		signal o_uart : std_logic_vector(7 downto 0);
 		signal busy_uart : std_logic;
@@ -213,10 +214,11 @@ begin
 end  process;
 
 	address <= to_i2c.address;
-	reg_addr <= to_i2c.reg_addr;
 	enable <= to_i2c.enable;		
+	continue <= to_i2c.continue;
+	
 	busy <= from_i2c.busy;
 	done <= from_i2c.done;
 	error <= from_i2c.error;
-		
+			
 end t_behaviour;

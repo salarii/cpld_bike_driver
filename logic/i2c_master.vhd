@@ -12,7 +12,7 @@ entity i2c_master is
 		i_to_i2c : in type_to_i2c;
 		o_from_i2c : out type_from_i2c;
 			
-		i2c_bus : inout std_logic_vector(15 downto 0);
+		i2c_bus : inout std_logic_vector(7 downto 0);
 			
 		res : in std_logic;		
 		clk : in std_logic;		
@@ -22,12 +22,12 @@ entity i2c_master is
 end i2c_master;
 
 architecture behaviour of i2c_master is
-	signal busy_internal	: std_logic;
+	signal busy_internal	: std_logic := '0';
 	signal bus_clk_internal	: std_logic;
 	signal bus_data_internal : std_logic;
 	signal debug : unsigned(7 downto 0);
 	signal data_out : signed(15 downto 0);
-	signal done : std_logic;
+	signal done : std_logic := '0';
 begin	
 
 
@@ -43,16 +43,18 @@ process(clk)
 		variable cycle_counter : integer range 10 downto 0 := 0; 
 		
 		variable shiftReg : unsigned(7 downto 0);
-		variable stage : transaction_stage := Idle;
+		variable stage : transaction_stage := t_Idle;
 		variable seq : transaction_seq := Inactive;		
 begin
 		
 		debug <= to_unsigned(cycle_counter, debug'length);
+		--debug <= shiftReg;
 		if res = '1' then
-			stage := Idle;
+			stage := t_Idle;
 			shiftReg := to_unsigned(0,8);
 			seq := Inactive;
 			done <= '0';
+			busy_internal <= '0';
 			cycle_counter:= 0;
 		elsif rising_edge(clk)  then
 		
@@ -64,13 +66,14 @@ begin
 			
 			if i_to_i2c.enable = '1' or busy_internal = '1' then
 				
-				if stage = Idle and seq = Inactive then
-					stage := Address;
+				if stage = t_Idle and seq = Inactive then
+					stage := t_Address;
 					
 					shiftReg(7  downto 1) := unsigned(i_to_i2c.address);
 				
 					if i_to_i2c.transaction = Write then
 						shiftReg(0) := '0';
+						i2c_bus <= (others=>'Z');
 					elsif i_to_i2c.transaction = Read then
 						shiftReg(0) := '1';
 					end if;
@@ -85,9 +88,9 @@ begin
 				if cnt = 0 then
 					
 					cnt := clk_reduction -1;
-					if stage = Repeat then 
+					if stage = t_Repeat then 
 						if seq = Inactive then
-							stage := Idle;
+							stage := t_Idle;
 						elsif seq = Active then
 							seq := DataActive; 
 							bus_clk_internal <= 'Z';
@@ -96,20 +99,33 @@ begin
 							bus_data_internal <= 'Z';
 							cnt := longerSlide -1;
 						end if;  
-						
-					elsif stage = Conclude then
-					
+					elsif stage = t_Continue then
+						bus_clk_internal <= '0';
+						bus_data_internal <= '0';
 						if seq = Active then
-							seq := DataActive; 
-							bus_clk_internal <= 'Z';
-						elsif seq = DataActive then
 							seq := Inactive;
-							bus_data_internal <= 'Z';
+							cnt := longerSlide -1;
+						elsif seq = Inactive then
 							busy_internal <= '0';
-							stage := Idle; 
-							done <= '1';
+							if i_to_i2c.enable = '1' then
+							
+							
+							end if;
 						end if;
 						
+					elsif stage = t_Conclude then
+
+						if seq = Active then
+								seq := DataActive; 
+								bus_clk_internal <= 'Z';
+						elsif seq = DataActive then
+								seq := Inactive;
+								bus_data_internal <= 'Z';
+								busy_internal <= '0';
+								stage := t_Idle; 
+								done <= '1';
+						end if;
+
 					elsif  bus_clk_internal /= '0' then
 						bus_clk_internal <= '0';
 						seq := Active;
@@ -120,85 +136,91 @@ begin
 					end if;
 					
 
-
-					
-					if (stage = Data_H or stage = Data_L) and  i_to_i2c.transaction = Read then
-						if  bus_clk /= '0' then
-						
-							if cycle_counter = 7 then
-								if stage = Data_H  then
-									i2c_bus(15  downto  8) <= std_logic_vector(shiftReg);
+					if stage /= t_Continue then
+						if stage = t_Data then
+							if i_to_i2c.transaction = Read then
 								
-								elsif stage = Data_L then
-									i2c_bus(7  downto  0) <= std_logic_vector(shiftReg);
+								if  bus_clk /= '0' then
+								
+									if cycle_counter = 7 then
+										if stage = t_Data  then
+											i2c_bus <= std_logic_vector(shiftReg);
+										
+										end if;
+										
+										bus_data_internal <= '0';
+									elsif cycle_counter = 8 then
+										bus_data_internal <= 'Z';
+										
+										
+										if stage = t_Data  then
+		
+											if i_to_i2c.continue = '1' then
+												stage := t_Continue;
+											else
+												stage := t_Conclude;
+											end if;	
+										
+										end if;
+										
+										cnt := longerSlide -1;
+								
+									end if;
+								
+								else			
+										shiftReg(0) := bus_data;
 								end if;
-								
-								bus_data_internal <= '0';
-							elsif cycle_counter = 8 then
-								bus_data_internal <= 'Z';
-								
-								
-								if stage = Data_H  then
-									stage := Data_L;
-								elsif stage = Data_L then
-									stage := Conclude;
-								end if;
-								
+							elsif i_to_i2c.transaction = Write and cycle_counter = 0 and bus_clk /= '0' then
 								cnt := longerSlide -1;
-						
 							end if;
-						
-						else			
-								shiftReg(0) := bus_data;
 						end if;
-					end if;
-					if  bus_clk = '0' then
-						if cycle_counter = 8  then
-	
-							if bus_data = '0' then	
-								cycle_counter := 0;
-								if i_to_i2c.transaction = Write then
-									if stage = Address then
-										stage := Reg_Addr;
-										shiftReg(1 downto 0) := unsigned(i_to_i2c.reg_addr);
-									elsif stage = Reg_Addr then
-										shiftReg := unsigned(i2c_bus(15 downto 8));									
-										stage := Data_H;
-									elsif stage = Data_H then
-										shiftReg := unsigned(i2c_bus(7 downto 0));
-										stage := Data_L; 
-									elsif stage = Data_L then
-										stage := Conclude; 	
+						if  bus_clk = '0' then
+							if cycle_counter = 8  then
+		
+								if bus_data = '0' then	
+									cycle_counter := 0;
+									if i_to_i2c.transaction = Write then
+										if stage = t_Address then
+											shiftReg := unsigned(i2c_bus);
+											stage := t_Data; 
+											bus_data_internal <= '0';
+										elsif stage = t_Data then
+											if i_to_i2c.continue = '1' then
+												
+												stage := t_Continue;
+											else
+												stage := t_Conclude;
+											end if;	
+										
+										end if;
+										
+		
+									elsif i_to_i2c.transaction = Read then
+		
+										if stage = t_Address then
+											stage := t_Data;
+											shiftReg := (others=>'0');	
+										end if;
+										
 									end if;
 									
-	
-								elsif i_to_i2c.transaction = Read then
-	
-									if stage = Address then
-										stage := Data_H;
-										shiftReg := (others=>'0');	
-									end if;
+								else
+										bus_data_internal <= '0';
+										stage := t_Repeat;
+									
 									
 								end if;
-	
-								cnt := longerSlide -1;
-								
 							else
-									bus_data_internal <= '0';
-									stage := Repeat;
-								
-								
+								cycle_counter := cycle_counter + 1;
 							end if;
-						else
-							cycle_counter := cycle_counter + 1;
 						end if;
 					end if;
 				else 
 
 					cnt := cnt -1;
-					if cnt = clk_half  and seq = Active and bus_clk = '0' then
+					if cnt = clk_half  and seq = Active and bus_clk = '0' and stage /= t_Continue then
 						
-						if stage = Address or i_to_i2c.transaction = Write then 
+						if stage = t_Address or i_to_i2c.transaction = Write then 
 							if shiftReg(7) = '1'  then
 								bus_data_internal <= 'Z';
 							else
