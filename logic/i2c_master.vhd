@@ -32,7 +32,7 @@ begin
 
 
 process(clk)
-		type transaction_seq is (Inactive, DataActive, Active);
+		type transaction_seq is (Inactive, DataActive, Active,ShortData);
 
 		constant slide : integer := 10;
 		constant clk_reduction : integer := 10;
@@ -40,7 +40,7 @@ process(clk)
 		constant clk_half : integer := clk_reduction/2;
 		variable cnt : integer;
 		
-		variable cycle_counter : integer range 10 downto 0 := 0; 
+		variable cycle_counter : integer range 9 downto 0 := 0; 
 		
 		variable shiftReg : unsigned(7 downto 0);
 		variable stage : transaction_stage := t_Idle;
@@ -64,7 +64,7 @@ begin
 				done <= '0';
 			end if;	
 			
-			if i_to_i2c.enable = '1' or busy_internal = '1' then
+			if i_to_i2c.enable = '1' or busy_internal = '1' or i_to_i2c.continue = '1' then
 				
 				if stage = t_Idle and seq = Inactive then
 					stage := t_Address;
@@ -91,6 +91,10 @@ begin
 					if stage = t_Repeat then 
 						if seq = Inactive then
 							stage := t_Idle;
+						elsif seq = ShortData then
+							bus_clk_internal <= '0';
+							bus_data_internal <= '0';
+							seq := Active;
 						elsif seq = Active then
 							seq := DataActive; 
 							bus_clk_internal <= 'Z';
@@ -105,12 +109,13 @@ begin
 						if seq = Active then
 							seq := Inactive;
 							cnt := longerSlide -1;
+						elsif seq = ShortData then
+							bus_clk_internal <= '0';
+							bus_data_internal <= '0';
+							seq := Active;
 						elsif seq = Inactive then
 							busy_internal <= '0';
-							if i_to_i2c.enable = '1' then
-							
-							
-							end if;
+							done <= '1';
 						end if;
 						
 					elsif stage = t_Conclude then
@@ -118,6 +123,10 @@ begin
 						if seq = Active then
 								seq := DataActive; 
 								bus_clk_internal <= 'Z';
+						elsif seq = ShortData then
+							bus_clk_internal <= '0';
+							bus_data_internal <= '0';
+							seq := Active;
 						elsif seq = DataActive then
 								seq := Inactive;
 								bus_data_internal <= 'Z';
@@ -135,101 +144,58 @@ begin
 						bus_clk_internal <= 'Z';
 					end if;
 					
-
-					if stage /= t_Continue then
-						if stage = t_Data then
-							if i_to_i2c.transaction = Read then
-								
-								if  bus_clk /= '0' then
-								
-									if cycle_counter = 7 then
-										if stage = t_Data  then
-											i2c_bus <= std_logic_vector(shiftReg);
-										
-										end if;
-										
-										bus_data_internal <= '0';
-									elsif cycle_counter = 8 then
-										bus_data_internal <= 'Z';
-										
-										
-										if stage = t_Data  then
-		
-											if i_to_i2c.continue = '1' then
-												stage := t_Continue;
-											else
-												stage := t_Conclude;
-											end if;	
-										
-										end if;
-										
-										cnt := longerSlide -1;
-								
-									end if;
-								
-								else			
-										shiftReg(0) := bus_data;
-								end if;
-							elsif i_to_i2c.transaction = Write and cycle_counter = 0 and bus_clk /= '0' then
-								cnt := longerSlide -1;
-							end if;
-						end if;
+					if stage = t_Address or stage = t_Data then
 						if  bus_clk = '0' then
-							if cycle_counter = 8  then
-		
-								if bus_data = '0' then	
-									cycle_counter := 0;
-									if i_to_i2c.transaction = Write then
-										if stage = t_Address then
-											shiftReg := unsigned(i2c_bus);
-											stage := t_Data; 
-											bus_data_internal <= '0';
-										elsif stage = t_Data then
-											if i_to_i2c.continue = '1' then
-												
-												stage := t_Continue;
-											else
-												stage := t_Conclude;
-											end if;	
-										
-										end if;
-										
-		
-									elsif i_to_i2c.transaction = Read then
-		
-										if stage = t_Address then
-											stage := t_Data;
-											shiftReg := (others=>'0');	
-										end if;
-										
-									end if;
-									
+							if cycle_counter = 9  then
+								if bus_data /= '0' and stage = t_Address then
+									seq := ShortData;
+									stage := t_Repeat;
 								else
-										bus_data_internal <= '0';
-										stage := t_Repeat;
-									
-									
+									if stage = t_Data then
+										seq := ShortData;
+										if i_to_i2c.continue = '1' then				
+											stage := t_Continue;
+										else
+											stage := t_Conclude;
+										end if;
+									else
+										cnt := longerSlide -1;
+										cycle_counter:= 0;
+										stage := t_Data;
+									end if;
 								end if;
-							else
-								cycle_counter := cycle_counter + 1;
+							elsif bus_clk = '0' then
+								shiftReg(0) := bus_data;
 							end if;
 						end if;
 					end if;
 				else 
 
 					cnt := cnt -1;
-					if cnt = clk_half  and seq = Active and bus_clk = '0' and stage /= t_Continue then
+					if cnt = clk_half and
+					   bus_clk = '0' and
+					   (stage = t_Address or stage = t_Data) then
+					   
+						if cycle_counter = 8 then
 						
-						if stage = t_Address or i_to_i2c.transaction = Write then 
-							if shiftReg(7) = '1'  then
-								bus_data_internal <= 'Z';
+							if i_to_i2c.transaction = Read and stage = t_Data then
+								bus_data_internal <= '0';
 							else
-								bus_data_internal <= '0';					
-							end if;				
+								bus_data_internal <= 'Z';
+							end if;	
+						
+						else
+							if stage = t_Address or i_to_i2c.transaction = Write then 
+								if shiftReg(7) = '1'  then
+									bus_data_internal <= 'Z';
+								else
+									bus_data_internal <= '0';					
+								end if;				
+							end if;
 						end if;
 						
-						shiftReg := shift_left(shiftReg, 1);
-						shiftReg(0) := '1';					
+						cycle_counter := cycle_counter + 1;
+						shiftReg := shift_left(shiftReg, 1);					
 					
 					end if;
 				end if;

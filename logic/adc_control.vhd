@@ -43,7 +43,7 @@ begin
 		variable cnt : integer := 0;		
 		variable time : unsigned(15 downto 0) := x"1234";		
 		variable val_cnt : integer  range 4 downto 0 := 0;
-		variable state : state_type := Setup;
+		variable state : state_type := Standby;
 		variable i2c_state : type_i2c_operations;
 		
 	begin
@@ -138,6 +138,7 @@ begin
 							val_cnt := 0;
 							state := Standby;
 						else
+							
 							val_cnt := val_cnt + 1;
 							enable_uart <= '1';
 						end if;
@@ -149,10 +150,6 @@ begin
 				end if;	
 				cnt := cnt - 1;	
 					
-				if i_from_i2c.busy = '1' then
-						o_to_i2c.enable <= '0';
-
-				end if;
 			end if;
 
 		end if;
