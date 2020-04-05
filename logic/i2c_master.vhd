@@ -16,7 +16,7 @@ entity i2c_master is
 			
 		res : in std_logic;		
 		clk : in std_logic;		
-		bus_clk	: inout  std_logic;
+		bus_clk	: out  std_logic;
 		bus_data : inout std_logic
 		);
 end i2c_master;
@@ -164,7 +164,7 @@ begin
 					end if;
 					
 					if stage = t_Address or stage = t_Data then
-						if  bus_clk = '0' then
+						if  bus_clk_internal = '0' then
 							if cycle_counter = 9  then
 								if bus_data /= '0' and stage = t_Address then
 									seq := ShortData;
@@ -188,7 +188,7 @@ begin
 										end if;
 									end if;
 								end if;
-							elsif bus_clk = '0' then
+							elsif bus_clk_internal = '0' then
 								if  i_to_i2c.transaction = Read  then
 									shiftReg(0) := bus_data;
 								end if;
@@ -199,7 +199,7 @@ begin
 
 					cnt := cnt -1;
 					if cnt = clk_half and
-					   bus_clk = '0' and
+					   bus_clk_internal = '0' and
 					   (stage = t_Address or stage = t_Data) then
 					   
 						if cycle_counter = 8 then

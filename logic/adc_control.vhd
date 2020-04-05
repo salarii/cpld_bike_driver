@@ -19,15 +19,12 @@ entity adc_control is
 		
 		o_uart : inout std_logic_vector(7 downto 0);
 		busy_uart : in std_logic;
-		en_uart : out std_logic;
-		
-		ready : in  std_logic
+		en_uart : out std_logic
 		);
 end adc_control;
 
 architecture behaviour of adc_control is
 		signal data : std_logic_vector(15 downto 0);	
-		--signal address : unsigned(6 downto 0) := "";
 		signal enable_uart  : std_logic;
 begin	
 
