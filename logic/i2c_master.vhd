@@ -48,13 +48,16 @@ begin
 		
 		--debug <= to_unsigned(cycle_counter, debug'length);
 		debug <= shiftReg;
-		if res = '1' then
+		if res = '0' then
 			stage := t_Idle;
 			shiftReg := to_unsigned(0,8);
 			seq := Inactive;
 			done <= '0';
 			busy_internal <= '0';
 			cycle_counter:= 0;
+			bus_clk_internal <= 'Z';
+			bus_data_internal <= 'Z';
+			i2c_bus <= (others=>'Z');
 		elsif rising_edge(clk)  then
 		
 			--report "cnt:  " & integer'image(cnt);

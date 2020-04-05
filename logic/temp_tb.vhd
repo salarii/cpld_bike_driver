@@ -193,12 +193,12 @@ architecture t_behaviour of temp_tb is
 				-- inputs which produce '1' on the output
 				
 		
-				ready <= '0';
 				wait for 1 us;
 				wait for 0.1 us;
-				wait for 16.5 us;
-				--bus_data <= '0';
-				
+				wait for 165 us;
+				res <= '0';
+				wait for 195 us;				
+				res <= '1';
 				wait for 1 ms;
 
 				wait;

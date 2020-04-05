@@ -35,7 +35,7 @@ process(bus_clk,bus_data)
 begin
 		
 	
-		if res = '1' then
+		if res = '0' then
 			stage := Idle;
 			shiftReg := to_unsigned(0,8);
 			cnt := 0;

@@ -54,8 +54,10 @@ begin
 				cnt :=0;
 				val_cnt := 0;
 				time := (others=>'0');
+				i2c_bus <= (others=>'Z');
 				enable_pc_write := '0';
 				enable_uart <= '0';
+				o_to_i2c.continue <= '0';
 			else
 
 				if  state = Setup then
