@@ -47,8 +47,8 @@ process(clk)
 		variable seq : transaction_seq := Inactive;		
 begin
 		
-		debug <= to_unsigned(cycle_counter, debug'length);
-		--debug <= shiftReg;
+		--debug <= to_unsigned(cycle_counter, debug'length);
+		debug <= shiftReg;
 		if res = '1' then
 			stage := t_Idle;
 			shiftReg := to_unsigned(0,8);
@@ -64,7 +64,7 @@ begin
 				done <= '0';
 			end if;	
 			
-			if i_to_i2c.enable = '1' or busy_internal = '1' or i_to_i2c.continue = '1' then
+			if i_to_i2c.enable = '1' or busy_internal = '1' or stage = t_Continue then
 				
 				if stage = t_Idle and seq = Inactive then
 					stage := t_Address;
@@ -86,8 +86,12 @@ begin
 				end if;
 				
 				if cnt = 0 then
+					if cycle_counter = 0 then
+						cnt := longerSlide -1;
+					else
+						cnt := clk_reduction -1;
+					end if;
 					
-					cnt := clk_reduction -1;
 					if stage = t_Repeat then 
 						if seq = Inactive then
 							stage := t_Idle;
@@ -114,8 +118,21 @@ begin
 							bus_data_internal <= '0';
 							seq := Active;
 						elsif seq = Inactive then
-							busy_internal <= '0';
-							done <= '1';
+							if i_to_i2c.enable = '1' then
+								cycle_counter := 0;
+								stage := t_Data;
+								busy_internal <= '1';	
+								if i_to_i2c.transaction = Write  then	
+									shiftReg := unsigned(i2c_bus);
+								end if;
+								
+							else
+								if busy_internal = '1' then
+									done <= '1';
+								end if;
+								busy_internal <= '0';
+
+							end if;
 						end if;
 						
 					elsif stage = t_Conclude then
@@ -159,13 +176,17 @@ begin
 											stage := t_Conclude;
 										end if;
 									else
-										cnt := longerSlide -1;
 										cycle_counter:= 0;
 										stage := t_Data;
+										if i_to_i2c.transaction = Write  then
+											shiftReg := unsigned(i2c_bus);
+										end if;
 									end if;
 								end if;
 							elsif bus_clk = '0' then
-								shiftReg(0) := bus_data;
+								if  i_to_i2c.transaction = Read  then
+									shiftReg(0) := bus_data;
+								end if;
 							end if;
 						end if;
 					end if;
@@ -190,7 +211,9 @@ begin
 									bus_data_internal <= 'Z';
 								else
 									bus_data_internal <= '0';					
-								end if;				
+								end if;
+							else
+									bus_data_internal <= 'Z';				
 							end if;
 						end if;
 						

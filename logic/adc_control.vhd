@@ -43,9 +43,9 @@ begin
 		variable cnt : integer := 0;		
 		variable time : unsigned(15 downto 0) := x"1234";		
 		variable val_cnt : integer  range 4 downto 0 := 0;
-		variable state : state_type := Standby;
+		variable state : state_type := Setup;
 		variable i2c_state : type_i2c_operations;
-		
+		variable enable_pc_write : std_logic;
 	begin
 	
 		if rising_edge(clk)  then
@@ -56,33 +56,40 @@ begin
 			else
 
 				if  state = Setup then
-					i2c_bus <= x"03";
+					
 				
 					o_to_i2c.transaction <= Write;
 					
-					i2c_state :=  i2c_index;
-					
-					if i_from_i2c.done = '1' then
-						if i2c_state = i2c_index then
+					if i2c_state = i2c_index then
+						i2c_bus <= x"03";
+						o_to_i2c.continue <= '1'; 
 						
+						if i_from_i2c.done = '1' then
 							i2c_bus <= std_logic_vector(config_register_h);	
-						elsif i2c_state = i2c_data_H then
-						
-							i2c_bus <= std_logic_vector(config_register_l);
+							i2c_state := i2c_data_H;
+						end if;
 					
-							i2c_state := i2c_data_L;
-						elsif i2c_state = i2c_data_L then
-							state := Index_Read;
-							i2c_bus <=  (others=>'Z');		
-							cnt := short_break;	
+					elsif i2c_state = i2c_data_H then
 						
+						if i_from_i2c.done = '1' then	
+							i2c_bus <= std_logic_vector(config_register_l);
+							i2c_state := i2c_data_L;
+							o_to_i2c.continue <= '0'; 
 						end if;
 						
-					elsif i_from_i2c.busy = '1' then
-						o_to_i2c.continue <= '1';
-						o_to_i2c.enable <= '0';
-					else
+					elsif i2c_state = i2c_data_L then
+						if i_from_i2c.done = '1' then
+							state := Index_Read;
+							--i2c_bus <=  (others=>'Z');		
+							cnt := short_break;	
+						end if;
+					end if;
+					
+					if i_from_i2c.busy = '0' and state /= Index_Read then		
 						o_to_i2c.enable <= '1';
+					elsif i_from_i2c.busy = '1' then
+						
+						o_to_i2c.enable <= '0';
 					end if;
 					
 					
@@ -103,19 +110,9 @@ begin
 					if cnt = 0 then
 						i2c_bus <= x"AB";
 						state := Cycle;
-						o_to_i2c.transaction <= Read;
-						o_to_i2c.enable <= '1';
-					
-						if i_from_i2c.done = '1' then
-							o_to_i2c.enable <= '0';				
-						end if;
-						
-						if i_from_i2c.busy = '1' then
-							o_to_i2c.enable <= '0';
-	
-						end if;
-					
-					
+
+						enable_pc_write := '0';
+						i2c_state := i2c_data_L;
 						cnt := period;
 					end if;
 					
@@ -124,7 +121,9 @@ begin
 				elsif state = Cycle then
 					
 					
-					if busy_uart = '0' and enable_uart = '0' then
+					if busy_uart = '0' and
+					   enable_uart = '0' and
+					   enable_pc_write = '1' then
 						
 						case val_cnt is
 						  when 0 =>   o_uart <= i2c_bus;
@@ -146,7 +145,27 @@ begin
 					else
 						enable_uart <= '0';
 							
-					end if;			
+					end if;
+					
+					if i2c_state = i2c_data_H and i_from_i2c.done = '1'  then	
+						i2c_state := i2c_data_H;
+						o_to_i2c.continue <= '0';
+						o_to_i2c.enable <= '1';
+						i2c_state := i2c_data_L;
+						report integer'image(2);	
+					elsif i2c_state = i2c_data_H and i_from_i2c.busy = '0' then
+						o_to_i2c.transaction <= Read;
+						o_to_i2c.enable <= '1';
+						o_to_i2c.continue <= '1';
+						report integer'image(1);	
+					elsif i2c_state = i2c_data_L and i_from_i2c.done = '1'  then						
+						enable_pc_write := '1';
+						report integer'image(3);	
+					elsif i_from_i2c.busy = '1' then
+						o_to_i2c.enable <= '0';
+					end if;
+					
+								
 				end if;	
 				cnt := cnt - 1;	
 					
