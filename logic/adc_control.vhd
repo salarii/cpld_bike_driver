@@ -7,7 +7,7 @@ use std.textio.all;
 use work.interface_data.all;
 
 entity adc_control is
-	generic (CONSTANT period : integer := 1000000);
+	generic (CONSTANT period : integer := 2000);
 
 	port(
 		clk : in  std_logic;
@@ -26,7 +26,7 @@ entity adc_control is
 end adc_control;
 
 architecture behaviour of adc_control is
-		--signal data : std_logic_vector(15 downto 0) := x"ABCD";	
+		signal data : std_logic_vector(15 downto 0);	
 		--signal address : unsigned(6 downto 0) := "";
 		signal enable_uart  : std_logic;
 begin	
@@ -53,6 +53,9 @@ begin
 				state := Setup;
 				cnt :=0;
 				val_cnt := 0;
+				time := (others=>'0');
+				enable_pc_write := '0';
+				enable_uart <= '0';
 			else
 
 				if  state = Setup then
@@ -94,25 +97,26 @@ begin
 					
 					
 				elsif state = Index_Read then
-
-					if cnt = 0 then
-						
-						o_to_i2c.enable <= '1';
-						
-					end if;
-					
-					if i_from_i2c.done = '1' then
+					if  i_from_i2c.done = '1' then
 						cnt := short_break;
 						state := Standby;
+					elsif cnt = 0 and  i_from_i2c.busy = '0' then
+						
+						o_to_i2c.enable <= '1';
+					elsif i_from_i2c.busy = '1' then
+						
+						o_to_i2c.enable <= '0';
 					end if;
+					
 				elsif state = Standby then		
 						
 					if cnt = 0 then
-						i2c_bus <= x"AB";
+			
+						i2c_bus <= (others=>'Z');
 						state := Cycle;
 
 						enable_pc_write := '0';
-						i2c_state := i2c_data_L;
+						i2c_state := i2c_data_H;
 						cnt := period;
 					end if;
 					
@@ -126,8 +130,8 @@ begin
 					   enable_pc_write = '1' then
 						
 						case val_cnt is
-						  when 0 =>   o_uart <= i2c_bus;
-						  when 1 =>   o_uart <= i2c_bus;
+						  when 0 =>   o_uart <= data(15 downto 8);
+						  when 1 =>   o_uart <= data(7 downto 0);
 						  when 2 =>   o_uart <= std_logic_vector(time(15 downto 8));
 						  when 3 =>   o_uart <= std_logic_vector(time(7 downto 0));
 						  when others => o_uart <=  (others=>'Z');
@@ -151,16 +155,15 @@ begin
 						i2c_state := i2c_data_H;
 						o_to_i2c.continue <= '0';
 						o_to_i2c.enable <= '1';
-						i2c_state := i2c_data_L;
-						report integer'image(2);	
+						i2c_state := i2c_data_L;	
+						data(15 downto 8) <= i2c_bus;
 					elsif i2c_state = i2c_data_H and i_from_i2c.busy = '0' then
 						o_to_i2c.transaction <= Read;
 						o_to_i2c.enable <= '1';
-						o_to_i2c.continue <= '1';
-						report integer'image(1);	
-					elsif i2c_state = i2c_data_L and i_from_i2c.done = '1'  then						
-						enable_pc_write := '1';
-						report integer'image(3);	
+						o_to_i2c.continue <= '1';	
+					elsif i2c_state = i2c_data_L and i_from_i2c.done = '1'  then
+						data(7 downto 0) <= i2c_bus;						
+						enable_pc_write := '1';	
 					elsif i_from_i2c.busy = '1' then
 						o_to_i2c.enable <= '0';
 					end if;

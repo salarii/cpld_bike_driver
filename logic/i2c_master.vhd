@@ -26,7 +26,6 @@ architecture behaviour of i2c_master is
 	signal bus_clk_internal	: std_logic;
 	signal bus_data_internal : std_logic;
 	signal debug : unsigned(7 downto 0);
-	signal data_out : signed(15 downto 0);
 	signal done : std_logic := '0';
 begin	
 
@@ -175,6 +174,9 @@ begin
 										else
 											stage := t_Conclude;
 										end if;
+										if i_to_i2c.transaction = Read then
+											i2c_bus <= std_logic_vector(shiftReg);
+										end  if;
 									else
 										cycle_counter:= 0;
 										stage := t_Data;
@@ -218,8 +220,9 @@ begin
 						end if;
 						
 						cycle_counter := cycle_counter + 1;
-						shiftReg := shift_left(shiftReg, 1);					
-					
+						if cycle_counter /= 9 then
+							shiftReg := shift_left(shiftReg, 1);					
+						end if;
 					end if;
 				end if;
 						

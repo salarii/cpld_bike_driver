@@ -37,7 +37,7 @@ begin
 	
 		if res = '1' then
 			stage := Idle;
-			shiftReg := to_unsigned(0,9);
+			shiftReg := to_unsigned(0,8);
 			cnt := 0;
 			bus_data_internal <= 'Z';
 		elsif falling_edge(bus_data)  then
@@ -65,7 +65,7 @@ begin
 			if cnt = 9 and seq_type = Read_data then
  						
 				assert bus_data = '0' report "Master no ack.";
-					
+
 			end if;
 			--report integer'image(1);
 			shiftReg := shift_left(shiftReg, 1);
@@ -96,6 +96,9 @@ begin
 						elsif stage = Data_H then
 							shiftReg := "01010101";
 							stage := Data_L;
+						elsif stage = Data_L then
+						
+							cnt := 9;
 						end if;
 					elsif seq_type = Write_data then
 						if stage = Address then
@@ -113,6 +116,8 @@ begin
 				
  				if seq_type = Read_data and ( stage = Data_H or stage = Data_L ) then
 					if cnt = 8 then
+					 	bus_data_internal <= 'Z';
+					elsif cnt = 9 then
 					 	bus_data_internal <= 'Z';
 					else
 	 					if shiftReg(7) = '1'  then
