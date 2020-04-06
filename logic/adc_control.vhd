@@ -34,11 +34,11 @@ begin
 		
 		type type_i2c_operations is ( i2c_index, i2c_data_H, i2c_data_L );
 		
-		constant config_register_h : unsigned(7 downto 0) := "11111111";
-		constant config_register_l : unsigned(7 downto 0) := "00001111";
+		constant config_register_h : unsigned(7 downto 0) := "01000100";
+		constant config_register_l : unsigned(7 downto 0) := "01100011";
 		constant short_break : integer := 50;
 		variable cnt : integer := 0;		
-		variable time : unsigned(15 downto 0) := x"1234";		
+		variable time : unsigned(15 downto 0) := x"0000";		
 		variable val_cnt : integer  range 4 downto 0 := 0;
 		variable state : state_type := Setup;
 		variable i2c_state : type_i2c_operations;
@@ -63,7 +63,7 @@ begin
 					o_to_i2c.transaction <= Write;
 					
 					if i2c_state = i2c_index then
-						i2c_bus <= x"03";
+						i2c_bus <= x"01";
 						o_to_i2c.continue <= '1'; 
 						
 						if i_from_i2c.done = '1' then
@@ -81,13 +81,13 @@ begin
 						
 					elsif i2c_state = i2c_data_L then
 						if i_from_i2c.done = '1' then
-							state := Index_Read;
-							--i2c_bus <=  (others=>'Z');		
+							state := Index_Read;	
 							cnt := short_break;	
 						end if;
 					end if;
 					
-					if i_from_i2c.busy = '0' and state /= Index_Read then		
+					if i_from_i2c.busy = '0' and state /= Index_Read then	
+						
 						o_to_i2c.enable <= '1';
 					elsif i_from_i2c.busy = '1' then
 						
@@ -100,7 +100,7 @@ begin
 						cnt := short_break;
 						state := Standby;
 					elsif cnt = 0 and  i_from_i2c.busy = '0' then
-						
+						i2c_bus <= x"00";	
 						o_to_i2c.enable <= '1';
 					elsif i_from_i2c.busy = '1' then
 						

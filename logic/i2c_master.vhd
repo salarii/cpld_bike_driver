@@ -118,6 +118,8 @@ begin
 						elsif seq = ShortData then
 							bus_clk_internal <= '0';
 							bus_data_internal <= '0';
+				
+							
 							seq := Active;
 						elsif seq = Inactive then
 							if i_to_i2c.enable = '1' then

@@ -65,7 +65,6 @@ architecture t_behaviour of temp_tb is
 	
 			clk : in  std_logic;
 			res : in  std_logic;
-			ready : in  std_logic;
 			
 			o_uart : inout std_logic_vector(7 downto 0);
 			busy_uart : in std_logic;
@@ -165,7 +164,6 @@ architecture t_behaviour of temp_tb is
 				i2c_bus => i2c_bus,
 				res => res,
 				clk => clk,
-				ready => ready,
 				o_uart => o_uart,
 				busy_uart => busy_uart,
 				en_uart => en_uart
