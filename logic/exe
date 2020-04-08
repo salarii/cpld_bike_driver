@@ -5,7 +5,7 @@
 #gtkwave func.vcd
 
 ghdl -a interface_data.vhd  i2c_master.vhd i2c_slave.vhd adc_control.vhd 
-ghdl -a uart.vhd temp_tb.vhd
-ghdl -e temp_tb
-ghdl -r temp_tb --vcd=func.vcd  --stop-time=120us --ieee-asserts=disable-at-0
+ghdl -a uart.vhd temp_tb.vhd mul.vhd poly.vhd poly_tb.vhd
+ghdl -e poly_tb
+ghdl -r poly_tb --vcd=func.vcd  --stop-time=80ns --ieee-asserts=disable-at-0
 gtkwave func.vcd
