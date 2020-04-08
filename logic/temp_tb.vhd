@@ -41,12 +41,15 @@ architecture t_behaviour of temp_tb is
 			port(
 			i_to_i2c : in type_to_i2c;
 			o_from_i2c : out type_from_i2c;
+				
 			i2c_bus : inout std_logic_vector(7 downto 0);
-			
-			res : in std_logic;
-			clk : in std_logic;			
-			bus_clk	: inout  std_logic;
-			bus_data : inout std_logic
+				leds : out std_logic_vector(4 downto 0);
+			res : in std_logic;		
+			clk : in std_logic;		
+			o_slave_clk	: out  std_logic;
+			o_slave_data : out std_logic;
+			o_data_en : out std_logic;
+			i_slave_data : in std_logic
 			);
 		end component i2c_master;
 		
@@ -98,6 +101,8 @@ architecture t_behaviour of temp_tb is
 			);
 		end component uart;
 	 
+	 	signal leds : std_logic_vector(4 downto 0);
+	 
 		signal to_i2c : type_to_i2c;
 		signal from_i2c : type_from_i2c;
 		signal i2c_bus : std_logic_vector(7 downto 0);
@@ -106,7 +111,9 @@ architecture t_behaviour of temp_tb is
 		signal clk : std_logic;		
 		signal bus_clk	: std_logic;
 		signal bus_data :  std_logic;
-
+		signal o_slave_data :  std_logic;
+		signal o_data_en :  std_logic;
+		signal i_slave_data :  std_logic;
 
 		signal ready	: std_logic;
 		
@@ -131,16 +138,19 @@ architecture t_behaviour of temp_tb is
 		signal err_uart : std_logic;		
 		
 	begin	
-
+		
 		module_master: i2c_master
 		port map (
 				i_to_i2c => to_i2c,
 				o_from_i2c => from_i2c,
 				i2c_bus => i2c_bus,
+				leds => leds,
 				res => res,
 				clk => clk,
-				bus_clk => bus_clk,
-				bus_data => bus_data
+				o_slave_clk => bus_clk,
+				o_slave_data => o_slave_data,
+				o_data_en => o_data_en,
+				i_slave_data => i_slave_data
 				);
 
 		module_slave: i2c_slave
@@ -218,5 +228,10 @@ end  process;
 	busy <= from_i2c.busy;
 	done <= from_i2c.done;
 	error <= from_i2c.error;
+			
+			
+	i_slave_data <= bus_data;
+	bus_data <=  o_slave_data when o_data_en = '1' else  'Z'; 
+
 			
 end t_behaviour;

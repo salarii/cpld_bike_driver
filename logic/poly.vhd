@@ -33,7 +33,6 @@ architecture behaviour of poly is
 		constant par_2 : unsigned(IntPart + FracPart - 1  downto 0) := "00000001010111100000";
 		constant par_3 : unsigned(IntPart + FracPart - 1  downto 0) := "00000000000011001010";
 
-
 		component mul
 			generic (CONSTANT IntPart : integer;
 		   			 CONSTANT FracPart : integer );
@@ -42,11 +41,8 @@ architecture behaviour of poly is
 			B : in  unsigned(IntPart + FracPart - 1  downto 0);
 			outMul : out unsigned(IntPart + FracPart - 1  downto 0));
 		end component;
-		
-		
-		
+				
 begin	
-
 
 		module_mul1: mul
 		generic map(
@@ -58,8 +54,6 @@ begin
 			B => unsigned(val),
 			outMul => out_mul_1);
 
-
-
 		module_mul2: mul
 		generic map(
 			 IntPart => IntPart,
@@ -69,9 +63,6 @@ begin
 			A => stored_val_power,
 			B => mul2_in,
 			outMul => out_mul_2);
-
-
-
 
 	process(clk)
 		type state_type is (Inactive, Active, Calculated);
@@ -120,11 +111,8 @@ begin
 				end if;
 			end if;
 			
-
 		end if;
 		
-			
-
 	end process;
 
 	process(result)
