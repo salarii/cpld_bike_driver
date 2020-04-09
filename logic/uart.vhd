@@ -60,7 +60,7 @@ entity uart is
 end uart;
 
 architecture behaviour of uart is
-	signal tx_internal : std_logic;
+	signal tx_internal : std_logic := '1';
 	signal  busy_internal_tx : std_logic := '0'; 
 	signal  busy_internal_rx : std_logic := '0';
 	
@@ -83,7 +83,7 @@ process(clk)
 		variable seq : integer  range 15 downto 0;
 
 		variable bit_cnt_rx : integer  range 9 downto 0;
-		variable bit_cnt_tx : integer  range 9 downto 0;
+		variable bit_cnt_tx : integer  range 11 downto 0;
 				
 		variable shift_reg_tx: unsigned(7 downto 0);
 		variable shift_reg_rx: unsigned(7 downto 0);
@@ -101,6 +101,7 @@ begin
 			
 			if res = '0' then
 				busy_internal_tx <= '0';
+				tx_internal <= '1';
 				bit_cnt_tx := 0;
 				bit_cnt_rx := 0;
 			else
@@ -108,27 +109,36 @@ begin
 				if enable = '1' or busy_internal_tx = '1' then	
 				
 					busy_internal_tx <= '1';
-					if  bit_cnt_tx = 0 then
+					if  busy_internal_tx = '0' then
 
 						parity := parity_check(i_data,8);
 			
 						cnt_tx := period;
 						shift_reg_tx(0) := '0'; 
 						shift_reg_tx(7  downto  0) := unsigned(i_data);				
-						
-					end if;
-			
-					
-					if cnt_tx = 0  then 
-						if bit_cnt_tx = 10  then
-							busy_internal_tx <= '0';
+						tx_internal <= '0';	
+						bit_cnt_tx := 0;
+					elsif cnt_tx = 0  then 
+						if bit_cnt_tx = 8  then
+							tx_internal <= parity;
 							--o_data <= std_logic_vector(shift_reg(7 downto 0));
+						elsif bit_cnt_tx = 9  then
+							tx_internal <= '1';
+						elsif bit_cnt_tx = 10  then
+							busy_internal_tx <= '0';
+						else
+							tx_internal <= shift_reg_tx(0);
 						end if;
-						
-						
-						tx_internal <= shift_reg_tx(0);	
+								
 						shift_reg_tx := shift_right(shift_reg_tx, 1);
+						cnt_tx := period;
+						bit_cnt_tx := bit_cnt_tx + 1;
+						
+					else
+						cnt_tx := cnt_tx - 1;
 					end if;	
+					
+					
 				end if;
 				
 				if rx = '0' and busy_internal_rx = '0' then 
