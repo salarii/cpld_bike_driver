@@ -45,135 +45,133 @@ entity uart is
 		);
 		
 	port(
-		data : inout std_logic_vector(7 downto 0);
-		enable : in std_logic;		
-		res : in std_logic;		
-		clk : in std_logic;	
-		rx : in std_logic;		
-		error : out std_logic;
-		busy	: out std_logic;
-		tx	: out  std_logic
+			i_data : in std_logic_vector(7 downto 0);
+			enable : in std_logic;
+			res : in std_logic;		
+			clk : in std_logic;	
+			rx : in std_logic;	
+			
+			o_data : out std_logic_vector(7 downto 0);	
+			error : out std_logic;
+			received : out std_logic;
+			busy	: out std_logic;
+			tx	: out  std_logic
 		);
 end uart;
 
 architecture behaviour of uart is
 	signal tx_internal : std_logic;
-	signal  busy_internal : std_logic := '0'; 
+	signal  busy_internal_tx : std_logic := '0'; 
+	signal  busy_internal_rx : std_logic := '0';
+	
+	
+	signal bit_cnt_debug  : unsigned(3 downto 0);	
+	signal cycle_cnt_debug  : unsigned(3 downto 0);
 begin	
 
 
 process(clk)
 
-		type state_type is (Idle, Data_in, Data_out);
-		--constant clk_reduction : integer := 10;
+
 
 		constant parity_bit : integer := 9;
 		constant period : integer := freq/bound;
 		constant half : integer := period/2;
 		
-		constant size : integer := 10;
-		variable cnt : integer;
-		variable seq : integer;
-		variable shift_reg: unsigned(size - 1 downto 0);
-		variable  state : state_type := Idle;
+		variable cnt_tx : integer  range period downto 0;
+		variable cnt_rx : integer  range period downto 0;
+		variable seq : integer  range 15 downto 0;
+
+		variable bit_cnt_rx : integer  range 9 downto 0;
+		variable bit_cnt_tx : integer  range 9 downto 0;
+				
+		variable shift_reg_tx: unsigned(7 downto 0);
+		variable shift_reg_rx: unsigned(7 downto 0);
+		
 		variable  parity : std_logic;
 
 begin
 		
-		
 
+		
 		if rising_edge(clk)  then
+			
+			bit_cnt_debug  <= to_unsigned(bit_cnt_tx, bit_cnt_debug'length); 
+			cycle_cnt_debug  <= to_unsigned(cnt_tx, cycle_cnt_debug'length);
+			
 			if res = '0' then
-				state := Idle;
-				busy_internal <= '0';
+				busy_internal_tx <= '0';
+				bit_cnt_tx := 0;
+				bit_cnt_rx := 0;
 			else
-				cnt := cnt - 1;
 			
-			
-				if enable = '1' or busy_internal = '1' then	
+				if enable = '1' or busy_internal_tx = '1' then	
 				
-					busy_internal <= '1';
-					
-					if enable = '1' and  state = Idle then
-					
-						parity := parity_check(data,8);
+					busy_internal_tx <= '1';
+					if  bit_cnt_tx = 0 then
+
+						parity := parity_check(i_data,8);
+			
+						cnt_tx := period;
+						shift_reg_tx(0) := '0'; 
+						shift_reg_tx(7  downto  0) := unsigned(i_data);				
+						
+					end if;
 			
 					
-						seq := 0;
-						cnt := period;
-						state := Data_out;
-						shift_reg(0) := '0'; 
-						shift_reg(size -2  downto  1) := unsigned(data);				
-						
-						shift_reg(size -1 ) := parity;
-					end if;
-					
-					if cnt = 0  then 
-						if state = Data_out then
-							
-							
-							shift_reg(size -1) := '1';
-							if seq = size + 3 then
-								busy_internal <= '0';
-								state := Idle;
-							end if;
-							shift_reg := shift_right(shift_reg, 1);
-						elsif state = Data_in then
-							
-							if seq = size - 2 then
-							
-								parity := parity_check(std_logic_vector(shift_reg(size - 1 downto 2)),8); 
-								if rx = parity then
-								
-								
-								end if;
-								busy_internal <= '0';
-								state := Idle;
-							else
-								shift_reg := shift_right(shift_reg, 1);
-							end if;					
-						
+					if cnt_tx = 0  then 
+						if bit_cnt_tx = 10  then
+							busy_internal_tx <= '0';
+							--o_data <= std_logic_vector(shift_reg(7 downto 0));
 						end if;
 						
-						cnt := period;	
-						seq :=  seq +1;
-
-					end if;
-					
-					if state = Data_out then
-						tx_internal <= shift_reg(0);
-					elsif state = Data_in then
-						shift_reg(size - 1) := rx;
-					end if;
-					
-				else
-					tx_internal <= '1';
+						
+						tx_internal <= shift_reg_tx(0);	
+						shift_reg_tx := shift_right(shift_reg_tx, 1);
+					end if;	
 				end if;
 				
-				if state = Data_in then
-					data <= std_logic_vector(shift_reg(size - 2 downto 1));
-				else
-					data <= "ZZZZZZZZ";
-				end if;
-
-				if rx = '0' and state = Idle then
+				if rx = '0' and busy_internal_rx = '0' then 
+					busy_internal_rx <= '1';
+					if  bit_cnt_rx = 0 then
+			
+						cnt_rx := period + half;
+					end if;
 					
-						seq := 0;
-						state := Data_in;
-						cnt := period + half;
-						busy_internal <= '1';
-				end if;
+					
+					if cnt_rx = 0 then
+						if bit_cnt_rx = 10  then
+							parity := parity_check(std_logic_vector(shift_reg_rx(7 downto 0)),8); 
+							
+							if parity /= rx then
+								error <= '1';
+							else
+								error <= '0';
+							end if;
+							
+						end if;
+						
+						shift_reg_rx := shift_right(shift_reg_rx, 1);
+						
+						
+						
+						cnt_rx := period;	
+						bit_cnt_rx :=  bit_cnt_rx +1;
+						--shift_right(7) := rx;
+					end if;
+				end if;	
+				
 			end if;
-
+				
 		end if;
 	
 
 end  process;
 
-process(tx_internal,busy_internal)
+process(tx_internal,busy_internal_tx)
 begin
 	tx <= tx_internal;
-	busy <= busy_internal;
+	busy <= busy_internal_tx;
 end process;
 
 
