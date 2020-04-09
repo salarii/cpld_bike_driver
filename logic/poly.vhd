@@ -11,9 +11,9 @@ entity poly is
 	port(
 		res : in std_logic;
 		clk : in std_logic;
-		start : in std_logic;
-		val	: in  std_logic_vector(IntPart + FracPart - 1  downto 0);
-		temp : out std_logic_vector(7  downto 0)
+		i_enable : in std_logic;
+		i_val	: in  std_logic_vector(IntPart + FracPart - 1  downto 0);
+		o_temp : out std_logic_vector(7  downto 0)
 		);
 end poly;
 
@@ -51,7 +51,7 @@ begin
 		 )
 		port map (
 			A => stored_val_power,
-			B => unsigned(val),
+			B => unsigned(i_val),
 			outMul => out_mul_1);
 
 		module_mul2: mul
@@ -81,10 +81,10 @@ begin
 			result <= (others=>'0');
 		elsif  rising_edge(clk) then
 			
-			if start = '1' and state = Inactive then 
+			if i_enable = '1' and state = Inactive then 
 				state := Active;
 				result <= par_0;
-			elsif  start = '0' and state = Calculated then
+			elsif  i_enable = '0' and state = Calculated then
 				state := Inactive;
 				cnt := 0;
 			elsif state = Active then
@@ -117,7 +117,7 @@ begin
 
 	process(result)
 	begin
-		temp <= std_logic_vector(result(IntPart + FracPart - 1  downto FracPart));
+		o_temp <= std_logic_vector(result(IntPart + FracPart - 1  downto FracPart));
 	
 
 	end process;

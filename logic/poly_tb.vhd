@@ -25,9 +25,9 @@ architecture t_behaviour of poly_tb is
 			port(
 				res : in std_logic;
 				clk : in std_logic;
-				start : in std_logic;
-				val	: in  std_logic_vector(IntPart + FracPart - 1  downto 0);
-				temp : out std_logic_vector(7  downto 0)
+				i_enable : in std_logic;
+				i_val	: in  std_logic_vector(IntPart + FracPart - 1  downto 0);
+				o_temp : out std_logic_vector(7  downto 0)
 				);
 		end component;
 
@@ -44,9 +44,9 @@ architecture t_behaviour of poly_tb is
 		port map (
 		res => res,
 		clk => clk,
-		start => start,
-		val	=> std_logic_vector(in_val),
-		unsigned(temp) => temp );
+		i_enable => start,
+		i_val	=> std_logic_vector(in_val),
+		unsigned(o_temp) => temp );
 
 		process
 		

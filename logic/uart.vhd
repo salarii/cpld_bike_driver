@@ -45,17 +45,18 @@ entity uart is
 		);
 		
 	port(
-			i_data : in std_logic_vector(7 downto 0);
-			enable : in std_logic;
 			res : in std_logic;		
 			clk : in std_logic;	
-			rx : in std_logic;	
+			
+			i_data : in std_logic_vector(7 downto 0);
+			i_enable : in std_logic;
+			i_rx : in std_logic;	
 			
 			o_data : out std_logic_vector(7 downto 0);	
-			error : out std_logic;
-			received : out std_logic;
-			busy	: out std_logic;
-			tx	: out  std_logic
+			o_error : out std_logic;
+			o_received : out std_logic;
+			o_busy	: out std_logic;
+			o_tx	: out  std_logic
 		);
 end uart;
 
@@ -108,13 +109,13 @@ begin
 				received_internal <= '0';
 				bit_cnt_tx := 0;
 				bit_cnt_rx := 0;
-				error <= '0';
+				o_error <= '0';
 			else
 				if  received_internal = '1' then
 					received_internal <= '0';
 				end if;
 				
-				if enable = '1' or busy_internal_tx = '1' then	
+				if i_enable = '1' or busy_internal_tx = '1' then	
 				
 					
 					if  busy_internal_tx = '0' then
@@ -149,7 +150,7 @@ begin
 					
 				end if;
 				
-				if rx = '0' or busy_internal_rx = '1' then 
+				if i_rx = '0' or busy_internal_rx = '1' then 
 					
 					if  busy_internal_rx = '0' then
 						busy_internal_rx <= '1';
@@ -159,20 +160,20 @@ begin
 						if bit_cnt_rx = 8  then
 							parity := parity_check(std_logic_vector(shift_reg_rx(7 downto 0)),8); 
 							
-							if parity /= rx then
-								error <= '1';
+							if parity /= i_rx then
+								o_error <= '1';
 							else
-								error <= '0';
+								o_error <= '0';
 							end if;
 						elsif bit_cnt_rx = 9  then
-							error <= not rx;
+							o_error <= not i_rx;
 							bit_cnt_rx:= 0;
 							busy_internal_rx <= '0';
 							received_internal <= '1';
 						else
 
 							shift_reg_rx := shift_right(shift_reg_rx, 1);
-							shift_reg_rx(7) := rx;
+							shift_reg_rx(7) := i_rx;
 						
 						end if;
 						cnt_rx := period;	
@@ -191,9 +192,9 @@ end  process;
 
 process(tx_internal,busy_internal_tx,received_internal)
 begin
-	tx <= tx_internal;
-	busy <= busy_internal_tx;
-	received <= received_internal;
+	o_tx <= tx_internal;
+	o_busy <= busy_internal_tx;
+	o_received <= received_internal;
 end process;
 
 

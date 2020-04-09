@@ -60,20 +60,25 @@ architecture t_behaviour of temp_tb is
 			);
 		end component wire;
 		
-		component adc_control is
+		
+		
+		component control_unit is
 			port(
-			o_to_i2c : out type_to_i2c;
-			i_from_i2c : in type_from_i2c;
-			i2c_bus : inout std_logic_vector(7 downto 0);
-	
-			clk : in  std_logic;
-			res : in  std_logic;
-			
-			o_uart : inout std_logic_vector(7 downto 0);
-			busy_uart : in std_logic;
-			en_uart : out std_logic
+				clk : in  std_logic;
+				res : in  std_logic;
+				
+		
+				i_from_i2c : in type_from_i2c;
+				i2c_bus : inout std_logic_vector(7 downto 0);
+				o_to_i2c : out type_to_i2c;
+						
+				i_busy_uart : in std_logic;
+				i_from_uart : in std_logic_vector(7 downto 0);
+				i_received_uart : in std_logic;
+				o_to_uart : out std_logic_vector(7 downto 0);
+				o_en_uart : out std_logic
 			);
-		end component adc_control;
+		end component control_unit;
 	
 		component i2c_slave is
 			port(
@@ -90,16 +95,23 @@ architecture t_behaviour of temp_tb is
 				);
 			
 		port(
-			data : inout std_logic_vector(7 downto 0);
-			enable : in std_logic;		
 			res : in std_logic;		
 			clk : in std_logic;	
-			rx : in std_logic;		
-			error : out std_logic;
-			busy	: out std_logic;
-			tx	: out  std_logic
+			
+			i_data : in std_logic_vector(7 downto 0);
+			i_enable : in std_logic;
+			i_rx : in std_logic;	
+			
+			o_data : out std_logic_vector(7 downto 0);	
+			o_error : out std_logic;
+			o_received : out std_logic;
+			o_busy	: out std_logic;
+			o_tx	: out  std_logic
 			);
 		end component uart;
+	 
+
+	 
 	 
 	 	signal leds : std_logic_vector(4 downto 0);
 	 
@@ -130,13 +142,15 @@ architecture t_behaviour of temp_tb is
 		signal continue : std_logic;
 					
 			
-		signal o_uart : std_logic_vector(7 downto 0);
+		signal to_uart : std_logic_vector(7 downto 0);
+		signal from_uart : std_logic_vector(7 downto 0);
+		signal received_uart : std_logic; 
 		signal busy_uart : std_logic;
 		signal en_uart : std_logic;
 		signal tx_uart : std_logic;
 		signal rx_uart : std_logic;
 		signal err_uart : std_logic;		
-		
+
 	begin	
 		
 		module_master: i2c_master
@@ -167,32 +181,40 @@ architecture t_behaviour of temp_tb is
 				bus_data => bus_data
 				);
 
-		control_func: adc_control
+		
+		control_func: control_unit
 		port map (
+				res => res,
+				clk => clk,
+				
 				o_to_i2c => to_i2c,
 				i_from_i2c => from_i2c,
 				i2c_bus => i2c_bus,
-				res => res,
-				clk => clk,
-				o_uart => o_uart,
-				busy_uart => busy_uart,
-				en_uart => en_uart
+
+				i_received_uart => received_uart,
+				i_from_uart => from_uart,
+				i_busy_uart => busy_uart,
+				o_to_uart => to_uart,
+				o_en_uart => en_uart
 				);
 
+ 
 		to_display : uart
 		generic map (
 		 	freq => 95,
 			bound => 10 )
 			
 		port map (
-			data => o_uart,
-			enable => en_uart,		
 			res => res,		
 			clk => clk,
-			rx => rx_uart,	
-			error => err_uart,
-			busy => busy_uart,
-			tx => tx_uart
+			i_data => to_uart,
+			i_enable => en_uart,		
+			i_rx => rx_uart,	
+			o_data => from_uart,
+			o_error => err_uart,
+			o_received => received_uart,
+			o_busy => busy_uart,
+			o_tx => tx_uart
 			);
 
 		process
