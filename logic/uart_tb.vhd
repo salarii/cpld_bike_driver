@@ -67,15 +67,27 @@ architecture t_behaviour of uart_tb is
 				
 				-- inputs which produce '1' on the output
 				res <= '0';
-				--en_uart <= '1';
+				en_uart <= '1';
 				i_data_uart <= x"AB";
 				wait for 3 ns;
 				res <= '1';
 				wait for 10 ns;
-				
+				rx_uart <= '0';
+				wait for 10 ns;
+				rx_uart <= '1';
+				wait for 10 ns;
+				rx_uart <= '0';
 				wait for 10 ns;
 				wait for 10 ns;
-				
+				wait for 10 ns;
+				rx_uart <= '1';
+				wait for 10 ns;
+				wait for 10 ns;
+				wait for 10 ns;
+				wait for 10 ns;
+				wait for 10 ns;
+				wait for 5 ns;
+				wait for 5 ns;				
 				wait for 100 ns;				
 				res <= '0';
 				wait for 10 ns;

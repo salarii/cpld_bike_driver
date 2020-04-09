@@ -61,12 +61,14 @@ end uart;
 
 architecture behaviour of uart is
 	signal tx_internal : std_logic := '1';
+	signal  received_internal : std_logic := '0';
 	signal  busy_internal_tx : std_logic := '0'; 
 	signal  busy_internal_rx : std_logic := '0';
 	
 	
 	signal bit_cnt_debug  : unsigned(3 downto 0);	
 	signal cycle_cnt_debug  : unsigned(3 downto 0);
+	signal shift_reg_debug  : unsigned(7 downto 0);
 begin	
 
 
@@ -79,10 +81,10 @@ process(clk)
 		constant half : integer := period/2;
 		
 		variable cnt_tx : integer  range period downto 0;
-		variable cnt_rx : integer  range period downto 0;
+		variable cnt_rx : integer  range period + half downto 0;
 		variable seq : integer  range 15 downto 0;
 
-		variable bit_cnt_rx : integer  range 9 downto 0;
+		variable bit_cnt_rx : integer  range 10 downto 0;
 		variable bit_cnt_tx : integer  range 11 downto 0;
 				
 		variable shift_reg_tx: unsigned(7 downto 0);
@@ -96,21 +98,27 @@ begin
 		
 		if rising_edge(clk)  then
 			
-			bit_cnt_debug  <= to_unsigned(bit_cnt_tx, bit_cnt_debug'length); 
-			cycle_cnt_debug  <= to_unsigned(cnt_tx, cycle_cnt_debug'length);
-			
+			bit_cnt_debug  <= to_unsigned(bit_cnt_rx, bit_cnt_debug'length); 
+			cycle_cnt_debug  <= to_unsigned(cnt_rx, cycle_cnt_debug'length);
+			shift_reg_debug <= shift_reg_rx;
 			if res = '0' then
 				busy_internal_tx <= '0';
+				busy_internal_rx <= '0';
 				tx_internal <= '1';
+				received_internal <= '0';
 				bit_cnt_tx := 0;
 				bit_cnt_rx := 0;
+				error <= '0';
 			else
-			
+				if  received_internal = '1' then
+					received_internal <= '0';
+				end if;
+				
 				if enable = '1' or busy_internal_tx = '1' then	
 				
-					busy_internal_tx <= '1';
+					
 					if  busy_internal_tx = '0' then
-
+						busy_internal_tx <= '1';
 						parity := parity_check(i_data,8);
 			
 						cnt_tx := period;
@@ -141,16 +149,14 @@ begin
 					
 				end if;
 				
-				if rx = '0' and busy_internal_rx = '0' then 
-					busy_internal_rx <= '1';
-					if  bit_cnt_rx = 0 then
-			
+				if rx = '0' or busy_internal_rx = '1' then 
+					
+					if  busy_internal_rx = '0' then
+						busy_internal_rx <= '1';
+
 						cnt_rx := period + half;
-					end if;
-					
-					
-					if cnt_rx = 0 then
-						if bit_cnt_rx = 10  then
+					elsif cnt_rx = 0 then
+						if bit_cnt_rx = 8  then
 							parity := parity_check(std_logic_vector(shift_reg_rx(7 downto 0)),8); 
 							
 							if parity /= rx then
@@ -158,16 +164,21 @@ begin
 							else
 								error <= '0';
 							end if;
-							
+						elsif bit_cnt_rx = 9  then
+							error <= not rx;
+							bit_cnt_rx:= 0;
+							busy_internal_rx <= '0';
+							received_internal <= '1';
+						else
+
+							shift_reg_rx := shift_right(shift_reg_rx, 1);
+							shift_reg_rx(7) := rx;
+						
 						end if;
-						
-						shift_reg_rx := shift_right(shift_reg_rx, 1);
-						
-						
-						
 						cnt_rx := period;	
-						bit_cnt_rx :=  bit_cnt_rx +1;
-						--shift_right(7) := rx;
+						bit_cnt_rx :=  bit_cnt_rx +1;	
+					else
+						cnt_rx := cnt_rx - 1;
 					end if;
 				end if;	
 				
@@ -178,10 +189,11 @@ begin
 
 end  process;
 
-process(tx_internal,busy_internal_tx)
+process(tx_internal,busy_internal_tx,received_internal)
 begin
 	tx <= tx_internal;
 	busy <= busy_internal_tx;
+	received <= received_internal;
 end process;
 
 
