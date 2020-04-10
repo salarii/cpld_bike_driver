@@ -6,14 +6,14 @@ entity poly_tb is
 end poly_tb;
 
 architecture t_behaviour of poly_tb is
-		signal IntPart : integer := 8;
+		signal IntPart : integer := 12;
 		signal FracPart : integer := 12;
 		signal res :  std_logic;
 		signal clk :  std_logic := '0';
 		signal start :  std_logic;
 
 		
-		signal in_val :  unsigned(IntPart + FracPart - 1  downto 0);
+		signal in_val :  unsigned(15  downto 0);
 		signal temp :  unsigned(7  downto 0);
 
 
@@ -26,7 +26,7 @@ architecture t_behaviour of poly_tb is
 				res : in std_logic;
 				clk : in std_logic;
 				i_enable : in std_logic;
-				i_val	: in  std_logic_vector(IntPart + FracPart - 1  downto 0);
+				i_val	: in  std_logic_vector(15  downto 0);
 				o_temp : out std_logic_vector(7  downto 0)
 				);
 		end component;
@@ -57,7 +57,7 @@ architecture t_behaviour of poly_tb is
 				res <= '0';
 				start <= '1';
 				start <= '1';
-				in_val  <= x"01000";
+				in_val  <= x"6000";
 		
 				wait for 1 ns;
 				res <= '1';

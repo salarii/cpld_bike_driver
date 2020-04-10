@@ -5,21 +5,22 @@ use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity poly is
-	generic (CONSTANT IntPart : integer := 8;
+	generic (CONSTANT IntPart : integer := 12;
    			 CONSTANT FracPart : integer := 12);
 
 	port(
 		res : in std_logic;
 		clk : in std_logic;
 		i_enable : in std_logic;
-		i_val	: in  std_logic_vector(IntPart + FracPart - 1  downto 0);
+		i_val	: in  std_logic_vector(15  downto 0);
 		o_temp : out std_logic_vector(7  downto 0)
 		);
 end poly;
 
 architecture behaviour of poly is
-		constant one : unsigned(IntPart + FracPart - 1  downto 0) := x"01000";
+		constant one : unsigned(IntPart + FracPart - 1  downto 0) := x"001000";
 		
+		signal translated_input : unsigned (IntPart + FracPart - 1  downto 0);
 		signal stored_val_power : unsigned (IntPart + FracPart - 1  downto 0) := one;
 		signal out_mul_1 : unsigned (IntPart + FracPart - 1  downto 0);
 		signal mul2_in : unsigned (IntPart + FracPart - 1  downto 0);
@@ -28,10 +29,10 @@ architecture behaviour of poly is
 		
 		--- 6.3511 17.3911 -1.3672 0.0495          
 		
-		constant par_0 : unsigned(IntPart + FracPart - 1  downto 0) := "00000110010110011110";
-		constant par_1 : unsigned(IntPart + FracPart - 1  downto 0) := "00010001011001000001";
-		constant par_2 : unsigned(IntPart + FracPart - 1  downto 0) := "00000001010111100000";
-		constant par_3 : unsigned(IntPart + FracPart - 1  downto 0) := "00000000000011001010";
+		constant par_0 : unsigned(IntPart + FracPart - 1  downto 0) := "000000000110010110011110";
+		constant par_1 : unsigned(IntPart + FracPart - 1  downto 0) := "000000010001011001000001";
+		constant par_2 : unsigned(IntPart + FracPart - 1  downto 0) := "000000000001010111100000";
+		constant par_3 : unsigned(IntPart + FracPart - 1  downto 0) := "000000000000000011001010";
 
 		component mul
 			generic (CONSTANT IntPart : integer;
@@ -51,7 +52,7 @@ begin
 		 )
 		port map (
 			A => stored_val_power,
-			B => unsigned(i_val),
+			B => unsigned(translated_input),
 			outMul => out_mul_1);
 
 		module_mul2: mul
@@ -115,9 +116,10 @@ begin
 		
 	end process;
 
-	process(result)
+	process(result,i_val)
 	begin
-		o_temp <= std_logic_vector(result(IntPart + FracPart - 1  downto FracPart));
+		translated_input(16 downto 1) <= unsigned(i_val);
+		o_temp <= std_logic_vector(result(IntPart + FracPart - 5  downto FracPart));
 	
 
 	end process;

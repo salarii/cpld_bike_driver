@@ -28,18 +28,15 @@ entity control_unit is
 end control_unit;
 
 architecture behaviour of control_unit is
-		constant  IntPart : integer := 8;
-		constant  FracPart : integer := 12;
 
 		component poly is
-			generic (CONSTANT IntPart : integer;
-		   			 CONSTANT FracPart : integer);
+
 		
 			port(
 				res : in std_logic;
 				clk : in std_logic;
 				i_enable : in std_logic;
-				i_val	: in  std_logic_vector(IntPart + FracPart - 1  downto 0);
+				i_val	: in  std_logic_vector(15  downto 0);
 				o_temp : out std_logic_vector(7  downto 0)
 				);
 		end component;
@@ -67,7 +64,7 @@ architecture behaviour of control_unit is
 		
 		signal poly_enable : std_logic;	
 		signal poly_temperature : unsigned(7  downto 0);	
-		signal poly_val : unsigned(IntPart + FracPart - 1  downto 0);
+		signal poly_val : unsigned(15 downto 0);
 
 		signal en_trigger : std_logic;	
 		signal out_trigger : std_logic;
@@ -75,10 +72,7 @@ architecture behaviour of control_unit is
 begin	
 
 	module_poly: poly
-	generic map(
-			 IntPart => IntPart,
-			 FracPart => FracPart
-	)
+
 	port map (
 		res => res,
 		clk => clk,
@@ -255,8 +249,8 @@ begin
 						data(7 downto 0) <= i2c_bus;
 						poly_enable <= '1';	
 		
-						poly_val <= (others => '0');
-						poly_val(16 downto 1) <= unsigned(data);						
+						
+						poly_val <= unsigned(data);						
 						enable_pc_write := '1';	
 					elsif i_from_i2c.busy = '1' then
 						o_to_i2c.enable <= '0';
