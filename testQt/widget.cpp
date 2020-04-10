@@ -104,20 +104,20 @@ QChart * Widget::createChart()
     series->attachAxis(axisX);
     series->attachAxis(axisY);
     axisX->applyNiceNumbers();
-    axisY->setRange(0.0, 2.0);
+    axisY->setRange(25.0, 130.0);
     axisY->applyNiceNumbers();
     return newChart;
 }
 
 
-void Widget::serviceMeasurement(Measurement const & _measurement)
+void Widget::serviceMeasurement(Measurement const * _measurement)
 {
 
-    series->append(idx,_measurement.temperature);
+    series->append(idx,_measurement->temperature);
     idx++;
 
-    auto message = labelText + QString().setNum(_measurement.voltage, 'g', 4) + QString(" V ");
-    message += QString(" Temperature:") + QString().setNum(_measurement.temperature) + QString(" Celsius");
+    auto message = labelText + QString().setNum(_measurement->voltage, 'g', 4) + QString(" V ");
+    message += QString(" Temperature:") + QString().setNum(_measurement->temperature) + QString(" Celsius");
 
     label->setText(message);
     QChart* chartToDelete=NULL;

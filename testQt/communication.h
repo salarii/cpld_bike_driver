@@ -21,7 +21,7 @@ public:
     ~Communication();
 
 signals:
-    void serviceMeasurement(Measurement _measurement);
+    void passMeasurement(Measurement const * _measurement);
     void noSerial();
 public slots:
     void addToSendQueue(unsigned char _data);

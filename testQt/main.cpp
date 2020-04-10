@@ -10,8 +10,9 @@ int main(int argc, char *argv[])
     Communication comm;
     w.show();
 
-    QObject::connect(&comm, &Communication::serviceMeasurement,
+    QObject::connect(&comm, &Communication::passMeasurement,
                      &w, &Widget::serviceMeasurement);
+
 
     QObject::connect(&comm, &Communication::noSerial,
                      &w, &Widget::serialProblem);

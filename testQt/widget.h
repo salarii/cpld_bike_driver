@@ -21,7 +21,7 @@ signals:
 
 
 public slots:
-    void serviceMeasurement(Measurement const & _value);
+    void serviceMeasurement(Measurement const * _value);
     void startMeasurement(bool _checked);
     void serialProblem();
 private:

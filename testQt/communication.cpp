@@ -50,12 +50,8 @@ void Communication::run()
             measurement.temperature = readbuffer[4];
             measurement.voltage = voltage;
             measurement.time = time;
+            emit  passMeasurement(&measurement);
 
-            emit  serviceMeasurement(measurement);
-
-
-            void sendLastVoltage(float _value);
-            void sendLastTemp(float _value);
             mutex.lock();
 
             writeToSerialPort(h,messages.constData(), messages.size());
