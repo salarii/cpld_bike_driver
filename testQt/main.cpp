@@ -10,8 +10,14 @@ int main(int argc, char *argv[])
     Communication comm;
     w.show();
 
-    QObject::connect(&comm, &Communication::overflow,
-                     &w, &Widget::setValue);
+    QObject::connect(&comm, &Communication::serviceMeasurement,
+                     &w, &Widget::serviceMeasurement);
+
+    QObject::connect(&comm, &Communication::noSerial,
+                     &w, &Widget::serialProblem);
+
+    QObject::connect(&w, &Widget::sendToHardware,
+                     &comm, &Communication::addToSendQueue);
     comm.start();
     return a.exec();
 }

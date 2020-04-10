@@ -1,6 +1,7 @@
 #include "communication.h"
 #include <math.h>
 #include "serialport.h"
+#include <QMessageBox>
 
 Communication::Communication(QObject *parent)
     : QThread(parent)
@@ -16,33 +17,61 @@ Communication::~Communication()
 
 void Communication::run()
 {
+    int const oneGoBytes =5;
     float  dest = 0.0;
-    HANDLE h = openSerialPort("COM3",B9600,one,even);
-    unsigned char readbuffer[10];
-    int index = 0;
-    forever {
-        int bytesRead = readFromSerialPort(h,readbuffer+index,8);
-        if (bytesRead  == 0 )
-            continue;
+    HANDLE h;
+    try {
+        h = openSerialPort("COM3",B9600,one,even);
 
-        if (bytesRead < 4)
-        {
-            index += bytesRead;
+
+        unsigned char readbuffer[10];
+        int index = 0;
+
+        Measurement measurement;
+        forever {
+            int bytesRead = readFromSerialPort(h,readbuffer+index,8);
+            if (bytesRead  == 0 )
+                continue;
+
+            if (bytesRead < oneGoBytes)
+            {
+                index += bytesRead;
+            }
+            if (index >= oneGoBytes)
+            {
+                index =0;
+            }
+            int shift8 = 8;
+            float voltage = (readbuffer[0] << shift8)+
+                        readbuffer[1];
+            voltage *=(2.048/32768.0);
+            int time = (readbuffer[2] << shift8)+
+                        readbuffer[3];
+            measurement.temperature = readbuffer[4];
+            measurement.voltage = voltage;
+            measurement.time = time;
+
+            emit  serviceMeasurement(measurement);
+
+
+            void sendLastVoltage(float _value);
+            void sendLastTemp(float _value);
+            mutex.lock();
+
+            writeToSerialPort(h,messages.constData(), messages.size());
+
+            mutex.unlock();
         }
-        if (index >= 4)
-        {
-            index =0;
-        }
-        int shift8 = 8;
-        float value = (readbuffer[0] << shift8)+
-                    readbuffer[1];
-        value *=(2.048/32768.0);
-        float time = (readbuffer[2] << shift8)+
-                    readbuffer[3];
-
-
-        emit  overflow(value);
-
+        closeSerialPort(h);
+    }catch (int e) {
+        emit noSerial();
     }
-    closeSerialPort(h);
+}
+
+void
+Communication::addToSendQueue(unsigned char _data)
+{
+    mutex.lock();
+    messages.push_back(_data);
+    mutex.unlock();
 }

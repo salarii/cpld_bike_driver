@@ -4,6 +4,9 @@
 #include <QWidget>
 #include <QtCharts>
 #include <QLabel>
+#include <QSpinBox>
+
+struct Measurement;
 
 class Widget : public QWidget
 {
@@ -13,14 +16,21 @@ public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
 
+signals:
+    void sendToHardware(char _byte);
+
+
 public slots:
-    void setValue(float _value);
+    void serviceMeasurement(Measurement const & _value);
+    void startMeasurement(bool _checked);
+    void serialProblem();
 private:
     QChart *  createChart();
 private:
     QLineSeries* series;
     QChartView * chartView;
     QLabel * label;
+    QSpinBox * force;
     float idx;
 };
 #endif // WIDGET_H

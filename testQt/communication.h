@@ -2,6 +2,15 @@
 #define COMMUNICATION_H
 
 #include <QThread>
+#include <QMutex>
+
+
+struct Measurement
+{
+  float  voltage;
+  int time;
+  int temperature;
+};
 
 class Communication : public QThread
 {
@@ -12,9 +21,14 @@ public:
     ~Communication();
 
 signals:
-    void overflow(float _value);
+    void serviceMeasurement(Measurement _measurement);
+    void noSerial();
+public slots:
+    void addToSendQueue(unsigned char _data);
 protected:
     void run() override;
+    QMutex mutex;
+    QVector<unsigned char> messages;
 
 };
 
