@@ -28,8 +28,8 @@ entity control_unit is
 end control_unit;
 
 architecture behaviour of control_unit is
-		signal IntPart : integer := 8;
-		signal FracPart : integer := 12;
+		constant  IntPart : integer := 8;
+		constant  FracPart : integer := 12;
 
 		component poly is
 			generic (CONSTANT IntPart : integer;
