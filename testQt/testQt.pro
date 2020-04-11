@@ -25,6 +25,7 @@ SOURCES += \
 
 HEADERS += \
     communication.h \
+    data_types.h \
     serialport.h \
     widget.h
 

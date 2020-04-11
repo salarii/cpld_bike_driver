@@ -2,11 +2,16 @@
 #define WIDGET_H
 
 #include <QWidget>
+#include "data_types.h"
+
 #include <QtCharts>
 #include <QLabel>
 #include <QSpinBox>
+#include <QPushButton>
+
 
 struct Measurement;
+
 
 class Widget : public QWidget
 {
@@ -17,7 +22,7 @@ public:
     ~Widget();
 
 signals:
-    void sendToHardware(char _byte);
+    void sendToHardware(unsigned char * _data, unsigned  _size);
 
 
 public slots:
@@ -30,7 +35,11 @@ private:
     QLineSeries* series;
     QChartView * chartView;
     QLabel * label;
-    QSpinBox * force;
+    QSpinBox * pulseWidth;
+    QSpinBox * frequency;
+    QPushButton * startButton;
+    unsigned char * sendBuff;
+
     float idx;
 };
 #endif // WIDGET_H
