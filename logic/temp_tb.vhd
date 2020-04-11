@@ -201,7 +201,7 @@ architecture t_behaviour of temp_tb is
  
 		to_display : uart
 		generic map (
-		 	freq => 95,
+		 	freq => 100,
 			bound => 10 )
 			
 		port map (
@@ -224,7 +224,60 @@ architecture t_behaviour of temp_tb is
 				
 		
 				wait for 1 us;
-				wait for 0.1 us;
+				
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 7 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 3 us;
+
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 7 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 3 us;
+				
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 4 us;
+				rx_uart <= '0';
+				wait for 4 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 3 us;
+				
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 8 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 3 us;
+				
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 2 us;
+				rx_uart <= '0';
+				wait for 6 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 3 us;
+							
 				wait for 165 us;
 				res <= '0';
 				wait for 195 us;				

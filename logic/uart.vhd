@@ -122,7 +122,7 @@ begin
 						busy_internal_tx <= '1';
 						parity := parity_check(i_data,8);
 			
-						cnt_tx := period;
+						cnt_tx := period-1;
 						shift_reg_tx(0) := '0'; 
 						shift_reg_tx(7  downto  0) := unsigned(i_data);				
 						tx_internal <= '0';	
@@ -140,7 +140,7 @@ begin
 						end if;
 								
 						shift_reg_tx := shift_right(shift_reg_tx, 1);
-						cnt_tx := period;
+						cnt_tx := period-1;
 						bit_cnt_tx := bit_cnt_tx + 1;
 						
 					else
@@ -154,8 +154,10 @@ begin
 					
 					if  busy_internal_rx = '0' then
 						busy_internal_rx <= '1';
-
-						cnt_rx := period + half;
+						bit_cnt_rx := 0;
+						cnt_rx := period + half-1;
+						shift_reg_rx := (others => '0' );
+						
 					elsif cnt_rx = 0 then
 						if bit_cnt_rx = 8  then
 							parity := parity_check(std_logic_vector(shift_reg_rx(7 downto 0)),8); 
@@ -170,13 +172,14 @@ begin
 							bit_cnt_rx:= 0;
 							busy_internal_rx <= '0';
 							received_internal <= '1';
+							o_data <= std_logic_vector(shift_reg_rx);
 						else
 
 							shift_reg_rx := shift_right(shift_reg_rx, 1);
 							shift_reg_rx(7) := i_rx;
 						
 						end if;
-						cnt_rx := period;	
+						cnt_rx := period-1;	
 						bit_cnt_rx :=  bit_cnt_rx +1;	
 					else
 						cnt_rx := cnt_rx - 1;
