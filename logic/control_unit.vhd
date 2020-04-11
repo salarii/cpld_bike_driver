@@ -281,7 +281,9 @@ begin
 				
 					en_trigger <= '0';
 				end if;
-				
+				if stop_trigger <= '1' then
+					stop_trigger <= '0';
+				end if;
 							
 				if 	i_received_uart = '1' then
 					blink_1 <= '0';
@@ -296,7 +298,7 @@ begin
 					else	
 						
 						if i_from_uart = x"00" and user_command = command_active then 
-						
+							stop_trigger <= '1';
 							user_command := no_command;
 						else
 							if user_command = trigger_unit_step_setup then

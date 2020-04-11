@@ -55,7 +55,10 @@ begin
 				o_current_time <= (others => '0');			
 			else
 			
-				if i_enable = '1' or activated = '1' then	
+				if i_stop = '1' then	
+					activated := '0';
+					trigger_internal <= '0';			
+				elsif i_enable = '1' or activated = '1' then	
 					if activated = '0' then
 
 						period_cnt := to_integer(i_period);
@@ -85,8 +88,7 @@ begin
 					
 						period_cnt := period_cnt - 1;
 					end if;
-				elsif i_stop = '1' then
-					activated := '0';
+
 				end if;	
 				
 			end if;

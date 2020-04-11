@@ -277,8 +277,16 @@ leds => leds,
 				rx_uart <= '1';
 				wait for 1 us;
 				rx_uart <= '1';
-				wait for 3 us;
-							
+				wait for 60 us;
+				
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 8 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				
 				wait for 165 us;
 				res <= '0';
 				wait for 195 us;				
