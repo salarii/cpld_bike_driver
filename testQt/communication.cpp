@@ -1,7 +1,9 @@
-#include "communication.h"
-#include <math.h>
-#include "serialport.h"
 #include <QMessageBox>
+#include <math.h>
+
+#include "communication.h"
+#include "serialport.h"
+#include "data_types.h"
 
 Communication::Communication(QObject *parent)
     : QThread(parent)
@@ -29,6 +31,12 @@ void Communication::run()
 
         Measurement measurement;
         forever {
+            mutex.lock();
+
+            writeToSerialPort(h,messages.constData(), messages.size());
+            messages.clear();
+            mutex.unlock();
+
             int bytesRead = readFromSerialPort(h,readbuffer+index,8);
             if (bytesRead  == 0 )
                 continue;
@@ -52,11 +60,7 @@ void Communication::run()
             measurement.time = time;
             emit  passMeasurement(&measurement);
 
-            mutex.lock();
 
-            writeToSerialPort(h,messages.constData(), messages.size());
-
-            mutex.unlock();
         }
         closeSerialPort(h);
     }catch (int e) {
@@ -65,9 +69,12 @@ void Communication::run()
 }
 
 void
-Communication::addToSendQueue(unsigned char _data)
+Communication::addToSendQueue(unsigned char * _data, unsigned  _size)
 {
     mutex.lock();
-    messages.push_back(_data);
+    for ( int i = 0; i < _size; i++)
+    {
+        messages.push_back(_data[i]);
+    }
     mutex.unlock();
 }

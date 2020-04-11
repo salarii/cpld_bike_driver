@@ -23,6 +23,7 @@ entity control_unit is
 		i_received_uart : in std_logic;
 		o_to_uart : out std_logic_vector(7 downto 0);
 		o_en_uart : out std_logic;
+		o_wave : out std_logic;
 		leds : out std_logic_vector(4 downto 0)
 		);
 end control_unit;
@@ -338,9 +339,9 @@ begin
 	end process;
 	
 
-	process(  enable_uart)
+	process(  enable_uart,out_trigger)
 	begin
-		
+		o_wave <= out_trigger;
 		o_en_uart <= enable_uart;
 	end process;
 

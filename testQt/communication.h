@@ -5,12 +5,8 @@
 #include <QMutex>
 
 
-struct Measurement
-{
-  float  voltage;
-  int time;
-  int temperature;
-};
+struct Measurement;
+
 
 class Communication : public QThread
 {
@@ -24,7 +20,7 @@ signals:
     void passMeasurement(Measurement const * _measurement);
     void noSerial();
 public slots:
-    void addToSendQueue(unsigned char _data);
+    void addToSendQueue(unsigned char * _data, unsigned  _size);
 protected:
     void run() override;
     QMutex mutex;
