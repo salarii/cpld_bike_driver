@@ -13,7 +13,6 @@ entity i2c_master is
 		o_from_i2c : out type_from_i2c;
 			
 		i2c_bus : inout std_logic_vector(7 downto 0);
-			leds : out std_logic_vector(4 downto 0);
 		res : in std_logic;		
 		clk : in std_logic;		
 		o_slave_clk	: out  std_logic;
@@ -28,8 +27,6 @@ architecture behaviour of i2c_master is
 	signal bus_clk_internal	: std_logic :='Z';
 	signal debug : unsigned(7 downto 0);
 	signal done : std_logic := '0';
-	signal blink_1  : std_logic := '1';
-	signal blink_2  : std_logic := '1';	
 begin	
 
 
@@ -184,9 +181,8 @@ begin
 									if i_slave_data /= '0' and stage = t_Address then
 										seq := ShortData;
 										stage := t_Repeat;
-										blink_1 <= not blink_1;
 									else
-									blink_2 <= not blink_2;
+									
 										if stage = t_Data then
 											seq := ShortData;
 											if i_to_i2c.continue = '1' then				
@@ -258,8 +254,6 @@ begin
 	end if;
 
 end  process;
-	leds(1) <= blink_2;
-	leds(0) <= blink_1;
 	
 process(busy_internal,bus_clk_internal,done)
 begin

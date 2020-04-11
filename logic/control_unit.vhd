@@ -22,8 +22,8 @@ entity control_unit is
 		i_from_uart : in std_logic_vector(7 downto 0);
 		i_received_uart : in std_logic;
 		o_to_uart : out std_logic_vector(7 downto 0);
-		o_en_uart : out std_logic
-		--leds : out std_logic_vector(4 downto 0);
+		o_en_uart : out std_logic;
+		leds : out std_logic_vector(4 downto 0)
 		);
 end control_unit;
 
@@ -126,7 +126,8 @@ begin
 		variable user_command : type_user_commands := no_command;
 		variable trigger_phase : type_init_trigger_phase;
 	begin
-	
+		leds(0) <= blink_1;
+		leds(1) <= blink_2;	
 		if rising_edge(clk)  then
 			if res = '0' then
 				state := Setup;
@@ -152,10 +153,9 @@ begin
 					
 						i2c_bus <= x"01";
 						o_to_i2c.continue <= '1'; 
-						blink_1 <= not blink_1;
+						
 						if i_from_i2c.done = '1' then
 								
-							blink_2 <= not blink_2;
 							i2c_bus <= std_logic_vector(config_register_h);	
 							i2c_state := i2c_data_H;
 						end if;
@@ -284,8 +284,11 @@ begin
 				
 							
 				if 	i_received_uart = '1' then
+					blink_1 <= '0';
 					if user_command = no_command then 
+						
 						if i_from_uart = x"01" then
+							blink_2 <= '0';
 							user_command := trigger_unit_step_setup;
 							trigger_phase := unit_step_freq_h;
 							

@@ -43,7 +43,6 @@ architecture t_behaviour of temp_tb is
 			o_from_i2c : out type_from_i2c;
 				
 			i2c_bus : inout std_logic_vector(7 downto 0);
-				leds : out std_logic_vector(4 downto 0);
 			res : in std_logic;		
 			clk : in std_logic;		
 			o_slave_clk	: out  std_logic;
@@ -76,7 +75,8 @@ architecture t_behaviour of temp_tb is
 				i_from_uart : in std_logic_vector(7 downto 0);
 				i_received_uart : in std_logic;
 				o_to_uart : out std_logic_vector(7 downto 0);
-				o_en_uart : out std_logic
+				o_en_uart : out std_logic;
+				leds : out std_logic_vector(4 downto 0)
 			);
 		end component control_unit;
 	
@@ -158,7 +158,6 @@ architecture t_behaviour of temp_tb is
 				i_to_i2c => to_i2c,
 				o_from_i2c => from_i2c,
 				i2c_bus => i2c_bus,
-				leds => leds,
 				res => res,
 				clk => clk,
 				o_slave_clk => bus_clk,
@@ -190,6 +189,8 @@ architecture t_behaviour of temp_tb is
 				o_to_i2c => to_i2c,
 				i_from_i2c => from_i2c,
 				i2c_bus => i2c_bus,
+
+leds => leds,
 
 				i_received_uart => received_uart,
 				i_from_uart => from_uart,
