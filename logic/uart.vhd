@@ -19,8 +19,7 @@ begin
 		if i = 0  then
 			parity := std_logic(data(i));
 		else
-			parity := std_logic(data(i))  xor parity;
-								
+			parity := std_logic(data(i))  xor parity;	
 		end	if;
 								
 	end loop;

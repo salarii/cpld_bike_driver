@@ -1,42 +1,96 @@
+
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 
 
-
-use work.interface_data.all;
 library IEEE;
 use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 
 
+package motor_auxiliary is
+
+type type_on_transistors_path is (A_B, A_C, B_A, B_C, C_A, C_B);
+
+type type_motor_transistors is record
+		A_n : std_logic;
+		A_p : std_logic;
+		B_n : std_logic;
+		B_p : std_logic;
+		C_n : std_logic;
+		C_p : std_logic;
+end record;
+
+function set_transistors(path: in type_on_transistors_path; driver : in std_logic) return type_motor_transistors;
+
+end package;
+
+package  body  motor_auxiliary is
+
+function set_transistors(path: in type_on_transistors_path; driver : in std_logic) return type_motor_transistors is
+	variable  transistors : type_motor_transistors;
+begin
+
+	transistors.A_n := '0';
+	transistors.A_p := '0';
+	transistors.B_n := '0';
+	transistors.B_p := '0';
+	transistors.C_n := '0';
+	transistors.C_p := '0';
+
+	if path = A_B then
+		transistors.A_p := driver;
+		transistors.B_n := '1';
+	elsif path = A_C then
+		transistors.A_p := driver;	
+		transistors.C_n := '1';
+	elsif path = B_A then
+		transistors.B_p := driver;
+		transistors.A_n := '1';
+	elsif path = B_C then
+		transistors.B_p := driver;
+		transistors.C_n := '1';
+	elsif path = C_A then
+		transistors.C_p := driver;
+		transistors.A_n := '1';
+	elsif path = C_B then
+		transistors.C_p := driver;
+		transistors.C_n := '1';
+	end if;	
+	
+			
+	return transistors;
+end set_transistors;
+
+end  motor_auxiliary;
+
+
+library IEEE;
+use work.motor_auxiliary.all;
+use work.interface_data.all;
+use IEEE.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+
 entity motor_driver is
 
-	port(
-		transaction : inout transaction_simp_data; 
+	port( 
 		res : in std_logic;		
 		clk : in std_logic;		
-		speed : in std_logic_vector(7 downto 0);
-		imp_cover : in std_logic_vector(7 downto 0);
-		A_n_out : out std_logic;
-		A_p_out : out std_logic;
-		B_n_out : out std_logic;
-		B_p_out : out std_logic;
-		C_n_out : out std_logic;
-		C_p_out : out std_logic
+		i_req_speed : in std_logic_vector(7 downto 0);
+		i_work_wave : in std_logic_vector(7 downto 0);
+		i_motor_sensors_setup : type_motor_control_setup;
+		i_enable  : in std_logic;
+
+		o_motor_transistors : out type_motor_transistors
 		);
 end motor_driver;
 
 
 
 architecture behaviour of motor_driver is
-		signal A_n : std_logic;
-		signal B_n : std_logic;
-		signal C_n : std_logic;
-		signal A_p : std_logic;
-		signal B_p : std_logic;
-		signal C_p : std_logic;
-		signal allow : std_logic;
 		
 begin	
 
@@ -44,66 +98,19 @@ begin
 process(clk)
 
 
-		constant period : integer := 10;
-		
-		constant size : integer := 8;
-		variable cnt : integer;
-		variable cntSmall : integer;
-		variable speed_internal : unsigned(7 downto 0);	
-		variable imp_cover_internal : unsigned(7 downto 0);
-
-
-
-
 begin
 		
 
 	
-		if res = '1' then
-			state := Idle;
-		elsif rising_edge(clk)  then
+		
+		if rising_edge(clk)  then
+			if res = '0' then	
 			
-			cnt = cnt - 1;
-			cntSmall = cntSmall -1;
+
 			
+			else
 			
-			if  cnt = 0 then
-				allow := 0;
-				cnt := to_integer( speed );
-				cntSmall := shift_right(speed_internal - imp_cover_internal,1 );
-				if A_p = '1' and B_n = '1' then
-					C_n := '1';
-					B_n := '0';
-				elsif A_p = '1' and C_n = '1' then
-					A_p = '0';
-					B_p = '1';
-				elsif B_p = '1' and C_n = '1' then
-					C_n = '0';
-					A_n = '1';
-				elsif B_p = '1' and A_n = '1' then
-					B_p = '0';
-					C_p = '1';
-				elsif C_p = '1' and A_n = '1' then
-					A_n = '0';
-					B_n = '1';
-				elsif C_p = '1' and B_n = '1' then	
-					C_p = '0';
-					A_p = '1';		
-				end if;
-			
-				
 			end if;
-			
-			if cntSmall = '0'  then
-				if  allow = '0' then
-					allow = '1';
-					cntSmall := imp_cover_internal;
-				elsif allow = '1' then
-					allow = '0';					
-					cntSmall :=cnt + 1;
-				end if;
-			end  if;
-			
 
 			
 		end if;
@@ -111,17 +118,5 @@ begin
 
 end  process;
 
-
-process(A_n,B_n,C_n,A_p,B_p,C_p,allow)
-begin
-		A_n_out <= A_n;
-		B_n_out <= B_n;
-		C_n_out <= C_n; 
-		A_p_out <= A_p and allow;
-		B_p_out <= B_p and allow;
-		C_p_out <= C_p and allow;
-
-
-end  process;
 
 end behaviour;
