@@ -37,7 +37,6 @@ Widget::Widget(QWidget *parent)
     layout->addWidget(chartView);
     layout->addWidget(label);
 
-    idx = 0;
 
     this->setMinimumSize(900, 900);
     this->adjustSize();
@@ -135,7 +134,6 @@ QChart * Widget::createChart()
     newChart->addSeries(series);
 
     QValueAxis *axisX = new QValueAxis;
-    //axisX->setTickInterval(10);
 
     newChart->addAxis(axisX, Qt::AlignBottom);
 
@@ -153,9 +151,12 @@ QChart * Widget::createChart()
 
 void Widget::serviceMeasurement(Measurement const * _measurement)
 {
-
-    series->append(idx,_measurement->temperature);
-    idx++;
+    float time = ((float)_measurement->time)/10.0;
+    if ( series->points().size() > 0 &&  series->points().back().x() > time )
+    {
+        series->clear();
+    }
+    series->append(time,_measurement->temperature);
 
     auto message = labelText + QString().setNum(_measurement->voltage, 'g', 4) + QString(" V ");
     message += QString(" Temperature:") + QString().setNum(_measurement->temperature) + QString(" Celsius");

@@ -1,13 +1,14 @@
 
 
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
 use std.textio.all;
 
 entity two_com_mul is
-	generic (CONSTANT IntPart : integer := 8;
-   			 CONSTANT FracPart : integer := 8);
+	generic (CONSTANT IntPart : integer := 4;
+   			 CONSTANT FracPart : integer := 4);
 
 	port(
 		A : in  signed(IntPart + FracPart - 1  downto 0);
@@ -27,6 +28,7 @@ begin
 		variable shift : integer := 0;
 		variable span : integer := IntPart + FracPart - 1;
 		variable result : signed (IntPart + FracPart - 1  downto 0);
+variable tmp : signed (IntPart + FracPart - 1  downto 0);
 	begin
 	
 	
@@ -37,32 +39,46 @@ begin
 				shift := -shift;
 				
 			end if;
-			
+			tmp := (not A + 1);
 			if i = 0 then
-				
-			
 				if  B(i) = '1' then
-						result := shift_right(signed(A),shift );
-						
-				else
-						result := to_signed(0,result'length);
-				end if;
+					if A(IntPart + FracPart - 1) = '1' then
 					
+						result := -shift_right(tmp ,shift);
+						tmp  := -shift_right(tmp ,shift);	
+					else
+						result := shift_right(signed(A),shift );
+					end if;						
+				else
+					result := to_signed(0,result'length);
+				end if;
+			
 			else
 				
 				if  B(i) = '1' then
-					
-					if FracPart -i < 0 then
-							result := result+ shift_left(signed(A),shift);
+					if A(IntPart + FracPart - 1) = '1' then
+						if FracPart -i < 0 then
+							tmp  := -shift_left( tmp,shift);
+						else
+							tmp  := -shift_right( tmp,shift);						
+						end if;		
+	
+	
 					else
-							result := result+ shift_right(signed(A),shift);
+						if FracPart -i < 0 then
+							tmp := shift_left(signed(A),shift);
+	
+						else
+							tmp := shift_right(signed(A),shift);
+						end if;
 					end if;
-						
-						
-					--report "idx:"	& integer'image( i );
-					--report 	integer'image( to_integer(result) );
-					
-					--report 	integer'image( to_integer(result) );
+	
+          if i = IntPart + FracPart - 1  then
+              result  := result-tmp;
+          else
+              result  := result+tmp;	
+          end if;
+  
 						
 				end if;
 	

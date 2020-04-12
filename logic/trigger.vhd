@@ -55,6 +55,14 @@ begin
 				o_current_time <= (others => '0');			
 			else
 			
+				if time_div = 0 then
+						time_div := time_divider;
+						o_current_time <= to_unsigned(time_cnt, o_current_time'length);
+						time_cnt :=	time_cnt + 1;
+				else
+						time_div := time_div - 1;
+				end if;
+			
 				if i_stop = '1' then	
 					activated := '0';
 					trigger_internal <= '0';			
@@ -67,12 +75,6 @@ begin
 						time_cnt := 0;
 						time_div := time_divider-1;
 						o_current_time <= (others => '0');						
-					elsif time_div = 0 then
-						time_div := time_divider;
-						o_current_time <= to_unsigned(time_cnt, o_current_time'length);
-						time_cnt :=	time_cnt + 1;
-					else
-						time_div := time_div - 1;
 					end if;
 
 					if 	period_cnt = 0 then
