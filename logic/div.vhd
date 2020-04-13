@@ -5,153 +5,75 @@ use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity div is
-	generic (CONSTANT IntPart : integer := 8;
-   			 CONSTANT FracPart : integer := 8);
+	generic (CONSTANT size : integer := 8);
 
 	port(
 		res : in std_logic;
 		clk : in std_logic;
-		enable : in std_logic;
-		divisor	: in  unsigned(IntPart + FracPart - 1  downto 0);
-		divident : in  unsigned(IntPart + FracPart - 1  downto 0);
-		quotient : out unsigned(IntPart + FracPart - 1  downto 0)
+		i_enable : in std_logic;
+			
+		i_divisor	: in  unsigned(size - 1  downto 0);
+		i_divident : in  unsigned(size - 1  downto 0);
+		o_valid : out std_logic;
+		o_quotient : out unsigned(size - 1  downto 0)
 		);
 end div;
 
 architecture behaviour of div is
-		signal reciprocal : unsigned (IntPart + FracPart - 1  downto 0); 
-		signal divTmp : unsigned (IntPart + FracPart - 1  downto 0);
-		signal addConst : unsigned (IntPart + FracPart - 1  downto 0); 
-
-
-		signal stageOne : unsigned (IntPart + FracPart - 1  downto 0);
-		signal stageTwo : unsigned (IntPart + FracPart - 1  downto 0);
-		signal stageThree : unsigned (IntPart + FracPart - 1  downto 0);
-
-
-		signal outStageIn : unsigned (IntPart + FracPart - 1  downto 0);
-		signal outStageInTwo : unsigned (IntPart + FracPart - 1  downto 0);
-		signal compOut : unsigned (IntPart + FracPart - 1  downto 0);
-
-		component mul
-			generic (CONSTANT IntPart : integer;
-		   			 CONSTANT FracPart : integer );
-		port  (
-			A : in  unsigned(IntPart + FracPart - 1  downto 0);
-			B : in  unsigned(IntPart + FracPart - 1  downto 0);
 	
-			outMul : out unsigned(IntPart + FracPart - 1  downto 0)
-			);
-		end component;
+		signal tmp : unsigned (size - 1  downto 0);
 
+		signal part_divident : signed (size downto 0 ) := (others => '0'); 
+		signal sig_divisor : signed (size downto 0 ) := (others => '0'); 
 begin	
 
 
-		module_mul1: mul
-		generic map(
-			 IntPart => 2,
-			 FracPart => IntPart + FracPart - 2
-		 )
-		port map (
-			A => reciprocal,
-			B => divTmp,
-			outMul => stageOne);
-
-		module_mul2: mul
-		generic map(
-			 IntPart => 2,
-			 FracPart => IntPart + FracPart - 2
-		 )
-		port map (
-			A => stageTwo,
-			B => reciprocal,
-			outMul => stageThree);
-
-
-		module_outStage: mul
-		generic map(
-			 IntPart => IntPart,
-			 FracPart => FracPart
-		 )
-		port map (
-			A => outStageIn,
-			B => outStageInTwo,
-			outMul => compOut);
-
-	outStageInTwo <= unsigned(divident);
-
 	process(clk)
-	
-		variable iteration : integer range 15 downto 0 := 6;
-		variable outShift : integer range 15 downto 0;
-		variable divHigh : integer range 15 downto 0 := 0;
-		variable decPos : integer range 15 downto 0 := 0;
-		variable fracRange : integer range 15 downto 0 := IntPart + FracPart;
+		variable  initiated : boolean :=  false;
+		variable index : integer range size-1 downto 0 := 0;
+
 	begin
 	
-		divHighFind : for i in 0 to fracRange - 1 loop
-					
-			if divisor(i) = '1' then  
-			      	
-			         divHigh := fracRange-i - 3;
-					 decPos := i;
-			end if;
-		end loop;
-	
-		outShift :=  decPos  - FracPart;
-		
-		outStageIn <= shift_right(unsigned(  reciprocal), IntPart - 1);
-		
 
-		if outShift < 0 then
-			quotient <= shift_left(unsigned(  compOut), -outShift);
-		else
-			quotient <= shift_right(unsigned(  compOut), outShift);
-		end if;
-		
-		
-		if  res = '0' then
-			iteration := 12;
-			divTmp <= to_unsigned(0,divTmp'length);
-			reciprocal <= shift_left(to_unsigned(1,divTmp'length), fracRange - 2);
+
+		if  rising_edge(clk) then
+			if  res = '0' then
+				index := size -1;
+				initiated := false;	
+				part_divident <= (others => '0');
+				sig_divisor <= (others => '0'); 
+				o_quotient <= (others => '0'); 
+			elsif i_enable = '1' then 
+				if initiated = false then
+					index := size -1;
 				
-		elsif  clk'event  and clk = '1' then
-		
-			if enable = '1' then 
-				divTmp <= unsigned(  divisor);
-				if divHigh < 0 then
-					divTmp <= shift_right(unsigned(  divisor), -divHigh);
+					initiated := true;
+					tmp <= i_divident;
+					o_valid <= '0';
+					o_quotient <= (others => '0'); 
+				else 
 					
-					
-				else
-					divTmp <= shift_left(unsigned(  divisor), divHigh);				
+					part_divident(size -1  downto 0) <= signed(shift_right(tmp, index));
+					sig_divisor(size -1  downto 0) <= signed(i_divisor);
+					part_divident <= part_divident - sig_divisor; 
+					if part_divident > 0 then
+						o_quotient(index) <= '1';
+						tmp(size -1  downto index) <= unsigned(part_divident(size -1  downto index));
+					end if;
+				
+					if index = 0 then
+						o_valid <= '1';
+						initiated := false;
+					else
+						index := index - 1;
+					end if;
 					
 				end if;
-				
-				addConst <= shift_left(to_unsigned(1,addConst'length), fracRange - 1);
-				reciprocal <= shift_left(to_unsigned(1,divTmp'length), fracRange - 2);
-				
-				
-				iteration := 12;
-			else
-			
-			
-				if iteration > 0 then
-					reciprocal <= stageThree;	
-					iteration := iteration - 1; 
-				end if;
 			end if;
-			
-
 		end if;
 		
 			
 
-	end process;
-
-	process(stageOne)
-	begin
-		stageTwo <= addConst - stageOne;
 	end process;
 
 end behaviour;

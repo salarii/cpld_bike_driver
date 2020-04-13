@@ -9,7 +9,6 @@ use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 
-
 package motor_auxiliary is
 
 type type_on_transistors_path is (No_path, A_B, A_C, B_A, B_C, C_A, C_B);
@@ -91,46 +90,46 @@ end motor_driver;
 
 
 architecture behaviour of motor_driver is
-	constant IntPart : integer := 12;
-	constant FracPart : integer := 0;
+	constant size : integer := 12;
 	
-	constant base_cycle : unsigned(IntPart + FracPart - 1  downto 0) := to_unsigned(1024,IntPart + FracPart);
+	constant base_cycle : unsigned(size - 1  downto 0) := to_unsigned(1024,size);
 	
 	constant generate_no_hal_control : boolean  := true;
 -- ????? use  other  ways, consider it  later  ???
 	component div is
-		generic (CONSTANT IntPart : integer := 8;
-	   			 CONSTANT FracPart : integer := 8);
+		generic (CONSTANT size : integer);
 	
 		port(
 			res : in std_logic;
 			clk : in std_logic;
-			enable : in std_logic;
-			divisor	: in  unsigned(IntPart + FracPart - 1  downto 0);
-			divident : in  unsigned(IntPart + FracPart - 1  downto 0);
-			quotient : out unsigned(IntPart + FracPart - 1  downto 0)
+			i_enable : in std_logic;
+			
+			i_divisor	: in  unsigned(size - 1  downto 0);
+			i_divident : in  unsigned(size - 1  downto 0);
+			o_valid : out std_logic;
+			o_quotient : out unsigned(size - 1  downto 0)
 			);
 	end component div;
 		
 		
-		signal divisor	: unsigned(IntPart + FracPart - 1  downto 0);
-		signal quotient : unsigned(IntPart + FracPart - 1  downto 0);	
+		signal divisor	: unsigned(size - 1  downto 0);
+		signal quotient : unsigned(size - 1  downto 0);	
+		signal o_valid : std_logic;
 		signal enable_div : std_logic;
 begin	
 
-	o_hal_con: if generate_no_hal_control = true generate
+generate_no_hal_controel: if generate_no_hal_control = true generate
 		module_div: div
 		generic map(
-		 IntPart => IntPart,
-		 FracPart => FracPart
-		 )
+		 size => size)
 		port map (
 		res => res,
 		clk => clk,
-		enable => enable_div,
-		divisor	=> divisor,
-		divident => base_cycle,
-		quotient => quotient);
+		i_enable => enable_div,
+		i_divisor => divisor,
+		i_divident	=> base_cycle,
+		o_valid => o_valid,
+		o_quotient => quotient);
 end generate;  
 	process(clk)
 		type type_status is (initialise_control, active_control);

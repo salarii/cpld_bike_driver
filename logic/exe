@@ -10,5 +10,5 @@ ghdl -a --workdir=build trigger.vhd two_com_mul.vhd poly.vhd
 ghdl -a --workdir=build ./tb/temp_tb.vhd ./tb/poly_tb.vhd ./tb/uart_tb.vhd
 ghdl -a --workdir=build ./tb/motor_driver_tb.vhd
 ghdl -e --workdir=build motor_driver_tb
-#ghdl -r --workdir=build --vcd=func.vcd  --stop-time=100ns --ieee-asserts=disable-at-0
-#gtkwave func.vcd
+ghdl -r motor_driver_tb --vcd=func.vcd  --stop-time=40ns --ieee-asserts=disable-at-0
+gtkwave func.vcd

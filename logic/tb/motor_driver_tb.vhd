@@ -11,7 +11,24 @@ architecture t_behaviour of motor_driver_tb is
 
 		signal res :  std_logic;
 		signal clk :  std_logic := '0';
-
+		
+		constant size : integer := 12;
+		
+		component div is
+			generic (CONSTANT size : integer);
+		
+			port(
+				res : in std_logic;
+				clk : in std_logic;
+				i_enable : in std_logic;
+					
+				i_divisor	: in  unsigned(size - 1  downto 0);
+				i_divident : in  unsigned(size - 1  downto 0);
+				o_valid : out std_logic;
+				o_quotient : out unsigned(size - 1  downto 0)
+				);
+		end component div;
+		
 		
 		component motor_driver is
 			port(
@@ -33,10 +50,31 @@ architecture t_behaviour of motor_driver_tb is
 		signal enable  : std_logic;
 		
 		signal motor_transistors : type_motor_transistors;
+		
+		signal divisor	: unsigned(size - 1  downto 0);
+		signal quotient : unsigned(size - 1  downto 0);	
+		signal divident : unsigned(size - 1  downto 0);	
+		signal o_valid : std_logic;
+		signal enable_div : std_logic;
+		
 	begin	
 		clk <= not clk after 1 ns;
 
-
+		module_div: div
+		generic map(
+		 size => size
+		 )
+		port map (
+		res => res,
+		clk => clk,
+		i_enable => enable_div,
+		i_divisor => divisor,
+		i_divident	=> divident,
+		o_valid => o_valid,
+		o_quotient => quotient
+		);
+		
+		
 		module_motor: motor_driver
 
 		port map (
@@ -54,13 +92,15 @@ architecture t_behaviour of motor_driver_tb is
 		
 			begin
 				
-				--
+				divident <= x"acd";
+				divisor	<= x"133";
 				
 				res <= '0';
-		
+				enable_div <= '1';
 				wait for 1 ns;
 				res <= '1';
-				
+				wait for 3 ns;
+				enable_div <= '0';								
 				wait for 100 ns;	
 
 					
