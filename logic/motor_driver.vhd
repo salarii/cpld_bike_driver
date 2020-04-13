@@ -56,7 +56,7 @@ begin
 		transistors.A_n := '1';
 	elsif path = C_B then
 		transistors.C_p := driver;
-		transistors.C_n := '1';
+		transistors.B_n := '1';
 	end if;	
 	
 			
@@ -78,10 +78,9 @@ entity motor_driver is
 	port( 
 		res : in std_logic;		
 		clk : in std_logic;		
-		i_req_speed : in std_logic_vector(7 downto 0);
+		i_req_speed : in unsigned(7 downto 0);
 		i_work_wave : in std_logic;
 		i_motor_control_setup : type_motor_control_setup;
-		i_enable  : in std_logic;
 
 		o_motor_transistors : out type_motor_transistors
 		);
@@ -91,8 +90,9 @@ end motor_driver;
 
 architecture behaviour of motor_driver is
 	constant size : integer := 12;
+	constant max_steps_per_cycle : integer := 2048;
 	
-	constant base_cycle : unsigned(size - 1  downto 0) := to_unsigned(1024,size);
+	constant base_cycle : unsigned(size - 1  downto 0) := to_unsigned(max_steps_per_cycle,size);
 	
 	constant generate_no_hal_control : boolean  := true;
 -- ????? use  other  ways, consider it  later  ???
@@ -116,6 +116,11 @@ architecture behaviour of motor_driver is
 		signal quotient : unsigned(size - 1  downto 0);	
 		signal o_valid : std_logic;
 		signal enable_div : std_logic;
+		
+		
+		signal debug_tick : unsigned(9  downto 0);
+		signal debug_cnt : unsigned(9  downto 0);
+		
 begin	
 
 generate_no_hal_controel: if generate_no_hal_control = true generate
@@ -135,33 +140,38 @@ end generate;
 		type type_status is (initialise_control, active_control);
 		
 		
-		constant tick_period : integer := 10;
+		constant tick_period : integer := 20;
 		
 		variable status : type_status := initialise_control;
-		variable cnt : integer;
-		variable tick_cnt  : integer range tick_period downto 0;
+		variable cnt : integer range max_steps_per_cycle downto 0 := 0;
+		variable tick_cnt  : integer range tick_period downto 0 := 0;
 		
 		variable transistors_path : type_on_transistors_path;
 	begin
+			
+		debug_tick <=  to_unsigned(tick_cnt, debug_tick'length);
+		debug_cnt <= to_unsigned(cnt, debug_tick'length);
+			
 			
 		if rising_edge(clk)  then
 			if res = '0' then	
 				status := initialise_control;
 				transistors_path := No_path;
-				
+				o_motor_transistors <= set_transistors(No_path, '0');
 			else
 				if i_motor_control_setup.enable = '1' then
 					if i_motor_control_setup.hal = '1' then
 						
 
-					
 					else
-							
+						divisor(7 downto 0) <= i_req_speed;
+						divisor(size -1 downto 8) <= (others => '0');
 						if status = initialise_control then
 							tick_cnt := tick_period-1;							
 							status := active_control;
 							enable_div <= '1';	
 							transistors_path := No_path;
+							cnt := 0;
 						elsif status = active_control then
 							if cnt = 0 then
 								case transistors_path is
@@ -169,50 +179,52 @@ end generate;
 									 o_motor_transistors <= set_transistors(No_path, '0');
 								     transistors_path := A_B;
 								  when A_B =>  
-									 o_motor_transistors <= set_transistors(No_path, i_work_wave);
+									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
 								  	 transistors_path := A_C;
 								  when A_C  =>  
-									 o_motor_transistors <= set_transistors(No_path, i_work_wave);
+									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
 								  	 transistors_path := B_C;
 								  when B_C  =>  
-									 o_motor_transistors <= set_transistors(No_path, i_work_wave);
+									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
 								  	 transistors_path := B_A;
 								  when B_A  =>  
-									 o_motor_transistors <= set_transistors(No_path, i_work_wave);
+									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
 								  	 transistors_path := C_A;
 								  when C_A  =>  
-									 o_motor_transistors <= set_transistors(No_path, i_work_wave);
+									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
 								  	 transistors_path := C_B;
 								  when C_B  =>  
-									 o_motor_transistors <= set_transistors(No_path, i_work_wave);
+									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
 								  	 transistors_path := A_B;
 								  when others => 
-									 o_motor_transistors <= set_transistors(No_path, i_work_wave);
+									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
 								  	 transistors_path := No_path;
 								end case;
 							
-							
-								if tick_cnt = 0 and  cnt = 0 then
+				
+							end if;
+						
+							if tick_cnt = 0 then
+								if cnt = 0 then
 									cnt := to_integer(quotient);
-									
+								else	
+									cnt := cnt -1;
 								end if;	
+							
+								
+								enable_div <= '1';
+								tick_cnt := tick_period-1;
+							else
+								enable_div <= '0';
+								tick_cnt := tick_cnt - 1;
+							
 							end if;
 						
 						end if;
 
-						if tick_cnt = 0 then
-							cnt := cnt -1;
-							enable_div <= '1';
-							tick_cnt := tick_period-1;
-						else
-							enable_div <= '0';
-							tick_cnt := tick_cnt - 1;
-						
-						end if;
+
 
 					end if;
-				else
-
 				end if;
 			
 				
