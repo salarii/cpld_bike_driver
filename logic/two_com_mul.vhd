@@ -19,7 +19,6 @@ entity two_com_mul is
 end two_com_mul;
 
 architecture behaviour of two_com_mul is
-		signal tmp : signed (IntPart + FracPart - 1  downto 0) := to_signed(0,IntPart + FracPart); 
 begin	
 
 

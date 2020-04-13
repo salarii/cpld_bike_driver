@@ -18,8 +18,8 @@ architecture t_behaviour of motor_driver_tb is
 				res : in std_logic;		
 				clk : in std_logic;		
 				i_req_speed : in std_logic_vector(7 downto 0);
-				i_work_wave : in std_logic_vector(7 downto 0);
-				i_motor_sensors_setup : type_motor_control_setup;
+				i_work_wave : in std_logic;
+				i_motor_control_setup : type_motor_control_setup;
 				i_enable  : in std_logic;
 		
 				o_motor_transistors : out type_motor_transistors
@@ -29,7 +29,7 @@ architecture t_behaviour of motor_driver_tb is
 		signal motor_control_setup : type_motor_control_setup;
 		
 		signal req_speed : std_logic_vector(7 downto 0);
-		signal work_wave : std_logic_vector(7 downto 0);
+		signal work_wave : std_logic;
 		signal enable  : std_logic;
 		
 		signal motor_transistors : type_motor_transistors;
@@ -44,7 +44,7 @@ architecture t_behaviour of motor_driver_tb is
 		clk => clk,
 		i_req_speed => req_speed,
 		i_work_wave => work_wave,
-		i_motor_sensors_setup => motor_control_setup,
+		i_motor_control_setup => motor_control_setup,
 		i_enable => enable,
 		
 		o_motor_transistors => motor_transistors
@@ -65,7 +65,7 @@ architecture t_behaviour of motor_driver_tb is
 
 					
 
-			end process;
+	end process;
 		--
 	--
 --

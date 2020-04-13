@@ -5,8 +5,8 @@
 #gtkwave func.vcd
 
 ghdl -a --workdir=build interface_data.vhd  i2c_master.vhd i2c_slave.vhd
-ghdl -a --workdir=build control_unit.vhd motor_driver.vhd mul.vhd uart.vhd
-ghdl -a --workdir=build trigger.vhd two_com_mul.vhd poly.vhd  
+ghdl -a --workdir=build control_unit.vhd div.vhd motor_driver.vhd mul.vhd uart.vhd
+ghdl -a --workdir=build trigger.vhd two_com_mul.vhd poly.vhd 
 ghdl -a --workdir=build ./tb/temp_tb.vhd ./tb/poly_tb.vhd ./tb/uart_tb.vhd
 ghdl -a --workdir=build ./tb/motor_driver_tb.vhd
 ghdl -e --workdir=build motor_driver_tb

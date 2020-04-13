@@ -22,10 +22,10 @@ type type_from_i2c is record
 end record;
 
 type type_motor_control_setup is record
-	i_hal : std_logic;
-	i_enable : std_logic;		
+	hal : std_logic;
+	enable : std_logic;		
 	
-	i_hal_data : std_logic_vector(2 downto 0);
+	hal_data : std_logic_vector(2 downto 0);
 end record;
 
 
