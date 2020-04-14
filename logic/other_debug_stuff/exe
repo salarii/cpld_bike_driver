@@ -1,0 +1,15 @@
+rm -rf work
+mkdir work
+
+ghdl -a  --work=work --workdir=work glue.vhd ../mul.vhd ../low_pass.vhd
+gcc -c -fPIC external.c -o external.o
+gcc -c -fPIC lib.c -o lib.o
+ar ruv libsim.a lib.o external.o 
+#ghdl -a  --work=work --workdir=work tb.vhd
+#ghdl -e -Wl,-lm  -Wl,-lsim   --ieee=synopsys -fexplicit --workdir=work -Pwork tb
+
+#ghdl -r tb  --wave=tbench.ghw  --stop-time=10000us
+
+#gnuplot -e "plot 'data.txt' using 1:2; pause -1"
+
+#gtkwave tbench.ghw a.gtkw

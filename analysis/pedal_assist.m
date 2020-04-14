@@ -41,3 +41,9 @@ bode(first_order_fil, first_order_fil_dis)
 
 
 lsim(first_order_fil,first_order_fil_dis,u,t)
+
+
+
+
+
+
