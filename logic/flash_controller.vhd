@@ -57,11 +57,6 @@ architecture behaviour of flash_controller is
 	signal  received_internal : std_logic := '0';
 	signal  busy_internal : std_logic := '0';
 	
-	
-	signal bit_cnt_debug  : unsigned(3 downto 0);	
-	signal cycle_cnt_debug  : unsigned(4 downto 0);
-	signal shift_reg_debug  : unsigned(7 downto 0);
-	
 	signal data_spi : std_logic_vector(7 downto 0);
 	signal busy_spi : std_logic;
 	signal en_spi : std_logic;
@@ -93,21 +88,21 @@ begin
 
 
 process(clk)
+							
 		constant enter_write_cycle : unsigned(7 downto 0) := x"01";
 		constant read_command : unsigned(7 downto 0) := x"02";
 		constant write_command : unsigned(7 downto 0) := x"03";
 		
 		type type_flash_operation is (no_flash_operation, flash_write, flash_read);
-		type type_write_flash is (idle , enable_write,address, write_data);
-		type type_read_flash is (idle ,address, read_data);		
+		type type_write_flash is (write_idle , write_enable, write_code, write_address, write_data, write_conclude);
+		type type_read_flash is (read_idle , read_code, read_address, read_data, read_conclude);		
 		
-		variable flash_operation : type_flash_operation;
-		variable write_flash : type_write_flash;
-		variable read_flash : type_read_flash;
+		variable flash_operation : type_flash_operation := no_flash_operation;
+		variable write_flash : type_write_flash := write_idle;
+		variable read_flash : type_read_flash := read_idle;
 		
-		variable shift_reg: unsigned(7 downto 0);-- := (others => '0');
 		
-
+		variable cnt : integer  range 3 downto 0 := 0;
 begin
 		
 
@@ -118,8 +113,10 @@ begin
 				busy_internal <= '0';
 				received_internal <= '0';
 				flash_operation := no_flash_operation;
-		 		write_flash := idle;
-				read_flash := idle;
+		 		write_flash := write_idle;
+				read_flash := read_idle;
+				data_spi <= (others => 'Z');
+				io_data <= (others => 'Z');
 		else		
 		
 				if  received_internal = '1' then
@@ -138,28 +135,121 @@ begin
 							if  i_transaction = Read then
 								flash_operation := flash_read;
 							elsif i_transaction = Write then
+								io_data <= (others => 'Z');
 								flash_operation := flash_write;
 							end if;
 						
 						elsif flash_operation =  flash_write then
-							if  write_flash = idle then
-												
-							elsif write_flash = enable_write then
-							
-							elsif write_flash = address then
+							if  write_flash = write_idle then
+								if busy_spi = '0' then
+									en_spi <= '1';
+									data_spi <= std_logic_vector(enter_write_cycle);
+									transaction_spi <= Write;
+								elsif busy_spi = '1' then
+									en_spi <= '0';	
+									write_flash := write_enable;
+									
+								end if;
+							elsif write_flash = write_enable then
+								if busy_spi = '0' then
+									write_flash := write_code;
+								end if;					
+					
+							elsif write_flash = write_code then
+								if busy_spi = '0' then
+									en_spi <= '1';
+									data_spi <= std_logic_vector(write_command);
+									cnt := 2;
+								elsif busy_spi = '1' then
+									write_flash := write_address;
+								end if;
+							elsif write_flash = write_address then
+								if busy_spi = '0' then
+									if cnt = 0 then
+										data_spi <= i_address;
+										write_flash := write_data;
+										cnt := 2;
+									else
+										data_spi <= x"00";
+									
+									end if;
+									
+									cnt := cnt - 1;
+									
+								end if;
 							
 							elsif write_flash = write_data then							
-							
+								if busy_spi = '0' then
+									data_spi <= io_data(8*(3-cnt)-1 downto 8*(2-cnt));
+									if cnt = 0 then
+										write_flash := write_conclude;
+									else
+										cnt := cnt - 1;
+									end if;
+									
+									
+									
+								end if;
+							elsif write_flash = write_conclude then	
+								if busy_spi = '0' then
+									flash_operation := no_flash_operation;
+									write_flash := write_idle;
+									en_spi <= '0';
+									data_spi <= (others => 'Z');
+									busy_internal <= '0';
+								end if;
+								
 							end if;
 						
 						
 						elsif flash_operation = flash_read then
-							if  read_flash = idle then
-					
-							elsif read_flash = address then
-							
+							if  read_flash = read_idle then
+								if busy_spi = '0' then
+									transaction_spi <= Read;
+									en_spi <= '1';
+									
+								elsif busy_spi = '1' then
+									read_flash := read_code;
+								end if;	
+							elsif read_flash = read_code then
+								if busy_spi = '0' then
+									data_spi <= std_logic_vector(read_command);
+									cnt := 2;
+								
+									read_flash := read_address;
+								end if;
+							elsif read_flash = read_address then
+								if busy_spi = '0' then
+									if cnt = 0 then
+										data_spi <= i_address;
+										read_flash := read_data;
+										cnt := 2;
+										data_spi <= (others => 'Z');
+									else
+										data_spi <= x"00";
+									
+									end if;
+									
+									cnt := cnt - 1;
+									
+								end if;
 							elsif read_flash = read_data then						
-							
+								if received_spi = '1' then
+									io_data(8*(3-cnt)-1 downto 8*(2-cnt))<= data_spi;
+									if cnt = 0 then
+										read_flash := read_conclude;
+									end if;
+									
+									cnt := cnt - 1;
+									
+								end if;
+								
+							elsif read_flash = read_conclude then
+								flash_operation := no_flash_operation;
+								read_flash := read_idle;
+								en_spi <= '0';
+								busy_internal <= '0';
+								received_internal <= '1';
 							end if;
 						end if;						
 						

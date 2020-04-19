@@ -75,7 +75,7 @@ begin
 					received_internal <= '0';
 				end if;
 				
-				if i_enable = '1' then	
+				if i_enable = '1' or busy_internal = '1' then	
 				
 					o_spi.ss <= '0';
 					if  busy_internal = '0' then
@@ -109,6 +109,7 @@ begin
 							if bit_cnt = 7  then
 								cnt:= separate;
 								bit_cnt := 0;
+								busy_internal <= '0';
 								if i_transaction = Read then
 								    io_data <= std_logic_vector(shift_reg);
 									received_internal <= '1';
@@ -136,6 +137,7 @@ begin
 					o_spi.ss <= '1';	
 					o_spi.mosi <= '1';
 					o_spi.sck <= '1';
+					busy_internal <= '0';
 				end if;
 				
 				

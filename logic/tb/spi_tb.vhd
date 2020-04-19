@@ -66,9 +66,21 @@ architecture t_behaviour of spi_tb is
 		signal stall : std_logic;
 		signal in_spi : type_to_spi;
 		signal out_spi : type_from_spi;
+		
+		signal miso : std_logic;
+		signal mosi : std_logic;
+		signal ss : std_logic;
+		signal sck : std_logic;		
+		
+		
 	begin	
+	
+		miso <= in_spi.miso;
+		mosi <= out_spi.mosi;
+		ss <= out_spi.ss;
+		sck <= out_spi.sck;
 
-		spi_function : flash_controller
+		flash_function : flash_controller
 			generic map ( 
 		 	freq => 1000000,
 			bound => 100000 )
@@ -100,7 +112,7 @@ architecture t_behaviour of spi_tb is
 				transaction <= Write;	
 				data <= x"AABBCC";	
 				en <= '1';
-				address <= x"00";
+				address <= x"01";
 				wait for 10 ns;
 				en <= '0';
 				res <= '1';
