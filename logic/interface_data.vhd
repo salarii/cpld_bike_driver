@@ -21,6 +21,17 @@ type type_from_i2c is record
 	error : std_logic;
 end record;
 
+
+type type_to_spi is record	
+	miso : std_logic;
+end record;
+
+type type_from_spi is record	
+	sck : std_logic;
+	ss : std_logic;	
+	mosi : std_logic;
+end record;
+
 type type_motor_control_setup is record
 	hal : std_logic;
 	enable : std_logic;		

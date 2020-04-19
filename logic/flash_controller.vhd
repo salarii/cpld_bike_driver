@@ -17,15 +17,14 @@ entity flash_controller is
 			
 			io_data : inout std_logic_vector(23 downto 0);
 			i_address : in std_logic_vector(7 downto 0);
-			i_miso : in std_logic;
 			i_transaction : in transaction_type;
 			i_enable : in std_logic;
+			i_spi : in type_to_spi;
 			i_stall : in std_logic;
 			
-			o_sck : out std_logic;
-			o_ss : out std_logic;	
-			o_mosi : out std_logic;
+			
 			o_received : out std_logic;
+			o_spi : out type_from_spi;
 			o_busy	: out std_logic
 		);
 end flash_controller;
@@ -44,14 +43,12 @@ architecture behaviour of flash_controller is
 				clk : in std_logic;	
 				
 				io_data : inout std_logic_vector(7 downto 0);
-				i_miso : in std_logic;
-				i_write : in std_logic;
+				i_spi : in type_to_spi;
+				i_transaction : transaction_type;
 				i_enable : in std_logic;
 				i_stall : in std_logic;
 				
-				o_sck : out std_logic;
-				o_ss : out std_logic;	
-				o_mosi : out std_logic;
+				o_spi : out type_from_spi;
 				o_received : out std_logic;
 				o_busy	: out std_logic
 			);
@@ -64,7 +61,35 @@ architecture behaviour of flash_controller is
 	signal bit_cnt_debug  : unsigned(3 downto 0);	
 	signal cycle_cnt_debug  : unsigned(4 downto 0);
 	signal shift_reg_debug  : unsigned(7 downto 0);
+	
+	signal data_spi : std_logic_vector(7 downto 0);
+	signal busy_spi : std_logic;
+	signal en_spi : std_logic;
+	signal received_spi : std_logic;
+	signal transaction_spi : transaction_type;
+	signal stall_spi : std_logic;
+	
 begin	
+
+		spi_function : spi
+			generic map ( 
+		 	freq => freq,
+			bound => bound )
+				
+			port map(
+					res => res,		
+					clk => clk,
+					
+					io_data => data_spi,
+					i_spi => i_spi,
+					i_transaction =>transaction_spi,
+					i_enable => en_spi,
+					i_stall =>stall_spi,
+					
+					o_spi => o_spi,
+					o_received =>received_spi,
+					o_busy	=> busy_spi
+				);
 
 
 process(clk)
@@ -118,10 +143,13 @@ begin
 						
 						elsif flash_operation =  flash_write then
 							if  write_flash = idle then
-					
+												
 							elsif write_flash = enable_write then
+							
 							elsif write_flash = address then
+							
 							elsif write_flash = write_data then							
+							
 							end if;
 						
 						
@@ -131,6 +159,7 @@ begin
 							elsif read_flash = address then
 							
 							elsif read_flash = read_data then						
+							
 							end if;
 						end if;						
 						

@@ -9,6 +9,29 @@ end spi_tb;
 
 architecture t_behaviour of spi_tb is
 
+		component flash_controller is
+			generic ( 
+				freq : integer;
+				bound : integer
+				);
+				
+			port(
+				res : in std_logic;		
+				clk : in std_logic;	
+			
+				io_data : inout std_logic_vector(23 downto 0);
+				i_address : in std_logic_vector(7 downto 0);
+				i_transaction : in transaction_type;
+				i_enable : in std_logic;
+				i_spi : in type_to_spi;
+				i_stall : in std_logic;
+					
+				o_spi : out type_from_spi;
+				o_received : out std_logic;
+				o_busy	: out std_logic
+				);
+		end component flash_controller;
+
 		component spi is
 			generic ( 
 				freq : integer;
@@ -20,14 +43,12 @@ architecture t_behaviour of spi_tb is
 				clk : in std_logic;	
 				
 				io_data : inout std_logic_vector(7 downto 0);
-				i_miso : in std_logic;
+				i_spi : in type_to_spi;
 				i_transaction : transaction_type;
 				i_enable : in std_logic;
 				i_stall : in std_logic;
 				
-				o_sck : out std_logic;
-				o_ss : out std_logic;	
-				o_mosi : out std_logic;
+				o_spi : out type_from_spi;
 				o_received : out std_logic;
 				o_busy	: out std_logic
 				);
@@ -36,80 +57,71 @@ architecture t_behaviour of spi_tb is
 			
 		signal res : std_logic;
 		signal clk : std_logic;			
-		signal data : std_logic_vector(7 downto 0);
+		signal data : std_logic_vector(23 downto 0);
+		signal address : std_logic_vector(7 downto 0);
 		signal busy : std_logic;
 		signal en : std_logic;
 		signal received : std_logic;	
-		signal miso : std_logic;
-		signal mosi : std_logic;
-		signal ss : std_logic;			
-		signal sck : std_logic;	
 		signal transaction : transaction_type;
 		signal stall : std_logic;
-				
+		signal in_spi : type_to_spi;
+		signal out_spi : type_from_spi;
 	begin	
 
-		spi_function : spi
-		generic map (
+		spi_function : flash_controller
+			generic map ( 
 		 	freq => 1000000,
 			bound => 100000 )
-			
-		port map (		
-			res => res,		
-			clk => clk,
-			io_data => data,
-			i_miso => miso,
-			i_transaction => transaction,
-			i_enable => en,
-			i_stall => stall,
-			o_sck => sck,
-			o_ss => ss,
-			o_mosi => mosi,
-			o_received => received,
-			o_busy => busy
-			);
+				
+			port map(
+					res => res,		
+					clk => clk,
+					 
+					io_data => data,
+					i_address => address,
+					i_transaction => transaction,
+					i_enable => en,
+					i_spi => in_spi,
+					i_stall => stall,
+						
+					o_received => received,
+					o_spi => out_spi,
+					o_busy => busy
+				);
 
 		process
 			begin
 				
 				-- inputs which produce '1' on the output
-				res <= '0';
+				--res <= '0';
+				res <= '1';
 				--i_data_uart <= x"AB";
 				
 				transaction <= Write;	
-				data <= x"AA";	
+				data <= x"AABBCC";	
 				en <= '1';
-				
+				address <= x"00";
 				wait for 10 ns;
+				en <= '0';
 				res <= '1';
 				wait for 95 ns;
-				data <= (others  => 'Z');	
+				--data <= (others  => 'Z');	
 				transaction <= Read;	
-				miso <= '1';
+		
 				wait for 10 ns;
-				miso <= '0';
 				wait for 10 ns;
-				miso <= '1';
 				wait for 10 ns;
-				miso <= '0';
 				wait for 10 ns;
-				miso <= '1';
 				wait for 10 ns;
-				miso <= '0';
 				wait for 10 ns;
-				miso <= '1';
 				wait for 10 ns;
-				miso <= '0';
 				wait for 10 ns;
-				miso <= '1';
 				wait for 10 ns;
 				wait for 10 ns;
 				wait for 5 ns;
 				wait for 5 ns;				
-				wait for 100 ns;				
-				--res <= '0';
+				wait for 100 ns;
 				wait for 10 ns;
-				--res <= '1';
 				
 				wait for 1 ms;
 
