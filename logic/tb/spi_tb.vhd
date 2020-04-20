@@ -109,16 +109,18 @@ architecture t_behaviour of spi_tb is
 				res <= '1';
 				--i_data_uart <= x"AB";
 				
-				transaction <= Write;	
-				data <= x"AABBCC";	
+				transaction <= Read;	
+				data <= (others => 'Z');
 				en <= '1';
 				address <= x"01";
+				in_spi.miso <= '0';
 				wait for 10 ns;
 				en <= '0';
 				res <= '1';
-				wait for 95 ns;
+				wait for 440 ns;
+				in_spi.miso <= '1';
 				--data <= (others  => 'Z');	
-				transaction <= Read;	
+					
 		
 				wait for 10 ns;
 				wait for 10 ns;

@@ -84,7 +84,9 @@ begin
 						cnt := period-1;
 						shift_reg := (others => '0');
 						bit_cnt := 0;
-						io_data <= (others => 'Z');
+						if i_transaction = Write then
+							io_data <= (others => 'Z');
+						end if;
 					else
 						if cnt = half  then 
 							o_spi.sck <= '0';
@@ -94,6 +96,8 @@ begin
 									
 									if i_transaction = Read then
 										shift_reg := (others  => '0');
+										shift_reg(7) := i_spi.miso; 
+										o_spi.mosi <= '1';	
 									elsif i_transaction = Write then
 										shift_reg := unsigned(io_data);	 
 									end if;
