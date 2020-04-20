@@ -19,6 +19,10 @@ int main(int argc, char *argv[])
 
     QObject::connect(&w, &Widget::sendToHardware,
                      &comm, &Communication::addToSendQueue);
+
+    QObject::connect(&comm, &Communication::passFlashData,
+                     &w, &Widget::displayFlash);
+
     comm.start();
     return a.exec();
 }

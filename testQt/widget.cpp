@@ -4,10 +4,16 @@
 #include "communication.h"
 #include "data_types.h"
 
-
 unsigned int const MainClockFreq = 1000000;
 
 using namespace QtCharts;
+
+const QStringList flashParamsMess ={
+    "Plynomial parameter 0: ",
+    "Plynomial parameter 1: ",
+    "Plynomial parameter 2: ",
+    "Plynomial parameter 3: "
+};
 
 QString const labelText = "Current Voltage: ";
 
@@ -21,8 +27,8 @@ Widget::Widget(QWidget *parent)
 
     QWidget * triggerWidget = new QWidget;
     QHBoxLayout *interfaceLayout = new QHBoxLayout;
-
     triggerWidget->setLayout(interfaceLayout);
+
 
 
     this->setLayout(layout);
@@ -34,7 +40,7 @@ Widget::Widget(QWidget *parent)
 
     chartView->setChart(createChart());
     layout->addWidget(functionsTabs);
-    layout->addWidget(chartView);
+
     layout->addWidget(label);
 
 
@@ -63,11 +69,68 @@ Widget::Widget(QWidget *parent)
     interfaceLayout->addWidget(percent);
     interfaceLayout->addWidget(startButton);
     startButton->setCheckable(true);
+
+
+    QWidget * flashWidget = new QWidget;
+    QVBoxLayout *flashLayout = new QVBoxLayout;
+    flashWidget->setLayout(flashLayout);
+    auto titleFlash = new QLabel("Manage flash: ");
+    flashLayout->addWidget(titleFlash);
+
+    valInput = new QLineEdit();
+    valInput->setInputMask("HHHHHH;");
+
+    parameterList = new QComboBox();
+    QStringList params = { "poly_par 0", "poly_par 1", "poly_par 2" , "poly_par 3"};
+    parameterList->addItems(params);
+    QPushButton * saveFlash= new QPushButton("save to flash");
+
+    QObject::connect(saveFlash, &QPushButton::clicked,
+                     this, &Widget::sendDataToFlash);
+
+    parLabels[0] = new QLabel(flashParamsMess[0]);
+    parLabels[1] = new QLabel(flashParamsMess[1]);
+    parLabels[2] = new QLabel(flashParamsMess[2]);
+    parLabels[3] = new QLabel(flashParamsMess[3]);
+    QPushButton * loadFlash= new QPushButton("load from flash");
+    flashLayout->addWidget(parameterList);
+    flashLayout->addWidget(valInput);
+    flashLayout->addWidget(saveFlash);
+    flashLayout->addWidget(parLabels[0]);
+    flashLayout->addWidget(parLabels[1]);
+    flashLayout->addWidget(parLabels[2]);
+    flashLayout->addWidget(parLabels[3]);
+    flashLayout->addWidget(loadFlash);
+
+    QWidget * blcdWidget = new QWidget;
+    QVBoxLayout *blcdLayout = new QVBoxLayout;
+    blcdWidget->setLayout(blcdLayout);
+    auto titleBlcd = new QLabel("Manage BLCD motor: ");
+    blcdLayout->addWidget(titleBlcd);
+
+    sliderSpeed = new QSlider();
+    sliderSpeed->setRange(1, 100);
+    blcdLayout->addWidget(sliderSpeed);
+    sliderSpeed->setOrientation(Qt::Horizontal);
+
+    sliderForce = new QSlider();
+    sliderSpeed->setRange(1, 100);
+    blcdLayout->addWidget(sliderForce);
+    sliderForce->setOrientation(Qt::Horizontal);
+
+    QWidget * triggAndChartWidget = new QWidget;
+    QVBoxLayout *layoutTCW = new QVBoxLayout;
+    triggAndChartWidget->setLayout(layoutTCW);
+    layoutTCW->addWidget(triggerWidget);
+    layoutTCW->addWidget(chartView);
+
     QObject::connect(startButton, &QPushButton::clicked,
                      this, &Widget::startMeasurement);
 
-    functionsTabs->addTab(triggerWidget, "Waveform");
-    functionsTabs->setMaximumHeight(80);
+    functionsTabs->addTab(triggAndChartWidget, "Waveform");
+    functionsTabs->addTab(flashWidget, "Flash");
+    functionsTabs->addTab(blcdWidget, "Motor");
+    triggerWidget->setMaximumHeight(80);
 }
 
 void
@@ -83,6 +146,47 @@ Widget::serialProblem()
     msgBox.exec();
 }
 
+void
+Widget::displayFlash(FlashData const * _value)
+{
+     auto idx = _value->address /3;
+     unsigned int value = (unsigned int)_value->data[0] +
+    (((unsigned int)_value->data[1])<<8) +
+    (((unsigned int)_value->data[1])<<16);
+    QString  valText = QString().arg(value, 6, 16);
+    parLabels[idx]->setText( flashParamsMess[idx] + valText);
+}
+
+void
+Widget::requestDataFromFlash()
+{
+    for (int i = 0;i<4;i++)
+    {
+        sendBuff[0] = (unsigned  char)CommandCodes::GetFlash;
+        sendBuff[1] = i*3;
+        emit sendToHardware(sendBuff, 2);
+    }
+}
+
+void
+Widget::sendDataToFlash()
+{
+    QString valueText = valInput->text();
+
+    bool bStatus = false;
+    unsigned int val = valueText.toUInt(&bStatus,16);
+
+    unsigned  char index = parameterList->currentIndex();
+
+     sendBuff[0] = (unsigned  char)CommandCodes::LoadFlash;
+     sendBuff[1] = index*3;
+     sendBuff[2] = val & 0xff;
+     sendBuff[3] = (val  >> 8) & 0xff;
+     sendBuff[4] = val  >> 16;
+
+     emit sendToHardware(sendBuff, 5);
+
+}
 
 void
 Widget::startMeasurement(bool _checked)
@@ -92,7 +196,7 @@ Widget::startMeasurement(bool _checked)
     {
         startButton->setText("Start");
 
-        sendBuff[0] = StopOpCode;
+        sendBuff[0] = (unsigned  char)CommandCodes::StopOpCodeTermistor;
 
         emit sendToHardware(sendBuff, 1);
 
@@ -106,7 +210,7 @@ Widget::startMeasurement(bool _checked)
         freq = MainClockFreq/frequency->value();
         pulse = (pulseWidth->value()* freq)/100;
 
-        sendBuff[0] = TriggerOpCode;
+        sendBuff[0] = (unsigned  char)CommandCodes::TriggerOpCodeTermistor;
         sendBuff[1] = freq >> 8;
         sendBuff[2] = freq  & 0xff;
         sendBuff[3] = pulse  >> 8;

@@ -6,6 +6,8 @@
 
 
 struct Measurement;
+struct FlashData;
+enum class DataCodes { termistor = 0, flash = 1};
 
 
 class Communication : public QThread
@@ -18,6 +20,8 @@ public:
 
 signals:
     void passMeasurement(Measurement const * _measurement);
+    void passFlashData(FlashData const * _flashData);
+
     void noSerial();
 public slots:
     void addToSendQueue(unsigned char * _data, unsigned  _size);

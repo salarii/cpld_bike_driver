@@ -15,11 +15,8 @@ Communication::~Communication()
 }
 
 
-
-
 void Communication::run()
 {
-    int const oneGoBytes =5;
     float  dest = 0.0;
     HANDLE h;
     try {
@@ -27,9 +24,10 @@ void Communication::run()
 
 
         unsigned char readbuffer[10];
-        int index = 0;
+
 
         Measurement measurement;
+        FlashData flashData;
         forever {
             mutex.lock();
 
@@ -37,28 +35,52 @@ void Communication::run()
             messages.clear();
             mutex.unlock();
 
-            int bytesRead = readFromSerialPort(h,readbuffer+index,8);
+            int bytesRead = readFromSerialPort(h,readbuffer,1);
             if (bytesRead  == 0 )
                 continue;
 
-            if (bytesRead < oneGoBytes)
+            int bytesToRead = readbuffer[0];
+            int index = 0;
+            while (bytesToRead)
             {
-                index += bytesRead;
+                int bytesRead = readFromSerialPort(h,readbuffer+index,bytesToRead);
+                if (bytesRead  == 0 )
+                    continue;
+                if (bytesRead < bytesToRead)
+                {
+                    index += bytesRead;
+                    bytesToRead -= bytesRead;
+                }
+
             }
-            if (index >= oneGoBytes)
+
+            if (readbuffer[0] == (unsigned char)DataCodes::termistor )
             {
-                index =0;
+                int shift8 = 8;
+                float voltage = (readbuffer[1] << shift8)+
+                            readbuffer[2];
+                voltage *=(2.048/32768.0);
+                int time = (readbuffer[3] << shift8)+
+                            readbuffer[4];
+                measurement.temperature = readbuffer[5];
+                measurement.voltage = voltage;
+                measurement.time = time;
+                emit  passMeasurement(&measurement);
+
+
+
             }
-            int shift8 = 8;
-            float voltage = (readbuffer[0] << shift8)+
-                        readbuffer[1];
-            voltage *=(2.048/32768.0);
-            int time = (readbuffer[2] << shift8)+
-                        readbuffer[3];
-            measurement.temperature = readbuffer[4];
-            measurement.voltage = voltage;
-            measurement.time = time;
-            emit  passMeasurement(&measurement);
+            else if(readbuffer[0] == (unsigned char)DataCodes::flash )
+            {
+                flashData.data.clear();
+                flashData.address = readbuffer[1];
+
+                flashData.data.push_back(readbuffer[2]);
+                flashData.data.push_back(readbuffer[3]);
+                flashData.data.push_back(readbuffer[4]);
+
+                emit  passFlashData(&flashData);
+            }
 
 
         }

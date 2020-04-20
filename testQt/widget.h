@@ -8,10 +8,12 @@
 #include <QLabel>
 #include <QSpinBox>
 #include <QPushButton>
-
+#include <QSlider>
+#include <QComboBox>
 
 struct Measurement;
-
+struct FlashData;
+const unsigned char  polyBase = 0x0;
 
 class Widget : public QWidget
 {
@@ -26,6 +28,9 @@ signals:
 
 
 public slots:
+    void sendDataToFlash();
+    void requestDataFromFlash();
+    void displayFlash(FlashData const * _value);
     void serviceMeasurement(Measurement const * _value);
     void startMeasurement(bool _checked);
     void serialProblem();
@@ -35,9 +40,14 @@ private:
     QLineSeries* series;
     QChartView * chartView;
     QLabel * label;
+    QLabel * parLabels[4];
     QSpinBox * pulseWidth;
     QSpinBox * frequency;
     QPushButton * startButton;
+    QSlider * sliderSpeed;
+    QSlider * sliderForce;
+    QComboBox *  parameterList;
+    QLineEdit * valInput;
     unsigned char * sendBuff;
 
     float idx;
