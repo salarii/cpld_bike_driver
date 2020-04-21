@@ -11,15 +11,13 @@ type type_uart_dev_status is record
 end record;
 
 
-type type_uart_device (flash_uart_dev, termistor_uart_dev);
+type type_uart_device is (flash_uart_dev, termistor_uart_dev);
 
 function parity_check(data: in std_logic_vector(7 downto 0); size : in integer) return std_logic;
 
 function uart_take(status: in type_uart_dev_status; dev : in type_uart_device) return boolean;
 
 function uart_any_taken(status: in type_uart_dev_status) return boolean;
-
-procedure uart_free(status: in type_uart_dev_status);
 
 
 end package;
@@ -43,34 +41,21 @@ begin
 end parity_check;
 
 function uart_take(status: in type_uart_dev_status; dev : in type_uart_device) return boolean is
-
+		
 begin
-	if ( status.flash  or status.termistor ) = False  then
-		if dev = flash_uart_dev then
-			status.flash = True;
-		elsif  dev = termistor_uart_dev  then
-			status.termistor = True;
-		end if;
-		
-		return True;
-		
-	else
-		return (dev = flash_uart_dev and status.flash = True ) or ( dev = termistor_uart_dev and status.termistor = True)
-	end if; 
+
+		return (dev = flash_uart_dev and status.flash = True ) or
+			   ( dev = termistor_uart_dev and status.termistor = True) or
+			    (( status.flash  or status.termistor ) = False);
+	
 	
 end uart_take;
 
 function uart_any_taken(status: in type_uart_dev_status) return boolean is
 begin 
-	return ( status.flash  or status.termistor )
+	return ( status.flash  or status.termistor );
 end uart_any_taken;
 
 
-procedure uart_free(status: in type_uart_dev_status)  is
-begin
-	status.flash = False;
-	status.termistor = False;
-
-end uart_free;
 
 end  functions;

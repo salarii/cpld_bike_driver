@@ -83,7 +83,6 @@ architecture behaviour of control_unit is
 					i_transaction : in transaction_type;
 					i_enable : in std_logic;
 					i_spi : in type_to_spi;
-					i_stall : in std_logic;
 					
 					
 					o_received : out std_logic;
@@ -175,15 +174,21 @@ begin
 		
 		type type_i2c_operations is ( i2c_index, i2c_data_H, i2c_data_L );
 		
-		type type_user_commands is (no_command,trigger_unit_step_setup, command_active, flash_save, flash_load );
+		type type_user_commands is (no_command,wave_and_termistor,  flash_write, flash_read );
+		
 		type type_init_trigger_phase is ( unit_step_freq_h,unit_step_freq_l, unit_step_pulse_h,unit_step_pulse_l);
 		
-		type type_flash_write is ( get_flash_write_addr, get_flash_write_byte2, , get_flash_write_byte1, , get_flash_write_byte0, execute_flash_write );
+		type type_flash_write_state is ( get_flash_write_addr, get_flash_write_byte2, get_flash_write_byte1, get_flash_write_byte0, execute_flash_write );
+		type type_flash_read_state is ( get_flash_read_addr, execute_flash_read,progress_flash_read, read_flash_done, send_flash_data );
+				
+		constant stop_command : unsigned(7 downto 0) := x"00";
+		constant measure_command : unsigned(7 downto 0) := x"01";		
+		constant flash_save_command : unsigned(7 downto 0) := x"02";		
+		constant flash_load_command : unsigned(7 downto 0) := x"03";
 		
-		constant stopCommand : unsigned(7 downto 0) := x"00";
-		constant measureCommand : unsigned(7 downto 0) := x"01";		
-		constant flashSaveCommand : unsigned(7 downto 0) := x"02";		
-		constant flashLoadCommand : unsigned(7 downto 0) := x"03";
+		constant flash_data_code : unsigned(7 downto 0) := x"03";
+		constant termistor_data_code : unsigned(7 downto 0) := x"03";
+		
 		
 		constant config_register_h : unsigned(7 downto 0) := "01000100";
 		constant config_register_l : unsigned(7 downto 0) := "01100011";
@@ -194,6 +199,8 @@ begin
 		variable i2c_state : type_i2c_operations := i2c_index;
 		variable enable_pc_write : std_logic;
 		
+		variable flash_read_state : type_flash_read_state;
+		variable flash_write_state : type_flash_write_state; 
 		variable user_command : type_user_commands := no_command;
 		variable trigger_phase : type_init_trigger_phase;
 		
@@ -217,34 +224,84 @@ begin
 				user_command := no_command;	
 		else
 
-				if user_command = flash_save then
+				if user_command = flash_write then
+					
+					if flash_write_state = execute_flash_write then
+						en_flash <= '1';
+						transaction_flash <= Write;
+						if busy_flash = '1' then
+							en_flash <= '0';
+							user_command := no_command;
+						end if;
+					end if;
+									
+				elsif user_command = flash_read then								
+					if flash_read_state = execute_flash_read  then
+						if busy_flash = '0' then
+							en_flash <= '1';
+							transaction_flash <= Read;
+							flash_read_state := progress_flash_read;
+						elsif busy_flash = '1' then
+							en_flash <= '0';
+							
+						end if;	
+							
+					elsif flash_read_state = progress_flash_read then
+						if received_flash = '1' then
+							flash_read_state := send_flash_data;
+							val_cnt := 0;
+						end if;
+					elsif flash_read_state = send_flash_data then
+					
+						if i_busy_uart = '0' and
+						   uart_take(uart_dev_status, flash_uart_dev) = true  then
+							uart_dev_status.flash := True;
+							case val_cnt is
+							  when 0 =>   o_to_uart <= x"05"; -- size
+							  when 1 =>   o_to_uart <= std_logic_vector(flash_data_code);
+							  when 2 =>   o_to_uart <= std_logic_vector(address_flash);
+							  when 3 =>   o_to_uart <= std_logic_vector(data_flash(23 downto 16));
+							  when 4 =>   o_to_uart <= std_logic_vector(data_flash(15 downto 8));
+							  when 5 =>   o_to_uart <= std_logic_vector(data_flash(7 downto 0));
+							  when others => o_to_uart <=  (others=>'Z');
+							end case;
+						
+							if val_cnt = 6 then
+								uart_dev_status.flash := False;
+								user_command := no_command; 
+							else
 								
-									
-				elsif user_command = flash_load then								
-		
-									
+								val_cnt := val_cnt + 1;
+							end if;
+							
+								
+						end if;								
+					end if;
+					
 				end if;
 	
 				if 	i_received_uart = '1' then
 						blink_1 <= '0';
 					if user_command = no_command then 
 							
-						if i_from_uart = measureCommand then
+						if i_from_uart = std_logic_vector(measure_command) then
 								blink_2 <= '0';
-								user_command := trigger_unit_step_setup;
+								user_command := wave_and_termistor;
 								trigger_phase := unit_step_freq_h;
-						elsif i_from_uart = flashSaveCommand then
-								user_command := flash_save; 
-						elsif i_from_uart = flashLoadCommand then
-								user_command := flash_load;
+						elsif i_from_uart = std_logic_vector(flash_save_command) then
+								user_command := flash_write; 
+								flash_write_state := get_flash_write_addr;
+						elsif i_from_uart = std_logic_vector(flash_load_command) then
+								user_command := flash_read;
+								flash_read_state := get_flash_read_addr;
 						end if;
 					else	
 							
-						if i_from_uart = stopCommand and user_command = command_active then 
+						if i_from_uart = std_logic_vector(stop_command) then 
 								stop_trigger <= '1';
 								user_command := no_command;
 						else
-							if user_command = trigger_unit_step_setup then
+							if user_command = wave_and_termistor then
 							
 								if trigger_phase = unit_step_freq_h then
 							
@@ -263,23 +320,28 @@ begin
 									pulse_trigger(7 downto 0) <= unsigned(i_from_uart);					
 										
 									en_trigger <= '1';
-									user_command := command_active;
 								end if;
-							elsif  then
-								if  then
-							data_flash	 period_trigger(15 downto 8) <= unsigned(i_from_uart);
 								
-								elsif then
-								elsif then
-									elsif then
-									end if;
+							elsif user_command = flash_write then
+								if flash_write_state = get_flash_write_addr then
+									address_flash <= i_from_uart;
+									flash_write_state := get_flash_write_byte2;
+								elsif flash_write_state = get_flash_write_byte2 then
+									data_flash(23 downto 16) <= i_from_uart;
+									flash_write_state := get_flash_write_byte1;
+								elsif flash_write_state = get_flash_write_byte1 then
+									data_flash(15 downto 8) <= i_from_uart;
+									flash_write_state := get_flash_write_byte0;
+								elsif flash_write_state = get_flash_write_byte0 then
+									data_flash(7 downto 0) <= i_from_uart;
+									flash_write_state := execute_flash_write;
+								end if;
 						
-	get_flash_write_addr, get_flash_write_byte2, , get_flash_write_byte1, , get_flash_write_byte0, execute_flash_write
-			signal data_flash : std_logic_vector(23 downto 0);
-		signal address_flash
-	
-	
-	
+							elsif user_command = flash_read then
+								if flash_read_state = get_flash_read_addr then
+									address_flash <= i_from_uart;
+									flash_read_state := execute_flash_read;
+								end if;
 							end if;
 						end if;
 	
@@ -378,6 +440,8 @@ begin
 					   uart_take(uart_dev_status, termistor_uart_dev) = true and
 					   enable_pc_write = '1' then
 						
+						uart_dev_status.termistor := True;
+						
 						case val_cnt is
 						  when 0 =>   o_to_uart <= data(15 downto 8);
 						  when 1 =>   o_to_uart <= data(7 downto 0);
@@ -388,7 +452,7 @@ begin
 						end case;
 					
 						if val_cnt = 5 then
-							uart_free(uart_dev_status); 
+							uart_dev_status.termistor := False; 
 							val_cnt := 0;
 							state := Standby;
 						else

@@ -6,5 +6,5 @@ ghdl -a --workdir=build flash_controller.vhd
 ghdl -a --workdir=build ./tb/temp_tb.vhd ./tb/poly_tb.vhd ./tb/uart_tb.vhd
 ghdl -a --workdir=build ./tb/motor_driver_tb.vhd ./tb/spi_tb.vhd
 ghdl -e --workdir=build spi_tb
-ghdl -r spi_tb --vcd=func.vcd  --stop-time=1us --ieee-asserts=disable-at-0
-gtkwave func.vcd
+#ghdl -r spi_tb --vcd=func.vcd  --stop-time=1us --ieee-asserts=disable-at-0
+#gtkwave func.vcd
