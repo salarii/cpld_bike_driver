@@ -5,6 +5,9 @@ use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
 use std.textio.all;
 use work.interface_data.all;
+use work.functions.all;
+		
+
 
 entity control_unit is
 	generic (CONSTANT period : integer := 1000000);
@@ -13,11 +16,15 @@ entity control_unit is
 		clk : in  std_logic;
 		res : in  std_logic;
 		
+		i_spi : in type_to_spi;
+		o_spi : out type_from_spi;
+
 
 		i_from_i2c : in type_from_i2c;
 		i2c_bus : inout std_logic_vector(7 downto 0);
 		o_to_i2c : out type_to_i2c;
-				
+			
+					
 		i_busy_uart : in std_logic;
 		i_from_uart : in std_logic_vector(7 downto 0);
 		i_received_uart : in std_logic;
@@ -61,6 +68,31 @@ architecture behaviour of control_unit is
 				);
 		end component;
 
+		component flash_controller is
+			generic ( 
+				freq : integer;
+				bound : integer
+				);
+				
+			port(
+					res : in std_logic;		
+					clk : in std_logic;	
+					
+					io_data : inout std_logic_vector(23 downto 0);
+					i_address : in std_logic_vector(7 downto 0);
+					i_transaction : in transaction_type;
+					i_enable : in std_logic;
+					i_spi : in type_to_spi;
+					i_stall : in std_logic;
+					
+					
+					o_received : out std_logic;
+					o_spi : out type_from_spi;
+					o_busy	: out std_logic
+				);
+		end component flash_controller;
+
+
 		signal data : std_logic_vector(15 downto 0);	
 		signal enable_uart  : std_logic;
 		
@@ -76,7 +108,15 @@ architecture behaviour of control_unit is
 		signal time_trigger : unsigned(15  downto 0);
 		signal period_trigger : unsigned(15 downto 0);
 		signal pulse_trigger : unsigned(15 downto 0);	
-		signal stop_trigger : std_logic;	
+		signal stop_trigger : std_logic;
+		
+		
+		signal data_flash : std_logic_vector(23 downto 0);
+		signal address_flash : std_logic_vector(7 downto 0);
+		signal busy_flash : std_logic;
+		signal en_flash : std_logic;
+		signal received_flash : std_logic;	
+		signal transaction_flash : transaction_type;
 begin	
 	o_to_i2c.address <= "1001000";
 	
@@ -107,13 +147,43 @@ begin
 		);
 
 	
+		flash_function : flash_controller
+			generic map ( 
+		 	freq => 1000000,
+			bound => 100000 )
+				
+			port map(
+					res => res,		
+					clk => clk,
+					 
+					io_data => data_flash,
+					i_address => address_flash,
+					i_transaction => transaction_flash,
+					i_enable => en_flash,
+					i_spi => i_spi,
+						
+					o_received => received_flash,
+					o_spi => o_spi,
+					o_busy => busy_flash
+				);
+	
+	
 	process(clk)
+		variable uart_sized : boolean := False; 
+	
 		type state_type is (Setup, Index_Read,Standby, Cycle, Empty);
 		
 		type type_i2c_operations is ( i2c_index, i2c_data_H, i2c_data_L );
 		
-		type type_user_commands is (no_command,trigger_unit_step_setup, command_active );
+		type type_user_commands is (no_command,trigger_unit_step_setup, command_active, flash_save, flash_load );
 		type type_init_trigger_phase is ( unit_step_freq_h,unit_step_freq_l, unit_step_pulse_h,unit_step_pulse_l);
+		
+		type type_flash_write is ( get_flash_write_addr, get_flash_write_byte2, , get_flash_write_byte1, , get_flash_write_byte0, execute_flash_write );
+		
+		constant stopCommand : unsigned(7 downto 0) := x"00";
+		constant measureCommand : unsigned(7 downto 0) := x"01";		
+		constant flashSaveCommand : unsigned(7 downto 0) := x"02";		
+		constant flashLoadCommand : unsigned(7 downto 0) := x"03";
 		
 		constant config_register_h : unsigned(7 downto 0) := "01000100";
 		constant config_register_l : unsigned(7 downto 0) := "01100011";
@@ -126,6 +196,8 @@ begin
 		
 		variable user_command : type_user_commands := no_command;
 		variable trigger_phase : type_init_trigger_phase;
+		
+		variable uart_dev_status : type_uart_dev_status;
 	begin
 		leds(0) <= blink_1;
 		leds(1) <= blink_2;	
@@ -144,6 +216,88 @@ begin
 				blink_2  <= '1';
 				user_command := no_command;	
 		else
+
+				if user_command = flash_save then
+								
+									
+				elsif user_command = flash_load then								
+		
+									
+				end if;
+	
+				if 	i_received_uart = '1' then
+						blink_1 <= '0';
+					if user_command = no_command then 
+							
+						if i_from_uart = measureCommand then
+								blink_2 <= '0';
+								user_command := trigger_unit_step_setup;
+								trigger_phase := unit_step_freq_h;
+						elsif i_from_uart = flashSaveCommand then
+								user_command := flash_save; 
+						elsif i_from_uart = flashLoadCommand then
+								user_command := flash_load;
+						end if;
+					else	
+							
+						if i_from_uart = stopCommand and user_command = command_active then 
+								stop_trigger <= '1';
+								user_command := no_command;
+						else
+							if user_command = trigger_unit_step_setup then
+							
+								if trigger_phase = unit_step_freq_h then
+							
+									period_trigger(15 downto 8) <= unsigned(i_from_uart);
+									trigger_phase := unit_step_freq_l;
+								elsif trigger_phase = unit_step_freq_l then
+							
+									period_trigger(7 downto 0) <= unsigned(i_from_uart);
+									trigger_phase := unit_step_pulse_h;
+								elsif trigger_phase = unit_step_pulse_h then
+									pulse_trigger(15 downto 8) <= unsigned(i_from_uart);					
+										
+									trigger_phase := unit_step_pulse_l;
+								elsif trigger_phase = unit_step_pulse_l then
+							
+									pulse_trigger(7 downto 0) <= unsigned(i_from_uart);					
+										
+									en_trigger <= '1';
+									user_command := command_active;
+								end if;
+							elsif  then
+								if  then
+							data_flash	 period_trigger(15 downto 8) <= unsigned(i_from_uart);
+								
+								elsif then
+								elsif then
+									elsif then
+									end if;
+						
+	get_flash_write_addr, get_flash_write_byte2, , get_flash_write_byte1, , get_flash_write_byte0, execute_flash_write
+			signal data_flash : std_logic_vector(23 downto 0);
+		signal address_flash
+	
+	
+	
+							end if;
+						end if;
+	
+					end if;
+	
+				end if;
+
+
+				if i_busy_uart = '0' and
+				   uart_any_taken(uart_dev_status) = True then
+
+				   enable_uart <= '1';	
+				else
+				   enable_uart <= '0';
+							
+				end if;
+
+
 
 				if  state = Setup then
 					
@@ -221,7 +375,7 @@ begin
 					
 					
 					if i_busy_uart = '0' and
-					   enable_uart = '0' and
+					   uart_take(uart_dev_status, termistor_uart_dev) = true and
 					   enable_pc_write = '1' then
 						
 						case val_cnt is
@@ -234,18 +388,14 @@ begin
 						end case;
 					
 						if val_cnt = 5 then
-							
-							
+							uart_free(uart_dev_status); 
 							val_cnt := 0;
 							state := Standby;
 						else
 							
 							val_cnt := val_cnt + 1;
-							enable_uart <= '1';
 						end if;
 						
-					else
-						enable_uart <= '0';
 							
 					end if;
 					
@@ -285,52 +435,7 @@ begin
 				if stop_trigger <= '1' then
 					stop_trigger <= '0';
 				end if;
-							
-				if 	i_received_uart = '1' then
-					blink_1 <= '0';
-					if user_command = no_command then 
-						
-						if i_from_uart = x"01" then
-							blink_2 <= '0';
-							user_command := trigger_unit_step_setup;
-							trigger_phase := unit_step_freq_h;
-							
-						end if;
-					else	
-						
-						if i_from_uart = x"00" and user_command = command_active then 
-							stop_trigger <= '1';
-							user_command := no_command;
-						else
-							if user_command = trigger_unit_step_setup then
-						
-								if trigger_phase = unit_step_freq_h then
-						
-									period_trigger(15 downto 8) <= unsigned(i_from_uart);
-									trigger_phase := unit_step_freq_l;
-								elsif trigger_phase = unit_step_freq_l then
-						
-									period_trigger(7 downto 0) <= unsigned(i_from_uart);
-									trigger_phase := unit_step_pulse_h;
-								elsif trigger_phase = unit_step_pulse_h then
-									pulse_trigger(15 downto 8) <= unsigned(i_from_uart);					
-									
-									trigger_phase := unit_step_pulse_l;
-								elsif trigger_phase = unit_step_pulse_l then
-						
-									pulse_trigger(7 downto 0) <= unsigned(i_from_uart);					
-									
-									en_trigger <= '1';
-									user_command := command_active;
-								end if;
-							end if;
-						end if;
-
-					end if;
-
-				end if;
-
-		 	
+			
 					
 			end if;
 

@@ -24,7 +24,6 @@ architecture t_behaviour of spi_tb is
 				i_transaction : in transaction_type;
 				i_enable : in std_logic;
 				i_spi : in type_to_spi;
-				i_stall : in std_logic;
 					
 				o_spi : out type_from_spi;
 				o_received : out std_logic;
@@ -46,7 +45,6 @@ architecture t_behaviour of spi_tb is
 				i_spi : in type_to_spi;
 				i_transaction : transaction_type;
 				i_enable : in std_logic;
-				i_stall : in std_logic;
 				
 				o_spi : out type_from_spi;
 				o_received : out std_logic;
@@ -63,7 +61,6 @@ architecture t_behaviour of spi_tb is
 		signal en : std_logic;
 		signal received : std_logic;	
 		signal transaction : transaction_type;
-		signal stall : std_logic;
 		signal in_spi : type_to_spi;
 		signal out_spi : type_from_spi;
 		
@@ -94,7 +91,6 @@ architecture t_behaviour of spi_tb is
 					i_transaction => transaction,
 					i_enable => en,
 					i_spi => in_spi,
-					i_stall => stall,
 						
 					o_received => received,
 					o_spi => out_spi,

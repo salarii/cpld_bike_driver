@@ -19,7 +19,6 @@ entity spi is
 			i_spi : in type_to_spi;
 			i_transaction : transaction_type;
 			i_enable : in std_logic;
-			i_stall : in std_logic;
 			
 			o_spi : out type_from_spi;
 			o_received : out std_logic;
