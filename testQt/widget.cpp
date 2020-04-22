@@ -93,6 +93,9 @@ Widget::Widget(QWidget *parent)
     parLabels[2] = new QLabel(flashParamsMess[2]);
     parLabels[3] = new QLabel(flashParamsMess[3]);
     QPushButton * loadFlash= new QPushButton("load from flash");
+    QObject::connect(loadFlash, &QPushButton::clicked,
+                     this, &Widget::requestDataFromFlash);
+
     flashLayout->addWidget(parameterList);
     flashLayout->addWidget(valInput);
     flashLayout->addWidget(saveFlash);
@@ -153,19 +156,18 @@ Widget::displayFlash(FlashData const * _value)
      unsigned int value = (unsigned int)_value->data[0] +
     (((unsigned int)_value->data[1])<<8) +
     (((unsigned int)_value->data[1])<<16);
-    QString  valText = QString().arg(value, 6, 16);
+    QString  valText = QString().number(value, 16);
     parLabels[idx]->setText( flashParamsMess[idx] + valText);
 }
 
 void
 Widget::requestDataFromFlash()
 {
-    for (int i = 0;i<4;i++)
-    {
+    unsigned  char index = parameterList->currentIndex();
         sendBuff[0] = (unsigned  char)CommandCodes::GetFlash;
-        sendBuff[1] = i*3;
+        sendBuff[1] = index*3;
         emit sendToHardware(sendBuff, 2);
-    }
+
 }
 
 void

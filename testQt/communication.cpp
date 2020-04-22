@@ -30,8 +30,10 @@ void Communication::run()
         FlashData flashData;
         forever {
             mutex.lock();
-
-            writeToSerialPort(h,messages.constData(), messages.size());
+            if ( messages.size() > 0 )
+            {
+                writeToSerialPort(h,messages.constData(), messages.size());
+            }
             messages.clear();
             mutex.unlock();
 
@@ -40,6 +42,16 @@ void Communication::run()
                 continue;
 
             int bytesToRead = readbuffer[0];
+            if ( bytesToRead > 10 || bytesToRead < 1 )
+            {
+                readFromSerialPort(h,readbuffer,3);
+                printf("problem");
+
+            }
+if(bytesToRead == 5)
+{
+ printf("problem");
+}
             int index = 0;
             while (bytesToRead)
             {
@@ -50,6 +62,10 @@ void Communication::run()
                 {
                     index += bytesRead;
                     bytesToRead -= bytesRead;
+                }
+                else
+                {
+                    break;
                 }
 
             }

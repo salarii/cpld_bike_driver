@@ -85,9 +85,9 @@ begin
 
 process(clk)
 							
-		constant enter_write_cycle : unsigned(7 downto 0) := x"01";
-		constant read_command : unsigned(7 downto 0) := x"02";
-		constant write_command : unsigned(7 downto 0) := x"03";
+		constant enter_write_cycle : unsigned(7 downto 0) := x"06";
+		constant read_command : unsigned(7 downto 0) := x"03";
+		constant write_command : unsigned(7 downto 0) := x"02";
 		
 		type type_flash_operation is (no_flash_operation, flash_write, flash_read);
 		type type_write_flash is (write_idle , write_enable, write_code, write_address, write_data, write_conclude);

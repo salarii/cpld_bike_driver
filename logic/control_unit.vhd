@@ -244,15 +244,17 @@ begin
 							en_flash <= '1';
 							transaction_flash <= Read;
 							data_flash <= (others => 'Z');
-						
+							blink_1 <= '0';
 						elsif busy_flash = '1' then
+						
 							en_flash <= '0';
 							flash_read_state := progress_flash_read;
-					
+					blink_2 <= '0';
 						end if;	
 							
 					elsif flash_read_state = progress_flash_read then
 						if received_flash = '1' then
+						
 							flash_read_state := send_flash_data;
 							val_cnt := 0;
 							
@@ -266,23 +268,24 @@ begin
 							case val_cnt is
 							  when 0 =>   o_to_uart <= x"05"; -- size
 							  when 1 =>   o_to_uart <= std_logic_vector(flash_data_code);
-							  when 2 =>   o_to_uart <= std_logic_vector(address_flash);
+							  when 2 =>   o_to_uart <= revert_byte(std_logic_vector(address_flash));
 							  when 3 =>   o_to_uart <= std_logic_vector(data_flash(23 downto 16));
 							  when 4 =>   o_to_uart <= std_logic_vector(data_flash(15 downto 8));
 							  when 5 =>   o_to_uart <= std_logic_vector(data_flash(7 downto 0));
 							  when others => o_to_uart <=  (others=>'Z');
 							end case;
 						
-							if val_cnt = 5 then
-								uart_dev_status.flash := False;
-								user_command := no_command; 
-								val_cnt := 0;
-							else
-								if enable_uart = '1' then
+							
+							if enable_uart = '1'  then
 									val_cnt := val_cnt + 1;
-								end if;
 							end if;
 							
+						elsif val_cnt = 6 and 
+								i_busy_uart = '1' and
+								uart_take(uart_dev_status, flash_uart_dev) = true then
+								uart_dev_status.flash := False;
+								user_command := no_command; 
+								val_cnt := 0;	
 								
 						end if;								
 					end if;
@@ -298,11 +301,11 @@ begin
 				end if;
 	
 				if 	i_received_uart = '1' then
-						blink_1 <= '0';
+						
 					if user_command = no_command then 
 							
 						if i_from_uart = std_logic_vector(measure_command) then
-								blink_2 <= '0';
+								
 								user_command := wave_and_termistor;
 								trigger_phase := unit_step_freq_h;
 						elsif i_from_uart = std_logic_vector(flash_write_command) then
@@ -472,17 +475,20 @@ begin
 						  when others => o_to_uart <=  (others=>'Z');
 						end case;
 						report integer'image(val_cnt);
-						if val_cnt = 6 then
-							uart_dev_status.termistor := False; 
-							val_cnt := 0;
-							state := Standby;
-						else
-							if enable_uart = '1' then
+						
+
+		
+						if enable_uart = '1'  then
 								val_cnt := val_cnt + 1;
-							end if;
 						end if;
 						
-							
+						
+					elsif val_cnt = 7 and 
+							i_busy_uart = '1' and
+							uart_take(uart_dev_status, termistor_uart_dev) = true then
+							uart_dev_status.termistor := False; 
+							val_cnt := 0;
+							state := Standby;							
 					end if;
 					
 					
