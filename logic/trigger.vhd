@@ -29,7 +29,7 @@ end trigger;
 architecture behaviour of trigger is
 	signal trigger_internal : std_logic := '0';
 	signal  debug : std_logic;
-	signal current_time : out unsigned(15 downto 0) := (others => '0');
+	signal current_time : unsigned(15 downto 0) := (others => '0');
 begin	
 
 
