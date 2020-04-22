@@ -19,6 +19,7 @@ function uart_take(status: in type_uart_dev_status; dev : in type_uart_device) r
 
 function uart_any_taken(status: in type_uart_dev_status) return boolean;
 
+function revert_byte(byte: in std_logic_vector(7 downto 0) ) return std_logic_vector; 
 
 end package;
 
@@ -55,6 +56,19 @@ function uart_any_taken(status: in type_uart_dev_status) return boolean is
 begin 
 	return ( status.flash  or status.termistor );
 end uart_any_taken;
+
+function revert_byte(byte: in std_logic_vector(7 downto 0) ) return std_logic_vector is
+	variable reverted : std_logic_vector(7 downto 0);
+begin 
+
+	for i in 0 to 7 loop
+										
+		reverted(i) := byte(7 - i);
+								
+	end loop;
+	
+	return reverted;
+end revert_byte;
 
 
 

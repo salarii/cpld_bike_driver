@@ -204,7 +204,7 @@ begin
 		variable user_command : type_user_commands := no_command;
 		variable trigger_phase : type_init_trigger_phase;
 		
-		variable uart_dev_status : type_uart_dev_status;
+		variable uart_dev_status : type_uart_dev_status  := (False,False);
 	begin
 		leds(0) <= blink_1;
 		leds(1) <= blink_2;	
@@ -222,6 +222,7 @@ begin
 				blink_1  <= '1';
 				blink_2  <= '1';
 				user_command := no_command;	
+				uart_dev_status := (False,False);
 		else
 
 				if user_command = flash_write then
@@ -232,6 +233,8 @@ begin
 						if busy_flash = '1' then
 							en_flash <= '0';
 							user_command := no_command;
+							 
+							
 						end if;
 					end if;
 									
@@ -240,21 +243,25 @@ begin
 						if busy_flash = '0' then
 							en_flash <= '1';
 							transaction_flash <= Read;
-							flash_read_state := progress_flash_read;
+							data_flash <= (others => 'Z');
+						
 						elsif busy_flash = '1' then
 							en_flash <= '0';
-							
+							flash_read_state := progress_flash_read;
+					
 						end if;	
 							
 					elsif flash_read_state = progress_flash_read then
 						if received_flash = '1' then
 							flash_read_state := send_flash_data;
 							val_cnt := 0;
+							
 						end if;
 					elsif flash_read_state = send_flash_data then
 					
 						if i_busy_uart = '0' and
 						   uart_take(uart_dev_status, flash_uart_dev) = true  then
+							
 							uart_dev_status.flash := True;
 							case val_cnt is
 							  when 0 =>   o_to_uart <= x"05"; -- size
@@ -266,12 +273,14 @@ begin
 							  when others => o_to_uart <=  (others=>'Z');
 							end case;
 						
-							if val_cnt = 6 then
+							if val_cnt = 5 then
 								uart_dev_status.flash := False;
 								user_command := no_command; 
+								val_cnt := 0;
 							else
-								
-								val_cnt := val_cnt + 1;
+								if enable_uart = '1' then
+									val_cnt := val_cnt + 1;
+								end if;
 							end if;
 							
 								
@@ -280,16 +289,24 @@ begin
 					
 				end if;
 	
+				if en_trigger = '1' then
+				
+					en_trigger <= '0';
+				end if;
+				if stop_trigger <= '1' then
+					stop_trigger <= '0';
+				end if;
+	
 				if 	i_received_uart = '1' then
 						blink_1 <= '0';
 					if user_command = no_command then 
-							report integer'image(0);
+							
 						if i_from_uart = std_logic_vector(measure_command) then
 								blink_2 <= '0';
 								user_command := wave_and_termistor;
 								trigger_phase := unit_step_freq_h;
 						elsif i_from_uart = std_logic_vector(flash_write_command) then
-							report integer'image(1);
+							
 								user_command := flash_write; 
 								flash_write_state := get_flash_write_addr;
 						elsif i_from_uart = std_logic_vector(flash_read_command) then
@@ -324,7 +341,7 @@ begin
 								
 						elsif user_command = flash_write then
 							if flash_write_state = get_flash_write_addr then
-								address_flash <= i_from_uart;									flash_write_state := get_flash_write_byte2;
+								address_flash <= revert_byte(i_from_uart);									flash_write_state := get_flash_write_byte2;
 							elsif flash_write_state = get_flash_write_byte2 then
 								data_flash(23 downto 16) <= i_from_uart;
 								flash_write_state := get_flash_write_byte1;
@@ -338,7 +355,8 @@ begin
 						
 						elsif user_command = flash_read then
 							if flash_read_state = get_flash_read_addr then
-								address_flash <= i_from_uart;
+								
+								address_flash <= revert_byte(i_from_uart);
 								flash_read_state := execute_flash_read;
 							end if;
 						end if;
@@ -348,9 +366,11 @@ begin
 				end if;
 
 
+
+
 				if i_busy_uart = '0' and
 				   uart_any_taken(uart_dev_status) = True then
-
+				
 				   enable_uart <= '1';	
 				else
 				   enable_uart <= '0';
@@ -427,6 +447,7 @@ begin
 						enable_pc_write := '0';
 						i2c_state := i2c_data_H;
 						cnt := period;
+						val_cnt := 0;
 					end if;
 					
 					
@@ -450,14 +471,15 @@ begin
 						  when 6 =>   o_to_uart <= std_logic_vector(poly_temperature);
 						  when others => o_to_uart <=  (others=>'Z');
 						end case;
-					
+						report integer'image(val_cnt);
 						if val_cnt = 6 then
 							uart_dev_status.termistor := False; 
 							val_cnt := 0;
 							state := Standby;
 						else
-							
-							val_cnt := val_cnt + 1;
+							if enable_uart = '1' then
+								val_cnt := val_cnt + 1;
+							end if;
 						end if;
 						
 							
@@ -481,9 +503,9 @@ begin
 						data(7 downto 0) <= i2c_bus;
 						poly_enable <= '1';	
 		
-						
 						poly_val <= unsigned(data);						
-						enable_pc_write := '1';	
+						enable_pc_write := '1';
+							
 					elsif i_from_i2c.busy = '1' then
 						o_to_i2c.enable <= '0';
 					end if;
@@ -491,15 +513,7 @@ begin
 								
 				end if;	
 				cnt := cnt - 1;	
-					
-				if en_trigger = '1' then
 				
-					en_trigger <= '0';
-				end if;
-				if stop_trigger <= '1' then
-					stop_trigger <= '0';
-				end if;
-			
 					
 			end if;
 
