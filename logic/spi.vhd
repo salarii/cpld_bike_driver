@@ -46,7 +46,7 @@ process(clk)
 		variable cnt: integer  range separate downto 0;
 		variable seq : integer  range 15 downto 0;
 		
-		variable bit_cnt : integer  range 11 downto 0;
+		variable bit_cnt : integer  range 15 downto 0;
 				
 		variable shift_reg: unsigned(7 downto 0) := (others => '0');
 	
@@ -137,7 +137,11 @@ begin
 					
 				else
 					io_data <= (others => 'Z');
-					o_spi.ss <= '1';	
+					if cnt = 0 then
+						o_spi.ss <= '1';
+					else
+						cnt := cnt -1;	
+					end if;
 					o_spi.mosi <= '1';
 					o_spi.sck <= '1';
 					busy_internal <= '0';

@@ -16,7 +16,7 @@ struct FlashData
   unsigned char address;
 };
 
-enum class CommandCodes { StopOpCodeTermistor = 0, TriggerOpCodeTermistor = 1,LoadFlash = 2,GetFlash =3 };
+enum class CommandCodes { StopOpCodeTermistor = 0, TriggerOpCodeTermistor = 1,WriteFlash = 2,ReadFlash =3 };
 
 
 #endif // DATA_TYPES_H

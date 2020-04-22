@@ -344,7 +344,8 @@ begin
 								
 						elsif user_command = flash_write then
 							if flash_write_state = get_flash_write_addr then
-								address_flash <= revert_byte(i_from_uart);									flash_write_state := get_flash_write_byte2;
+								address_flash <= revert_byte(i_from_uart);									
+								flash_write_state := get_flash_write_byte2;
 							elsif flash_write_state = get_flash_write_byte2 then
 								data_flash(23 downto 16) <= i_from_uart;
 								flash_write_state := get_flash_write_byte1;

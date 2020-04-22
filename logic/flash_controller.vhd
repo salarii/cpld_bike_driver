@@ -1,3 +1,4 @@
+use work.functions.all;
 use work.interface_data.all;
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -85,9 +86,11 @@ begin
 
 process(clk)
 							
-		constant enter_write_cycle : unsigned(7 downto 0) := x"06";
-		constant read_command : unsigned(7 downto 0) := x"03";
-		constant write_command : unsigned(7 downto 0) := x"02";
+		constant enter_write_cycle : unsigned(7 downto 0) := unsigned(revert_byte(x"06"));
+		constant read_command : unsigned(7 downto 0) := unsigned(revert_byte(x"03"));
+		constant write_command : unsigned(7 downto 0) := unsigned(revert_byte(x"02"));
+		
+		variable  separate : integer range 30 downto 0 := 0;
 		
 		type type_flash_operation is (no_flash_operation, flash_write, flash_read);
 		type type_write_flash is (write_idle , write_enable, write_code, write_address, write_data, write_conclude);
@@ -144,11 +147,16 @@ begin
 								elsif busy_spi = '1' then
 									en_spi <= '0';	
 									write_flash := write_enable;
-									
+									separate := 30;
 								end if;
 							elsif write_flash = write_enable then
 								if busy_spi = '0' then
-									write_flash := write_code;
+									if separate = 0 then
+										write_flash := write_code;
+									else
+										separate := separate - 1;
+									end if;
+									
 								end if;					
 					
 							elsif write_flash = write_code then
@@ -177,7 +185,7 @@ begin
 							elsif write_flash = write_data then							
 								if busy_spi = '0' then
 									data_spi <= io_data(8*(3-cnt)-1 downto 8*(2-cnt));
-									if cnt = 0 then
+									if cnt = 2 then
 										write_flash := write_conclude;
 										en_spi <= '0';
 									else

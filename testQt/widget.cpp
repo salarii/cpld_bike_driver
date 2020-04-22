@@ -153,9 +153,10 @@ void
 Widget::displayFlash(FlashData const * _value)
 {
      auto idx = _value->address /3;
-     unsigned int value = (unsigned int)_value->data[0] +
+idx-=14;
+     unsigned int value = (unsigned int)_value->data[2] +
     (((unsigned int)_value->data[1])<<8) +
-    (((unsigned int)_value->data[1])<<16);
+    (((unsigned int)_value->data[0])<<16);
     QString  valText = QString().number(value, 16);
     parLabels[idx]->setText( flashParamsMess[idx] + valText);
 }
@@ -164,7 +165,8 @@ void
 Widget::requestDataFromFlash()
 {
     unsigned  char index = parameterList->currentIndex();
-        sendBuff[0] = (unsigned  char)CommandCodes::GetFlash;
+    index+=14;
+    sendBuff[0] = (unsigned  char)CommandCodes::ReadFlash;
         sendBuff[1] = index*3;
         emit sendToHardware(sendBuff, 2);
 
@@ -179,13 +181,15 @@ Widget::sendDataToFlash()
     unsigned int val = valueText.toUInt(&bStatus,16);
 
     unsigned  char index = parameterList->currentIndex();
-
-     sendBuff[0] = (unsigned  char)CommandCodes::LoadFlash;
+index+=14;
+     sendBuff[0] = (unsigned  char)CommandCodes::WriteFlash;
      sendBuff[1] = index*3;
-     sendBuff[2] = val & 0xff;
+     sendBuff[2] = val  >> 16;
      sendBuff[3] = (val  >> 8) & 0xff;
-     sendBuff[4] = val  >> 16;
-
+     sendBuff[4] = val & 0xff;
+unsigned  char  triada = sendBuff[2];
+triada = sendBuff[3];
+triada = sendBuff[4];
      emit sendToHardware(sendBuff, 5);
 
 }
