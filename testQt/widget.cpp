@@ -148,12 +148,12 @@ Widget::serialProblem()
     msgBox.addButton("Ok", QMessageBox::AcceptRole);
     msgBox.exec();
 }
-
+int  shift = 30;
 void
 Widget::displayFlash(FlashData const * _value)
 {
      auto idx = _value->address /3;
-idx-=14;
+idx-=shift;
      unsigned int value = (unsigned int)_value->data[2] +
     (((unsigned int)_value->data[1])<<8) +
     (((unsigned int)_value->data[0])<<16);
@@ -165,7 +165,7 @@ void
 Widget::requestDataFromFlash()
 {
     unsigned  char index = parameterList->currentIndex();
-    index+=14;
+    index+=shift;
     sendBuff[0] = (unsigned  char)CommandCodes::ReadFlash;
         sendBuff[1] = index*3;
         emit sendToHardware(sendBuff, 2);
@@ -181,7 +181,7 @@ Widget::sendDataToFlash()
     unsigned int val = valueText.toUInt(&bStatus,16);
 
     unsigned  char index = parameterList->currentIndex();
-index+=14;
+index+=shift;
      sendBuff[0] = (unsigned  char)CommandCodes::WriteFlash;
      sendBuff[1] = index*3;
      sendBuff[2] = val  >> 16;

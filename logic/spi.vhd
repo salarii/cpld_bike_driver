@@ -34,6 +34,9 @@ architecture behaviour of spi is
 	signal bit_cnt_debug  : unsigned(3 downto 0);	
 	signal cycle_cnt_debug  : unsigned(4 downto 0);
 	signal shift_reg_debug  : unsigned(7 downto 0);
+	signal ss : std_logic := '1';
+	signal sck : std_logic := '1';
+	signal mosi : std_logic := '1';
 begin	
 
 
@@ -50,6 +53,8 @@ process(clk)
 				
 		variable shift_reg: unsigned(7 downto 0) := (others => '0');
 	
+	
+
 begin
 		
 
@@ -64,10 +69,10 @@ begin
 				busy_internal <= '0';
 				received_internal <= '0';
 				bit_cnt := 0;
-				o_spi.ss <= '1';
+				ss <= '1';
 				io_data <= (others => 'Z');
-				o_spi.mosi <= '1';
-				o_spi.sck <= '1';
+				mosi <= '1';
+				sck <= '1';
 				shift_reg := (others => '0');
 		else
 				if  received_internal = '1' then
@@ -76,7 +81,7 @@ begin
 				
 				if i_enable = '1' or busy_internal = '1' then	
 				
-					o_spi.ss <= '0';
+					ss <= '0';
 					if  busy_internal = '0' then
 						busy_internal <= '1';
 			
@@ -88,7 +93,7 @@ begin
 						end if;
 					else
 						if cnt = half  then 
-							o_spi.sck <= '0';
+							sck <= '0';
 							
 
 							if bit_cnt = 0 then
@@ -96,19 +101,23 @@ begin
 									if i_transaction = Read then
 										shift_reg := (others  => '0');
 										shift_reg(7) := i_spi.miso; 
-										o_spi.mosi <= '1';	
+										mosi <= '1';	
 									elsif i_transaction = Write then
 										shift_reg := unsigned(io_data);	 
 									end if;
 							end if;
 							if i_transaction = Write then
-								o_spi.mosi <= shift_reg(0);							
+								mosi <= shift_reg(0);							
 							
 							end if;	
 
 						elsif cnt = 0  then 
-							o_spi.sck <= '1';
-								
+							sck <= '1';
+							shift_reg := shift_right(shift_reg, 1);
+							if i_transaction = Read then
+									
+									shift_reg(7) := i_spi.miso;
+							end if;	
 							if bit_cnt = 7  then
 								cnt:= separate;
 								bit_cnt := 0;
@@ -120,13 +129,9 @@ begin
 							else
 
 							
-								shift_reg := shift_right(shift_reg, 1);
 								cnt:= period;
 								bit_cnt := bit_cnt + 1;
-								if i_transaction = Read then
-									
-									shift_reg(7) := i_spi.miso;
-								end if;	
+
 							end if;
 	
 
@@ -137,13 +142,10 @@ begin
 					
 				else
 					io_data <= (others => 'Z');
-					if cnt = 0 then
-						o_spi.ss <= '1';
-					else
-						cnt := cnt -1;	
-					end if;
-					o_spi.mosi <= '1';
-					o_spi.sck <= '1';
+					
+					ss <= '1';
+					mosi <= '1';
+					sck <= '1';
 					busy_internal <= '0';
 				end if;
 				
@@ -156,10 +158,14 @@ begin
 
 end  process;
 
-process(busy_internal,received_internal)
+
+process(busy_internal,received_internal,ss,sck,mosi)
 begin
 	o_busy <= busy_internal;
 	o_received <= received_internal;
+	o_spi.mosi <= mosi;
+	o_spi.ss <= ss;
+	o_spi.sck <= sck;
 end process;
 
 

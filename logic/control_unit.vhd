@@ -83,7 +83,7 @@ architecture behaviour of control_unit is
 					i_transaction : in transaction_type;
 					i_enable : in std_logic;
 					i_spi : in type_to_spi;
-					
+					i_put_bus_high : in std_logic;
 					
 					o_received : out std_logic;
 					o_spi : out type_from_spi;
@@ -116,6 +116,7 @@ architecture behaviour of control_unit is
 		signal en_flash : std_logic;
 		signal received_flash : std_logic;	
 		signal transaction_flash : transaction_type;
+		signal put_bus_high_flash : std_logic;
 begin	
 	o_to_i2c.address <= "1001000";
 	
@@ -160,7 +161,8 @@ begin
 					i_transaction => transaction_flash,
 					i_enable => en_flash,
 					i_spi => i_spi,
-						
+					i_put_bus_high =>	put_bus_high_flash,
+					
 					o_received => received_flash,
 					o_spi => o_spi,
 					o_busy => busy_flash
@@ -309,11 +311,11 @@ begin
 								user_command := wave_and_termistor;
 								trigger_phase := unit_step_freq_h;
 						elsif i_from_uart = std_logic_vector(flash_write_command) then
-							
+								put_bus_high_flash <= '1';
 								user_command := flash_write; 
 								flash_write_state := get_flash_write_addr;
 						elsif i_from_uart = std_logic_vector(flash_read_command) then
-							
+								put_bus_high_flash <= '0';
 								user_command := flash_read;
 								flash_read_state := get_flash_read_addr;
 						elsif i_from_uart = std_logic_vector(stop_command)  then 
@@ -343,6 +345,7 @@ begin
 							end if;
 								
 						elsif user_command = flash_write then
+							
 							if flash_write_state = get_flash_write_addr then
 								address_flash <= revert_byte(i_from_uart);									
 								flash_write_state := get_flash_write_byte2;

@@ -228,14 +228,19 @@ architecture t_behaviour of uart_flash_tb is
 				wait for 5 us;
 				
 				rx_uart <= '0';
-				wait for 10 us;
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 2 us;
+				rx_uart <= '0';
+				wait for 7 us;
 				rx_uart <= '1';
 				wait for 4 us;
 
-				
+				wait for 32 us;
+				to_spi.miso <= '1';				
 				wait for 120 us;
 			-- 0x02  0 0100 0000 1
-				-- 0x00  0 0000 0000 0
+				-- 0x00  0 1100 0000 0
 				-- 0xaa  0 0101 0101 0
 				-- 0xff  0 1111 1111 0
 				-- 0xaa  0 0101 0101 0

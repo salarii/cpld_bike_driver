@@ -21,7 +21,7 @@ entity flash_controller is
 			i_transaction : in transaction_type;
 			i_enable : in std_logic;
 			i_spi : in type_to_spi;
-			
+			i_put_bus_high : in std_logic;
 			
 			o_received : out std_logic;
 			o_spi : out type_from_spi;
@@ -56,7 +56,7 @@ architecture behaviour of flash_controller is
 	signal  received_internal : std_logic := '0';
 	signal  busy_internal : std_logic := '0';
 	
-	signal data_spi : std_logic_vector(7 downto 0);
+	signal data_spi : std_logic_vector(7 downto 0):= (others => 'Z');
 	signal busy_spi : std_logic;
 	signal en_spi : std_logic;
 	signal received_spi : std_logic;
@@ -121,7 +121,9 @@ begin
 				if  received_internal = '1' then
 					received_internal <= '0';
 				end if;
-				
+				if  i_put_bus_high = '1' then
+					io_data <= (others => 'Z');
+				end if;
 				
 				if i_enable = '1' or  busy_internal = '1' then	
 				
@@ -185,7 +187,7 @@ begin
 							elsif write_flash = write_data then							
 								if busy_spi = '0' then
 									data_spi <= io_data(8*(3-cnt)-1 downto 8*(2-cnt));
-									if cnt = 2 then
+									if cnt = 0 then
 										write_flash := write_conclude;
 										en_spi <= '0';
 									else
