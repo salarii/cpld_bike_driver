@@ -4,7 +4,7 @@ use ieee.std_logic_1164.all;
 
 package interface_data is
 
-type transaction_type is (Read, Write);
+type transaction_type is (Read, Write, Erase);
 
 type transaction_stage is ( t_Idle, t_Address, t_Data, t_Repeat, t_Conclude, t_Continue );
 

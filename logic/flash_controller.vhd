@@ -89,17 +89,20 @@ process(clk)
 		constant enter_write_cycle : unsigned(7 downto 0) := unsigned(revert_byte(x"06"));
 		constant read_command : unsigned(7 downto 0) := unsigned(revert_byte(x"03"));
 		constant write_command : unsigned(7 downto 0) := unsigned(revert_byte(x"02"));
-		
+		constant sector_erase_command : unsigned(7 downto 0) := unsigned(revert_byte(x"20"));
+				
 		variable  separate : integer range 30 downto 0 := 0;
 		
-		type type_flash_operation is (no_flash_operation, flash_write, flash_read);
+		type type_flash_operation is (no_flash_operation, flash_write, flash_read, flash_erase);
 		type type_write_flash is (write_idle , write_enable, write_code, write_address, write_data, write_conclude);
 		type type_read_flash is (read_idle , read_code, read_address, read_data, read_conclude);		
+		type type_erase_flash is (erase_idle , erase_enable, erase_code, erase_address, erase_conclude);		
 		
+				
 		variable flash_operation : type_flash_operation := no_flash_operation;
 		variable write_flash : type_write_flash := write_idle;
 		variable read_flash : type_read_flash := read_idle;
-		
+		variable erase_flash : type_erase_flash := erase_idle;
 		
 		variable cnt : integer  range 3 downto 0 := 0;
 begin
@@ -138,6 +141,64 @@ begin
 							elsif i_transaction = Write then
 								io_data <= (others => 'Z');
 								flash_operation := flash_write;
+							elsif i_transaction = Erase then
+								io_data <= (others => 'Z');
+								flash_operation := flash_erase;								
+							end if;
+						elsif flash_operation =  flash_erase then
+								
+		
+							if  erase_flash = erase_idle then
+								if busy_spi = '0' then
+									en_spi <= '1';
+									data_spi <= std_logic_vector(enter_write_cycle);
+									transaction_spi <= Write;
+								elsif busy_spi = '1' then
+									en_spi <= '0';	
+									erase_flash := erase_enable;
+									separate := 30;
+								end if;
+							elsif erase_flash = erase_enable then
+								if busy_spi = '0' then
+									if separate = 0 then
+										erase_flash := erase_code;
+									else
+										separate := separate - 1;
+									end if;
+									
+								end if;					
+					
+							elsif erase_flash = erase_code then
+								if busy_spi = '0' then
+									en_spi <= '1';
+									data_spi <= std_logic_vector(sector_erase_command);
+									cnt := 2;
+								elsif busy_spi = '1' then
+									erase_flash := erase_address;
+								end if;
+							elsif erase_flash = erase_address then
+								if busy_spi = '0' then
+									if cnt = 0 then
+										data_spi <= i_address;
+										erase_flash := erase_conclude;
+										cnt := 2;
+									else
+										data_spi <= x"00";
+										cnt := cnt - 1;
+									end if;
+									
+									
+									
+								end if;
+							
+							elsif erase_flash = erase_conclude then	
+								if busy_spi = '0' then
+									flash_operation := no_flash_operation;
+									erase_flash := erase_idle;
+									
+									data_spi <= (others => 'Z');
+									busy_internal <= '0';
+								end if;
 							end if;
 						
 						elsif flash_operation =  flash_write then

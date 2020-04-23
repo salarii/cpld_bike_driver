@@ -176,18 +176,21 @@ begin
 		
 		type type_i2c_operations is ( i2c_index, i2c_data_H, i2c_data_L );
 		
-		type type_user_commands is (no_command,wave_and_termistor,  flash_write, flash_read );
+		type type_user_commands is (no_command,wave_and_termistor,  flash_write, flash_read, flash_erase );
 		
 		type type_init_trigger_phase is ( unit_step_freq_h,unit_step_freq_l, unit_step_pulse_h,unit_step_pulse_l);
 		
 		type type_flash_write_state is ( get_flash_write_addr, get_flash_write_byte2, get_flash_write_byte1, get_flash_write_byte0, execute_flash_write );
 		type type_flash_read_state is ( get_flash_read_addr, execute_flash_read,progress_flash_read, read_flash_done, send_flash_data );
+		type type_flash_erase_state is ( get_flash_erase_addr, get_flash_erase_byte2, get_flash_erase_byte1, get_flash_erase_byte0, execute_flash_erase );
 				
 		constant stop_command : unsigned(7 downto 0) := x"00";
 		constant measure_command : unsigned(7 downto 0) := x"01";
 		constant flash_write_command : unsigned(7 downto 0) := x"02";				
 		constant flash_read_command : unsigned(7 downto 0) := x"03";
+		constant flash_erase_command : unsigned(7 downto 0) := x"04";
 		
+				
 		constant termistor_data_code : unsigned(7 downto 0) := x"00";
 		constant flash_data_code : unsigned(7 downto 0) := x"01";
 		
@@ -201,6 +204,7 @@ begin
 		variable i2c_state : type_i2c_operations := i2c_index;
 		variable enable_pc_write : std_logic;
 		
+		variable flash_erase_state : type_flash_erase_state;
 		variable flash_read_state : type_flash_read_state;
 		variable flash_write_state : type_flash_write_state; 
 		variable user_command : type_user_commands := no_command;
@@ -318,6 +322,11 @@ begin
 								put_bus_high_flash <= '0';
 								user_command := flash_read;
 								flash_read_state := get_flash_read_addr;
+						elsif i_from_uart = std_logic_vector(flash_erase_command) then
+								put_bus_high_flash <= '1';
+								user_command := flash_erase;
+								flash_erase_state := get_flash_erase_addr;
+						
 						elsif i_from_uart = std_logic_vector(stop_command)  then 
 								stop_trigger <= '1';
 						end if;
@@ -343,7 +352,21 @@ begin
 										
 								en_trigger <= '1';
 							end if;
-								
+						elsif user_command = flash_erase then
+							
+							if flash_erase_state = get_flash_erase_addr then
+								address_flash <= revert_byte(i_from_uart);									
+								flash_erase_state := get_flash_erase_byte2;
+							elsif flash_erase_state = get_flash_erase_byte2 then
+								data_flash(23 downto 16) <= i_from_uart;
+								flash_erase_state := get_flash_erase_byte1;
+							elsif flash_erase_state = get_flash_erase_byte1 then
+								data_flash(15 downto 8) <= i_from_uart;
+								flash_erase_state := get_flash_erase_byte0;
+							elsif flash_erase_state = get_flash_erase_byte0 then
+								data_flash(7 downto 0) <= i_from_uart;
+								flash_erase_state := execute_flash_erase;
+							end if;		
 						elsif user_command = flash_write then
 							
 							if flash_write_state = get_flash_write_addr then
