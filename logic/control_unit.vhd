@@ -176,20 +176,22 @@ begin
 		
 		type type_i2c_operations is ( i2c_index, i2c_data_H, i2c_data_L );
 		
-		type type_user_commands is (no_command,wave_and_termistor,  flash_write, flash_read, flash_erase );
+		type type_user_commands is (no_command,wave_and_termistor,  flash_write, flash_read, flash_erase, run_motor );
 		
 		type type_init_trigger_phase is ( unit_step_freq_h,unit_step_freq_l, unit_step_pulse_h,unit_step_pulse_l);
 		
 		type type_flash_write_state is ( get_flash_write_addr, get_flash_write_byte2, get_flash_write_byte1, get_flash_write_byte0, execute_flash_write );
 		type type_flash_read_state is ( get_flash_read_addr, execute_flash_read,progress_flash_read, read_flash_done, send_flash_data );
 		type type_flash_erase_state is ( get_flash_erase_addr, get_flash_erase_byte2, get_flash_erase_byte1, get_flash_erase_byte0, execute_flash_erase );
+		type type_run_motor_state is ( run_motor_get_speed, run_motor_get_pulse_width, execute_run_motor );
+			
 				
 		constant stop_command : unsigned(7 downto 0) := x"00";
 		constant measure_command : unsigned(7 downto 0) := x"01";
 		constant flash_write_command : unsigned(7 downto 0) := x"02";				
 		constant flash_read_command : unsigned(7 downto 0) := x"03";
 		constant flash_erase_command : unsigned(7 downto 0) := x"04";
-		
+		constant run_motor_command : unsigned(7 downto 0) := x"05";		
 				
 		constant termistor_data_code : unsigned(7 downto 0) := x"00";
 		constant flash_data_code : unsigned(7 downto 0) := x"01";
@@ -209,7 +211,7 @@ begin
 		variable flash_write_state : type_flash_write_state; 
 		variable user_command : type_user_commands := no_command;
 		variable trigger_phase : type_init_trigger_phase;
-		
+		variable run_motor_state : type_run_motor_state;
 		variable uart_dev_status : type_uart_dev_status  := (False,False);
 	begin
 		leds(0) <= blink_1;
@@ -322,6 +324,10 @@ begin
 								put_bus_high_flash <= '0';
 								user_command := flash_read;
 								flash_read_state := get_flash_read_addr;
+						
+						elsif i_from_uart = std_logic_vector(run_motor_command) then
+								user_command := run_motor;
+								run_motor_state := run_motor_get_speed;
 						elsif i_from_uart = std_logic_vector(flash_erase_command) then
 								put_bus_high_flash <= '1';
 								user_command := flash_erase;
@@ -352,6 +358,19 @@ begin
 										
 								en_trigger <= '1';
 							end if;
+						elsif user_command = run_motor then
+						
+
+							if run_motor_state = run_motor_get_speed then
+   								i_req_speed <= i_from_uart;
+							elsif run_motor_state = run_motor_get_pulse_width then
+								period_trigger(7 downto 0) <= x"ff";
+								period_trigger(15 downto 8) <= x"00";
+								pulse_trigger(7 downto 0) <= i_from_uart;
+								pulse_trigger(15 downto 8) <= x"00";
+								
+								run_motor_state := execute_run_motor;	
+							end if;								
 						elsif user_command = flash_erase then
 							
 							if flash_erase_state = get_flash_erase_addr then
