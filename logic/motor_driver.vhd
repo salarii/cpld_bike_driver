@@ -80,7 +80,7 @@ entity motor_driver is
 		clk : in std_logic;		
 		i_req_speed : in unsigned(7 downto 0);
 		i_work_wave : in std_logic;
-		i_motor_control_setup : type_motor_control_setup;
+		i_motor_control_setup : in type_motor_control_setup;
 
 		o_motor_transistors : out type_motor_transistors
 		);

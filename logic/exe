@@ -1,11 +1,11 @@
 
 ghdl -a --workdir=build functions.vhd interface_data.vhd  i2c_master.vhd 
-ghdl -a --workdir=build control_unit.vhd div.vhd motor_driver.vhd mul.vhd uart.vhd
-ghdl -a --workdir=build trigger.vhd two_com_mul.vhd poly.vhd spi.vhd i2c_slave.vhd
-ghdl -a --workdir=build flash_controller.vhd
+ghdl -a --workdir=build speed_impulse.vhd motor_driver.vhd control_unit.vhd div.vhd  
+ghdl -a --workdir=build mul.vhd uart.vhd trigger.vhd two_com_mul.vhd poly.vhd 
+ghdl -a --workdir=build spi.vhd i2c_slave.vhd flash_controller.vhd
 ghdl -a --workdir=build ./tb/temp_tb.vhd ./tb/poly_tb.vhd ./tb/uart_tb.vhd
 ghdl -a --workdir=build ./tb/motor_driver_tb.vhd ./tb/spi_tb.vhd  ./tb/uart_flash_tb.vhd
-
-ghdl -e --workdir=build uart_flash_tb 
-ghdl -r uart_flash_tb --vcd=func.vcd  --stop-time=800us --ieee-asserts=disable-at-0
+ghdl -a --workdir=build ./tb/uart_run_motor_tb.vhd
+ghdl -e --workdir=build uart_run_motor_tb
+ghdl -r uart_run_motor_tb --vcd=func.vcd  --stop-time=800us --ieee-asserts=disable-at-0
 #gtkwave func.vcd

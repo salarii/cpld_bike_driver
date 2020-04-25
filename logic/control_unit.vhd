@@ -6,7 +6,8 @@ use ieee.numeric_std.all;
 use std.textio.all;
 use work.interface_data.all;
 use work.functions.all;
-		
+use work.motor_auxiliary.all;
+
 
 
 entity control_unit is
@@ -89,8 +90,37 @@ architecture behaviour of control_unit is
 					o_spi : out type_from_spi;
 					o_busy	: out std_logic
 				);
+				
 		end component flash_controller;
 
+		component motor_driver is
+		
+			port( 
+				res : in std_logic;		
+				clk : in std_logic;		
+				i_req_speed : in unsigned(7 downto 0);
+				i_work_wave : in std_logic;
+				i_motor_control_setup : in type_motor_control_setup;
+		
+				o_motor_transistors : out type_motor_transistors
+				);
+		end component motor_driver;
+
+
+		component speed_impulse is
+			generic ( 
+				CONSTANT time_period : integer
+				);
+				
+			port(
+					res : in std_logic;		
+					clk : in std_logic;	
+					i_enable : in std_logic;
+					i_impulse : in std_logic;
+					
+					o_speed : out unsigned(7 downto 0)
+				);
+		end component speed_impulse;
 
 		signal data : std_logic_vector(15 downto 0);	
 		signal enable_uart  : std_logic;
@@ -117,6 +147,14 @@ architecture behaviour of control_unit is
 		signal received_flash : std_logic;	
 		signal transaction_flash : transaction_type;
 		signal put_bus_high_flash : std_logic;
+		
+		signal req_speed_motor : unsigned(7 downto 0);
+		signal motor_control_setup : type_motor_control_setup;
+		signal motor_transistors : type_motor_transistors;
+		
+		signal enable_speed :  std_logic;
+		signal impulse_speed :  std_logic;	
+		signal speed : unsigned(7 downto 0);
 begin	
 	o_to_i2c.address <= "1001000";
 	
@@ -129,6 +167,21 @@ begin
 		i_val	=> std_logic_vector(poly_val),
 		unsigned(o_temp) => poly_temperature 
 		);	
+
+
+	speed_impulse_func : speed_impulse 
+	generic map ( 
+			time_period => 500000
+		)
+				
+		port map(
+					res => res, 		
+					clk => clk,	
+					i_enable => enable_speed,
+					i_impulse => impulse_speed,
+					
+					o_speed => speed
+				);
 
 	trigger_func : trigger
 	generic map (
@@ -146,6 +199,17 @@ begin
 				o_current_time => time_trigger
 		);
 
+		motor_driver_func : motor_driver
+		
+			port map( 
+				res => res, 	
+				clk => clk,		
+				i_req_speed => req_speed_motor,
+				i_work_wave => out_trigger,
+				i_motor_control_setup => motor_control_setup,
+		
+				o_motor_transistors => motor_transistors
+				);
 	
 		flash_function : flash_controller
 			generic map ( 
@@ -362,11 +426,11 @@ begin
 						
 
 							if run_motor_state = run_motor_get_speed then
-   								i_req_speed <= i_from_uart;
+   								req_speed_motor <= unsigned(i_from_uart);
 							elsif run_motor_state = run_motor_get_pulse_width then
 								period_trigger(7 downto 0) <= x"ff";
 								period_trigger(15 downto 8) <= x"00";
-								pulse_trigger(7 downto 0) <= i_from_uart;
+								pulse_trigger(7 downto 0) <= unsigned(i_from_uart);
 								pulse_trigger(15 downto 8) <= x"00";
 								
 								run_motor_state := execute_run_motor;	
