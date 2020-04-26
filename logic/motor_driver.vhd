@@ -240,9 +240,9 @@ end generate;
 			variable motor_transistors_internal : type_motor_transistors;
 		begin
 			motor_transistors_internal := transistors;
-			motor_transistors_internal.A_n := transistors.A_n and wave;
-			motor_transistors_internal.B_n := transistors.B_n and wave;
-			motor_transistors_internal.C_n := transistors.C_n and wave;			
+			motor_transistors_internal.A_n := not(transistors.A_n and wave);
+			motor_transistors_internal.B_n := not(transistors.B_n and wave);
+			motor_transistors_internal.C_n := not(transistors.C_n and wave);			
 			return motor_transistors_internal;
 		end function;
 	begin

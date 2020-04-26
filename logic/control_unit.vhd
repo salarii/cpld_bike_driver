@@ -17,9 +17,11 @@ entity control_unit is
 		clk : in  std_logic;
 		res : in  std_logic;
 		
+		i_impulse : in std_logic;
+		
 		i_spi : in type_to_spi;
 		o_spi : out type_from_spi;
-
+	
 
 		i_from_i2c : in type_from_i2c;
 		i2c_bus : inout std_logic_vector(7 downto 0);
@@ -32,6 +34,7 @@ entity control_unit is
 		o_to_uart : out std_logic_vector(7 downto 0);
 		o_en_uart : out std_logic;
 		o_wave : out std_logic;
+		o_motor_transistors : out type_motor_transistors;
 		leds : out std_logic_vector(4 downto 0)
 		);
 end control_unit;
@@ -279,7 +282,8 @@ begin
 		variable uart_dev_status : type_uart_dev_status  := (False,False);
 	begin
 		leds(0) <= blink_1;
-		leds(1) <= blink_2;	
+		leds(1) <= blink_2;
+		leds(2) <= motor_transistors.A_p;
 		if rising_edge(clk)  then
 			if res = '0' then
 				state := Setup;
@@ -328,12 +332,12 @@ begin
 							en_flash <= '1';
 							transaction_flash <= Read;
 							data_flash <= (others => 'Z');
-							blink_1 <= '0';
+							
 						elsif busy_flash = '1' then
 						
 							en_flash <= '0';
 							flash_read_state := progress_flash_read;
-					blink_2 <= '0';
+					
 						end if;	
 							
 					elsif flash_read_state = progress_flash_read then
@@ -376,7 +380,7 @@ begin
 					
 				elsif user_command = run_motor then	
 					if run_motor_state = execute_run_motor then
-					
+						
 						en_trigger <= '1';
 				
 						motor_control_setup.hal <= '0';
@@ -389,7 +393,7 @@ begin
 
 	
 				if 	i_received_uart = '1' then
-						
+						blink_1 <= '0';
 					if user_command = no_command then 
 							
 						if i_from_uart = std_logic_vector(measure_command) then
@@ -407,6 +411,7 @@ begin
 						
 						elsif i_from_uart = std_logic_vector(run_motor_command) then
 								user_command := run_motor;
+								
 								run_motor_state := run_motor_get_speed;
 						elsif i_from_uart = std_logic_vector(flash_erase_command) then
 								put_bus_high_flash <= '1';
@@ -441,7 +446,7 @@ begin
 							end if;
 						elsif user_command = run_motor then
 						
-
+							
 							if run_motor_state = run_motor_get_speed then
    								req_speed_motor <= unsigned(i_from_uart);
 								run_motor_state := run_motor_get_pulse_width;	
@@ -656,10 +661,11 @@ begin
 	end process;
 	
 
-	process(  enable_uart,out_trigger)
+	process(  enable_uart,out_trigger,motor_transistors)
 	begin
 		o_wave <= out_trigger;
 		o_en_uart <= enable_uart;
+		o_motor_transistors <= motor_transistors;
 	end process;
 
 	

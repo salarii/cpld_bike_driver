@@ -18,7 +18,7 @@ const QStringList flashParamsMess ={
 QString const labelText = "Current Voltage: ";
 
 Widget::Widget(QWidget *parent)
-    : QWidget(parent)
+    : QWidget(parent),motorRun(false)
 {
     sendBuff = new unsigned char(10);
 
@@ -28,7 +28,6 @@ Widget::Widget(QWidget *parent)
     QWidget * triggerWidget = new QWidget;
     QHBoxLayout *interfaceLayout = new QHBoxLayout;
     triggerWidget->setLayout(interfaceLayout);
-
 
 
     this->setLayout(layout);
@@ -108,18 +107,39 @@ Widget::Widget(QWidget *parent)
     QWidget * blcdWidget = new QWidget;
     QVBoxLayout *blcdLayout = new QVBoxLayout;
     blcdWidget->setLayout(blcdLayout);
-    auto titleBlcd = new QLabel("Manage BLCD motor: ");
+    auto titleBlcd = new QLabel("Manage BLCD motor");
     blcdLayout->addWidget(titleBlcd);
 
+    labelSpeed = new QLabel("Current speed: 0");
+    blcdLayout->addWidget(labelSpeed);
+
     sliderSpeed = new QSlider();
-    sliderSpeed->setRange(1, 100);
+    sliderSpeed->setRange(0, 255);
     blcdLayout->addWidget(sliderSpeed);
     sliderSpeed->setOrientation(Qt::Horizontal);
 
+    connect(sliderSpeed, &QSlider::valueChanged, this, &Widget::motorSliderChanged);
+
+    labelForce = new QLabel("Pulse width: 0 %");
+    blcdLayout->addWidget(labelForce);
+
     sliderForce = new QSlider();
-    sliderSpeed->setRange(1, 100);
+    sliderForce->setRange(1, 100);
     blcdLayout->addWidget(sliderForce);
     sliderForce->setOrientation(Qt::Horizontal);
+
+    connect(sliderForce, &QSlider::valueChanged, this, &Widget::motorSliderChanged);
+
+    runMotorButton =  new QPushButton("Run motor");
+    runMotorButton->setCheckable(true);
+    blcdLayout->addWidget(runMotorButton);
+
+    QObject::connect(runMotorButton, &QPushButton::clicked,
+                     this, &Widget::startMotor);
+
+    motorChartView  = new  QChartView(this);
+    motorChartView->setChart(createMotorChart());
+    blcdLayout->addWidget(motorChartView);
 
     QWidget * triggAndChartWidget = new QWidget;
     QVBoxLayout *layoutTCW = new QVBoxLayout;
@@ -148,7 +168,9 @@ Widget::serialProblem()
     msgBox.addButton("Ok", QMessageBox::AcceptRole);
     msgBox.exec();
 }
+
 int  shift = 30;
+
 void
 Widget::displayFlash(FlashData const * _value)
 {
@@ -166,9 +188,9 @@ Widget::requestDataFromFlash()
 {
     unsigned  char index = parameterList->currentIndex();
     index+=shift;
-    sendBuff[0] = (unsigned  char)CommandCodes::ReadFlash;
-        sendBuff[1] = index*3;
-        emit sendToHardware(sendBuff, 2);
+    sendBuff[0] = (unsigned  char)CommandCodes::ReadFlashOpCode;
+    sendBuff[1] = index*3;
+    emit sendToHardware(sendBuff, 2);
 
 }
 
@@ -181,18 +203,60 @@ Widget::sendDataToFlash()
     unsigned int val = valueText.toUInt(&bStatus,16);
 
     unsigned  char index = parameterList->currentIndex();
-index+=shift;
-     sendBuff[0] = (unsigned  char)CommandCodes::WriteFlash;
+    index+=shift;
+     sendBuff[0] = (unsigned  char)CommandCodes::WriteFlashOpCode;
      sendBuff[1] = index*3;
      sendBuff[2] = val  >> 16;
      sendBuff[3] = (val  >> 8) & 0xff;
      sendBuff[4] = val & 0xff;
-unsigned  char  triada = sendBuff[2];
-triada = sendBuff[3];
-triada = sendBuff[4];
+    unsigned  char  triada = sendBuff[2];
+    triada = sendBuff[3];
+    triada = sendBuff[4];
      emit sendToHardware(sendBuff, 5);
 
 }
+
+void
+Widget::motorSliderChanged()
+{
+
+        char unsigned speed = sliderSpeed->value();
+        char unsigned pulse = sliderForce->value();
+        labelSpeed->setText( QString("Current speed: ") + QString().number(speed, 10));
+
+        labelForce->setText( QString("Pulse width: ")+ QString().number(pulse, 10) +QString(" %"));
+        if (motorRun == true)
+        {
+            sendBuff[0] = (unsigned  char)CommandCodes::StartMotorOpCode;
+            sendBuff[1] = speed;
+            sendBuff[2] = (unsigned  char)255.0*((float)pulse/100.0);
+
+            emit sendToHardware(sendBuff, 3);
+        }
+}
+
+void
+Widget::startMotor(bool _checked)
+{
+
+    if ( _checked == false )
+    {
+        runMotorButton->setText("Run motor");
+
+        sendBuff[0] = (unsigned  char)CommandCodes::StopOpCode;
+
+        emit sendToHardware(sendBuff, 1);
+        motorRun = false;
+
+    }
+    else
+    {
+        motorRun = true;
+        runMotorButton->setText("Stop");
+        motorSliderChanged();
+    }
+}
+
 
 void
 Widget::startMeasurement(bool _checked)
@@ -202,7 +266,7 @@ Widget::startMeasurement(bool _checked)
     {
         startButton->setText("Start");
 
-        sendBuff[0] = (unsigned  char)CommandCodes::StopOpCodeTermistor;
+        sendBuff[0] = (unsigned  char)CommandCodes::StopOpCode;
 
         emit sendToHardware(sendBuff, 1);
 
@@ -216,7 +280,7 @@ Widget::startMeasurement(bool _checked)
         freq = MainClockFreq/frequency->value();
         pulse = (pulseWidth->value()* freq)/100;
 
-        sendBuff[0] = (unsigned  char)CommandCodes::TriggerOpCodeTermistor;
+        sendBuff[0] = (unsigned  char)CommandCodes::TriggerTermistorOpCode;
         sendBuff[1] = freq >> 8;
         sendBuff[2] = freq  & 0xff;
         sendBuff[3] = pulse  >> 8;
@@ -224,6 +288,37 @@ Widget::startMeasurement(bool _checked)
 
         emit sendToHardware(sendBuff, 5);
     }
+}
+
+QChart * Widget::createMotorChart()
+{
+    QLineSeries * tmp = new QLineSeries();
+    auto list = series->points();
+    if ( list.size() > 100 )
+    {
+        list.removeFirst();
+    }
+
+    tmp->append(list);
+    series = tmp;
+    QChart * newChart = new QChart;
+    series->setName("motor speed (rpm)");
+    newChart->setTitle("Motor Data:");
+    newChart->addSeries(series);
+
+    QValueAxis *axisX = new QValueAxis;
+
+    newChart->addAxis(axisX, Qt::AlignBottom);
+
+    QValueAxis *axisY = new QValueAxis;
+
+    newChart->addAxis(axisY, Qt::AlignLeft);
+    series->attachAxis(axisX);
+    series->attachAxis(axisY);
+    axisX->applyNiceNumbers();
+    axisY->setRange(0.0, 2000.0);
+    axisY->applyNiceNumbers();
+    return newChart;
 }
 
 

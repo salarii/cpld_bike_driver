@@ -34,11 +34,16 @@ public slots:
     void serviceMeasurement(Measurement const * _value);
     void startMeasurement(bool _checked);
     void serialProblem();
+    void startMotor(bool _checked);
+    void motorSliderChanged();
 private:
     QChart *  createChart();
+    QChart * createMotorChart();
 private:
+    bool motorRun;
     QLineSeries* series;
     QChartView * chartView;
+    QChartView * motorChartView;
     QLabel * label;
     QLabel * parLabels[4];
     QSpinBox * pulseWidth;
@@ -46,6 +51,10 @@ private:
     QPushButton * startButton;
     QSlider * sliderSpeed;
     QSlider * sliderForce;
+    QLabel * labelSpeed;
+    QLabel * labelForce;
+    QPushButton * runMotorButton;
+
     QComboBox *  parameterList;
     QLineEdit * valInput;
     unsigned char * sendBuff;

@@ -58,7 +58,7 @@ begin
 					part_divident := part_divident - sig_divisor; 
 					if part_divident >= 0 then
 						o_quotient(index) <= '1';
-						tmp(size -1  downto index) := unsigned(part_divident(size -1 - index  downto 0));
+						tmp(size -1  downto 0) := unsigned(shift_left(part_divident(size -1  downto 0),index));
 					end if;
 				
 					if index = 0 then

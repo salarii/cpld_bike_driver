@@ -5,6 +5,7 @@ use IEEE.std_logic_1164.all;
 
 use work.interface_data.all;
 use ieee.numeric_std.all;
+use work.motor_auxiliary.all;
 
 entity uart_run_motor_tb is
 end uart_run_motor_tb;
@@ -37,26 +38,28 @@ architecture t_behaviour of uart_run_motor_tb is
 		
 		component control_unit is
 			port(
-				clk : in  std_logic;
-				res : in  std_logic;
-				
-				i_spi : in type_to_spi;
-				o_spi : out type_from_spi;
-		
-				i_from_i2c : in type_from_i2c;
-				i2c_bus : inout std_logic_vector(7 downto 0);
-				o_to_i2c : out type_to_i2c;
-						
-						
-						
-				i_busy_uart : in std_logic;
-				i_from_uart : in std_logic_vector(7 downto 0);
-				i_received_uart : in std_logic;
-				o_to_uart : out std_logic_vector(7 downto 0);
-				o_en_uart : out std_logic;
-				
-				o_wave : out std_logic;
-				leds : out std_logic_vector(4 downto 0)
+      clk : in  std_logic;
+      res : in  std_logic;
+      
+      i_impulse : in std_logic;
+      
+      i_spi : in type_to_spi;
+      o_spi : out type_from_spi;
+    
+
+      i_from_i2c : in type_from_i2c;
+      i2c_bus : inout std_logic_vector(7 downto 0);
+      o_to_i2c : out type_to_i2c;
+        
+            
+      i_busy_uart : in std_logic;
+      i_from_uart : in std_logic_vector(7 downto 0);
+      i_received_uart : in std_logic;
+      o_to_uart : out std_logic_vector(7 downto 0);
+      o_en_uart : out std_logic;
+      o_wave : out std_logic;
+      o_motor_transistors : out type_motor_transistors;
+      leds : out std_logic_vector(4 downto 0)
 			);
 		end component control_unit;
 	
@@ -109,7 +112,8 @@ architecture t_behaviour of uart_run_motor_tb is
 
 		signal ready	: std_logic;
 		
-		
+		signal motor_transistors : type_motor_transistors;
+		signal impulse : std_logic;
 		constant clk_period : time := 100 ns;
 		
 		signal data : std_logic_vector(15 downto 0);
@@ -169,6 +173,8 @@ architecture t_behaviour of uart_run_motor_tb is
 				res => res,
 				clk => clk,
 				
+				i_impulse => impulse,
+				
 				o_to_i2c => to_i2c,
 				i_from_i2c => from_i2c,
 				i2c_bus => i2c_bus,
@@ -177,6 +183,7 @@ architecture t_behaviour of uart_run_motor_tb is
 
 				leds => leds,
 				o_wave => wave,
+        o_motor_transistors => motor_transistors,
 		
 				i_received_uart => received_uart,
 				i_from_uart => from_uart,
