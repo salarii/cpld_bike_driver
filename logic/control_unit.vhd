@@ -297,6 +297,18 @@ begin
 				uart_dev_status := (False,False);
 		else
 
+				if en_trigger = '1' then
+				
+					en_trigger <= '0';
+				end if;
+				if stop_trigger <= '1' then
+					stop_trigger <= '0';
+				end if;
+				
+				if motor_control_setup.enable = '1' then
+					motor_control_setup.enable <= '0';
+				end if;
+
 				if user_command = flash_write then
 					
 					if flash_write_state = execute_flash_write then
@@ -362,15 +374,19 @@ begin
 						end if;								
 					end if;
 					
+				elsif user_command = run_motor then	
+					if run_motor_state = execute_run_motor then
+					
+						en_trigger <= '1';
+				
+						motor_control_setup.hal <= '1';
+						motor_control_setup.enable <= '1';
+		
+					end if;
+					
 				end if;
 	
-				if en_trigger = '1' then
-				
-					en_trigger <= '0';
-				end if;
-				if stop_trigger <= '1' then
-					stop_trigger <= '0';
-				end if;
+
 	
 				if 	i_received_uart = '1' then
 						
