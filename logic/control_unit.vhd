@@ -305,9 +305,9 @@ begin
 					stop_trigger <= '0';
 				end if;
 				
-				if motor_control_setup.enable = '1' then
-					motor_control_setup.enable <= '0';
-				end if;
+				
+					
+			
 
 				if user_command = flash_write then
 					
@@ -379,9 +379,9 @@ begin
 					
 						en_trigger <= '1';
 				
-						motor_control_setup.hal <= '1';
+						motor_control_setup.hal <= '0';
 						motor_control_setup.enable <= '1';
-		
+						user_command := no_command; 
 					end if;
 					
 				end if;
@@ -414,7 +414,8 @@ begin
 								flash_erase_state := get_flash_erase_addr;
 						
 						elsif i_from_uart = std_logic_vector(stop_command)  then 
-								stop_trigger <= '1';
+							stop_trigger <= '1';
+							motor_control_setup.enable <= '0';
 						end if;
 					else	
 							
@@ -443,6 +444,7 @@ begin
 
 							if run_motor_state = run_motor_get_speed then
    								req_speed_motor <= unsigned(i_from_uart);
+								run_motor_state := run_motor_get_pulse_width;	
 							elsif run_motor_state = run_motor_get_pulse_width then
 								period_trigger(7 downto 0) <= x"ff";
 								period_trigger(15 downto 8) <= x"00";

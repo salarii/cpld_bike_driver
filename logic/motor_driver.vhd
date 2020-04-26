@@ -22,46 +22,12 @@ type type_motor_transistors is record
 		C_p : std_logic;
 end record;
 
-function set_transistors(path: in type_on_transistors_path; driver : in std_logic) return type_motor_transistors;
+--impure function set_transistors(path: in type_on_transistors_path; driver : in std_logic) return type_motor_transistors;
 
 end package;
 
 package  body  motor_auxiliary is
 
-function set_transistors(path: in type_on_transistors_path; driver : in std_logic) return type_motor_transistors is
-	variable  transistors : type_motor_transistors;
-begin
-
-	transistors.A_n := '0';
-	transistors.A_p := '0';
-	transistors.B_n := '0';
-	transistors.B_p := '0';
-	transistors.C_n := '0';
-	transistors.C_p := '0';
-
-	if path = A_B then
-		transistors.A_p := driver;
-		transistors.B_n := '1';
-	elsif path = A_C then
-		transistors.A_p := driver;	
-		transistors.C_n := '1';
-	elsif path = B_A then
-		transistors.B_p := driver;
-		transistors.A_n := '1';
-	elsif path = B_C then
-		transistors.B_p := driver;
-		transistors.C_n := '1';
-	elsif path = C_A then
-		transistors.C_p := driver;
-		transistors.A_n := '1';
-	elsif path = C_B then
-		transistors.C_p := driver;
-		transistors.B_n := '1';
-	end if;	
-	
-			
-	return transistors;
-end set_transistors;
 
 end  motor_auxiliary;
 
@@ -120,7 +86,7 @@ architecture behaviour of motor_driver is
 		
 		signal debug_tick : unsigned(9  downto 0);
 		signal debug_cnt : unsigned(9  downto 0);
-		
+		signal motor_transistors : type_motor_transistors := ('0','0','0','0','0','0');
 begin	
 
 generate_no_hal_controel: if generate_no_hal_control = true generate
@@ -137,10 +103,44 @@ generate_no_hal_controel: if generate_no_hal_control = true generate
 		o_quotient => quotient);
 end generate;  
 	process(clk)
+ 		procedure set_transistors(path: in type_on_transistors_path) is
+	
+		begin
+
+			motor_transistors.A_n <= '0';
+			motor_transistors.A_p <= '0';
+			motor_transistors.B_n <= '0';
+			motor_transistors.B_p <= '0';
+			motor_transistors.C_n <= '0';
+			motor_transistors.C_p <= '0';
+
+			if path = A_B then
+				motor_transistors.A_p <= '1';
+				motor_transistors.B_n <= '1';
+			elsif path = A_C then
+				motor_transistors.A_p <= '1';	
+				motor_transistors.C_n <= '1';
+			elsif path = B_A then
+				motor_transistors.B_p <= '1';
+				motor_transistors.A_n <= '1';
+			elsif path = B_C then
+				motor_transistors.B_p <= '1';
+				motor_transistors.C_n <= '1';
+			elsif path = C_A then
+				motor_transistors.C_p <= '1';
+				motor_transistors.A_n <= '1';
+			elsif path = C_B then
+				motor_transistors.C_p <= '1';
+				motor_transistors.B_n <= '1';
+			end if;	
+	
+		
+		end procedure;
+
 		type type_status is (initialise_control, active_control);
 		
 		
-		constant tick_period : integer := 20;
+		constant tick_period : integer := 500;
 		
 		variable status : type_status := initialise_control;
 		variable cnt : integer range max_steps_per_cycle downto 0 := 0;
@@ -157,7 +157,7 @@ end generate;
 			if res = '0' then	
 				status := initialise_control;
 				transistors_path := No_path;
-				o_motor_transistors <= set_transistors(No_path, '0');
+				set_transistors(No_path);
 			else
 				if i_motor_control_setup.enable = '1' then
 					if i_motor_control_setup.hal = '1' then
@@ -171,44 +171,42 @@ end generate;
 							status := active_control;
 							enable_div <= '1';	
 							transistors_path := No_path;
-							cnt := 0;
+							cnt := max_steps_per_cycle /100;
 						elsif status = active_control then
-							if cnt = 0 then
-								case transistors_path is
-								  when No_path => 
-									 o_motor_transistors <= set_transistors(No_path, '0');
-								     transistors_path := A_B;
-								  when A_B =>  
-									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
-								  	 transistors_path := A_C;
-								  when A_C  =>  
-									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
-								  	 transistors_path := B_C;
-								  when B_C  =>  
-									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
-								  	 transistors_path := B_A;
-								  when B_A  =>  
-									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
-								  	 transistors_path := C_A;
-								  when C_A  =>  
-									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
-								  	 transistors_path := C_B;
-								  when C_B  =>  
-									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
-								  	 transistors_path := A_B;
-								  when others => 
-									 o_motor_transistors <= set_transistors(transistors_path, i_work_wave);
-								  	 transistors_path := No_path;
-								end case;
 							
-				
-							end if;
 						
 							if tick_cnt = 0 then
 								if cnt = 0 then
-									cnt := to_integer(quotient);
+								  case transistors_path is
+								  	when No_path => 
+								   	     set_transistors(No_path);
+									     transistors_path := A_B;
+									when A_B =>  
+									     set_transistors(transistors_path);
+								  	     transistors_path := A_C;
+								  	when A_C  =>  
+							      		     set_transistors(transistors_path);
+								  	     transistors_path := B_C;
+								  	when B_C  =>  
+									     set_transistors(transistors_path);
+								  	     transistors_path := B_A;
+								  	when B_A  =>  
+									     set_transistors(transistors_path);
+								  	     transistors_path := C_A;
+								  	when C_A  =>  
+								    	     set_transistors(transistors_path);
+								  	     transistors_path := C_B;
+								  	when C_B  =>  
+									     set_transistors(transistors_path);
+								  	     transistors_path := A_B;
+								  	when others => 
+									     set_transistors(transistors_path);
+								  	     transistors_path := No_path;
+								    end case;
+
+								    cnt := to_integer(quotient);
 								else	
-									cnt := cnt -1;
+								    cnt := cnt -1;
 								end if;	
 							
 								
@@ -225,6 +223,8 @@ end generate;
 
 
 					end if;
+				else
+					status := initialise_control;
 				end if;
 			
 				
@@ -235,6 +235,17 @@ end generate;
 		
 	
 	end  process;
-
-
+	process(motor_transistors,i_work_wave)
+ 		function drop_wave_on_transistors( transistors : type_motor_transistors; wave : std_logic) return type_motor_transistors  is
+			variable motor_transistors_internal : type_motor_transistors;
+		begin
+			motor_transistors_internal := transistors;
+			motor_transistors_internal.A_n := transistors.A_n and wave;
+			motor_transistors_internal.B_n := transistors.B_n and wave;
+			motor_transistors_internal.C_n := transistors.C_n and wave;			
+			return motor_transistors_internal;
+		end function;
+	begin
+		o_motor_transistors <= drop_wave_on_transistors(motor_transistors,i_work_wave);
+	end  process;
 end behaviour;
