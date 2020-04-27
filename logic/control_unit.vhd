@@ -451,11 +451,11 @@ begin
    								req_speed_motor <= unsigned(i_from_uart);
 								run_motor_state := run_motor_get_pulse_width;	
 							elsif run_motor_state = run_motor_get_pulse_width then
-								period_trigger(7 downto 0) <= x"ff";
-								period_trigger(15 downto 8) <= x"00";
-								pulse_trigger(7 downto 0) <= unsigned(i_from_uart);
-								pulse_trigger(15 downto 8) <= x"00";
+								period_trigger(7 downto 0) <= x"fe";
+								period_trigger(15 downto 8) <= x"01";
 								
+								pulse_trigger <= (others => '0');
+								pulse_trigger(8 downto 1) <= unsigned(i_from_uart);
 								run_motor_state := execute_run_motor;	
 							end if;								
 						elsif user_command = flash_erase then

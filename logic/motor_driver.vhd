@@ -140,7 +140,7 @@ end generate;
 		type type_status is (initialise_control, active_control);
 		
 		
-		constant tick_period : integer := 500;
+		constant tick_period : integer := 300;
 		
 		variable status : type_status := initialise_control;
 		variable cnt : integer range max_steps_per_cycle downto 0 := 0;
@@ -239,10 +239,13 @@ end generate;
  		function drop_wave_on_transistors( transistors : type_motor_transistors; wave : std_logic) return type_motor_transistors  is
 			variable motor_transistors_internal : type_motor_transistors;
 		begin
-			motor_transistors_internal := transistors;
-			motor_transistors_internal.A_n := not(transistors.A_n and wave);
-			motor_transistors_internal.B_n := not(transistors.B_n and wave);
-			motor_transistors_internal.C_n := not(transistors.C_n and wave);			
+			
+			motor_transistors_internal.A_n := not(transistors.A_n );
+			motor_transistors_internal.B_n := not(transistors.B_n );
+			motor_transistors_internal.C_n := not(transistors.C_n );			
+			motor_transistors_internal.A_p := transistors.A_p and wave;
+			motor_transistors_internal.B_p := transistors.B_p and wave;
+			motor_transistors_internal.C_p := transistors.C_p and wave;	
 			return motor_transistors_internal;
 		end function;
 	begin
