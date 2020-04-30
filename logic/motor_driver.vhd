@@ -61,7 +61,7 @@ architecture behaviour of motor_driver is
 	constant base_cycle : unsigned(size - 1  downto 0) := to_unsigned(max_steps_per_cycle,size);
 	
 	constant generate_no_hal_control : boolean  := true;
--- ????? use  other  ways, consider it  later  ???
+
 	component div is
 		generic (CONSTANT size : integer);
 	
