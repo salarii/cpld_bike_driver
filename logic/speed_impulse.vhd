@@ -20,7 +20,6 @@ entity speed_impulse is
 			clk : in std_logic;	
 			
 			i_impulse : in std_logic;
-			
 			o_speed : out unsigned(15 downto 0)
 		);
 		

@@ -265,7 +265,7 @@ begin
 				
 		constant termistor_data_code : unsigned(7 downto 0) := x"00";
 		constant flash_data_code : unsigned(7 downto 0) := x"01";
-		
+		constant motor_data_code : unsigned(7 downto 0) := x"02";
 		
 		constant config_register_h : unsigned(7 downto 0) := "01000100";
 		constant config_register_l : unsigned(7 downto 0) := "01100011";
@@ -282,7 +282,15 @@ begin
 		variable user_command : type_user_commands := no_command;
 		variable trigger_phase : type_init_trigger_phase;
 		variable run_motor_state : type_run_motor_state;
-		variable uart_dev_status : type_uart_dev_status  := (False,False);
+		variable uart_dev_status : type_uart_dev_status  := (False,False,False);
+		
+		constant glob_clk_denom : integer := 1000;
+		variable glob_clk_counter : integer range 65535 downto 0 := 0;
+		variable glob_small_clk_counter : integer range glob_clk_denom downto 0  := 0;
+		variable motor_action_init : integer range 65535 downto 0 := 0;
+		variable last_motor_action : integer range 65535 downto 0 := 0;
+		
+		variable time_tmp : unsigned(15 downto 0);
 	begin
 		leds(0) <= blink_1;
 		leds(1) <= blink_2;
@@ -301,21 +309,53 @@ begin
 				blink_1  <= '1';
 				blink_2  <= '1';
 				user_command := no_command;	
-				uart_dev_status := (False,False);
+				uart_dev_status := (False,False,False);
+				glob_clk_counter := 0;
+				glob_small_clk_counter := 0;
+				last_motor_action := 0;
 		else
+				if glob_small_clk_counter = glob_clk_denom  then
+					glob_small_clk_counter := 0;
+					glob_clk_counter := glob_clk_counter + 1; 
+				else  
+					glob_small_clk_counter := glob_small_clk_counter + 1; 				
+				end if;
 
-				if en_trigger = '1' then
+					
+				if glob_clk_counter - last_motor_action > 20 then
+					last_motor_action := glob_clk_counter;
 				
+					if i_busy_uart = '0' and
+					   uart_take(uart_dev_status, motor_uart_dev ) = true  then
+							
+							uart_dev_status.motor := True;
+							time_tmp := to_unsigned(glob_clk_counter - motor_action_init, time_tmp'length );
+							
+							case val_cnt is
+							  when 0 =>   o_to_uart <= x"05"; -- size
+							  when 1 =>   o_to_uart <= std_logic_vector(motor_data_code);
+							  when 2 =>   o_to_uart <= std_logic_vector(speed(15 downto 8));
+							  when 3 =>   o_to_uart <= std_logic_vector(speed(7 downto 0));
+							  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
+							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
+							  when others => o_to_uart <=  (others=>'Z');
+							end case;
+					end if;
+				end if;
+							
+				if enable_uart = '1' and uart_dev_status.motor = True then
+					uart_dev_status.motor := False;
+				end if;
+						
+				if en_trigger = '1' then
 					en_trigger <= '0';
 				end if;
+				
 				if stop_trigger <= '1' then
 					stop_trigger <= '0';
 				end if;
 				
 				
-					
-			
-
 				if user_command = flash_write then
 					
 					if flash_write_state = execute_flash_write then
@@ -383,7 +423,8 @@ begin
 					
 				elsif user_command = run_motor then	
 					if run_motor_state = execute_run_motor then
-						
+						motor_action_init := glob_clk_counter;
+						last_motor_action := glob_clk_counter;
 						en_trigger <= '1';
 				
 						motor_control_setup.hal <= '0';
@@ -424,6 +465,8 @@ begin
 						elsif i_from_uart = std_logic_vector(stop_command)  then 
 							stop_trigger <= '1';
 							motor_control_setup.enable <= '0';
+							motor_action_init := glob_clk_counter;
+							last_motor_action := glob_clk_counter;
 						end if;
 					else	
 							

@@ -8,10 +8,11 @@ package functions is
 type type_uart_dev_status is record	
 	flash : boolean;
 	termistor : boolean;	
+	motor : boolean;	
 end record;
 
 
-type type_uart_device is (flash_uart_dev, termistor_uart_dev);
+type type_uart_device is (flash_uart_dev, termistor_uart_dev, motor_uart_dev);
 
 function parity_check(data: in std_logic_vector(7 downto 0); size : in integer) return std_logic;
 
@@ -47,14 +48,15 @@ begin
 
 		return (dev = flash_uart_dev and status.flash = True ) or
 			   ( dev = termistor_uart_dev and status.termistor = True) or
-			    (( status.flash  or status.termistor ) = False);
+			   ( dev = motor_uart_dev and status.motor = True ) or
+			   (( status.flash or status.termistor or status.motor ) = False);
 	
 	
 end uart_take;
 
 function uart_any_taken(status: in type_uart_dev_status) return boolean is
 begin 
-	return ( status.flash  or status.termistor );
+	return ( status.flash  or status.termistor or status.motor );
 end uart_any_taken;
 
 function revert_byte(byte: in std_logic_vector(7 downto 0) ) return std_logic_vector is
