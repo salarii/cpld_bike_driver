@@ -112,16 +112,18 @@ architecture behaviour of control_unit is
 
 		component speed_impulse is
 			generic ( 
-				CONSTANT time_period : integer
+				CONSTANT main_clock : integer;
+				CONSTANT work_period : integer;
+				CONSTANT out_period : integer
 				);
 				
 			port(
 					res : in std_logic;		
 					clk : in std_logic;	
-					i_enable : in std_logic;
+					
 					i_impulse : in std_logic;
 					
-					o_speed : out unsigned(7 downto 0)
+					o_speed : out unsigned(15 downto 0)
 				);
 		end component speed_impulse;
 
@@ -155,9 +157,8 @@ architecture behaviour of control_unit is
 		signal motor_control_setup : type_motor_control_setup;
 		signal motor_transistors : type_motor_transistors;
 		
-		signal enable_speed :  std_logic;
 		signal impulse_speed :  std_logic;	
-		signal speed : unsigned(7 downto 0);
+		signal speed : unsigned(15 downto 0);
 begin	
 	o_to_i2c.address <= "1001000";
 	
@@ -174,16 +175,18 @@ begin
 
 	speed_impulse_func : speed_impulse 
 	generic map ( 
-			time_period => 500000
+		 main_clock =>1000000,
+		 work_period =>100,
+		 out_period => 10
 		)
 				
 		port map(
-					res => res, 		
-					clk => clk,	
-					i_enable => enable_speed,
-					i_impulse => impulse_speed,
-					
-					o_speed => speed
+				res => res, 	
+				clk => clk,	
+				
+				i_impulse => impulse_speed,
+				
+				o_speed => speed
 				);
 
 	trigger_func : trigger
