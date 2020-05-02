@@ -58,7 +58,7 @@ architecture behaviour of speed_impulse is
 		signal lap_cycles	: unsigned(15 downto 0);
 		signal freq : unsigned(15  downto 0);	
 		signal valid : std_logic;
-		signal enable_div : std_logic;
+		signal enable_div : std_logic := '0';
 		constant  base : integer := 1000;
 		constant norm : unsigned(15 downto 0):= to_unsigned(base,16);
 	
@@ -69,6 +69,9 @@ architecture behaviour of speed_impulse is
 
 		signal rotation_speed : unsigned(15 downto 0):= (others => '0');
 
+		signal debug_cnt_time_tick   : unsigned(15 downto 0);
+		signal debug_cnt_out   : unsigned(15 downto 0); 
+		signal debug_cnt_rot   : unsigned(15 downto 0); 
 begin	
 
 
@@ -100,7 +103,7 @@ begin
 process(clk)
 
 		type type_state is (idle, divide, filter);
-		
+		variable impCounted : boolean := False;
 
 		constant period_max : integer := main_clock/work_period;
 		constant out_period_max : integer := (main_clock/out_period)/period_max;
@@ -113,7 +116,9 @@ process(clk)
 		variable state : type_state;
 begin
 		
-
+		debug_cnt_time_tick <= to_unsigned(cnt_time_tick,16);
+		debug_cnt_out <= to_unsigned(cnt_out,16);
+		debug_cnt_rot <= to_unsigned(cnt_rotations,16);
 		
 		if rising_edge(clk)  then
 			
@@ -122,9 +127,15 @@ begin
 				cnt_out := 0;
 				cnt_rotations := 0;
 				rotation_speed <= (others => '0');
+				impCounted := False;
+				enable_div <= '0';
 			else
-				if i_impulse = '1' then
+				if i_impulse = '1' and impCounted = False then
 					cnt_rotations := cnt_rotations + 1;
+					impCounted := True;
+				elsif i_impulse = '0' and impCounted = True then
+					impCounted := False;					
+					
 				end if;
 				
 				

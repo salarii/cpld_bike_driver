@@ -69,9 +69,9 @@ architecture t_behaviour of speed_tb is
 				impulse <= '1';		
 				
 				wait for 8 us;
+				impulse <= '0';
 
-
-				wait;
+				--wait;
 			end process;
 		--
 clk_process :

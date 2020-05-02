@@ -58,7 +58,16 @@ begin
 					part_divident := part_divident - sig_divisor; 
 					if part_divident >= 0 then
 						o_quotient(index) <= '1';
-						tmp(size -1  downto 0) := unsigned(shift_left(part_divident(size -1  downto 0),index));
+						for i in 0 to size -1 loop
+										
+							if i <  index  then
+								tmp(i) := tmp(i);
+							else
+								tmp(i) := '0';	
+							end	if;
+								
+						end loop;
+						tmp(size -1  downto 0) := unsigned(shift_left(part_divident(size -1  downto 0),index)) +tmp(size -1  downto 0);
 					end if;
 				
 					if index = 0 then

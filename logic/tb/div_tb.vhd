@@ -26,21 +26,50 @@ architecture t_behaviour of div_tb is
 		outMul : out signed(IntPart + FracPart - 1  downto 0));
 		end component two_com_mul;
 		
+	component div is
+		generic (CONSTANT size : integer);
+	
+		port(
+			res : in std_logic;
+			clk : in std_logic;
+			i_enable : in std_logic;
+			
+			i_divisor	: in  unsigned(size - 1  downto 0);
+			i_divident : in  unsigned(size - 1  downto 0);
+			o_valid : out std_logic;
+			o_quotient : out unsigned(size - 1  downto 0)
+			);
+	end component div;
+		
+		
+		signal divisor	: unsigned(15 downto 0);
+		signal divident : unsigned(15  downto 0);	
+		signal quot : unsigned(15  downto 0);	
+		signal valid : std_logic;
+		signal enable_div : std_logic := '0';
+		constant  base : integer := 1000;
+		constant norm : unsigned(15 downto 0):= to_unsigned(base,16);
+	
+		signal clk : std_logic;		
+		signal res : std_logic;	
+					
+
+		signal rotation_speed : unsigned(15 downto 0):= (others => '0');
+		
+		constant clk_period : time := 1 us;
 	begin	
 
-
-		module_mul: two_com_mul
+		module_div: div
 		generic map(
-			 IntPart => IntPart,
-			 FracPart => FracPart
-		 )
+		 size => 16)
 		port map (
-			A => A,
-			B => B,
-			outMul => outMul);
-
-		
-
+		res => res,
+		clk => clk,
+		i_enable => enable_div,
+		i_divisor => divisor,
+		i_divident	=> divident,
+		o_valid => valid,
+		o_quotient => quot);
 
 		process
 		
@@ -48,57 +77,59 @@ architecture t_behaviour of div_tb is
 				
 				--
 				
-				wait for 1 ns;
-				A <= x"FFFF";
-				B <= x"0032";
-					
-				wait for 1 ns;	
+				wait for 1 us;
+				divisor <= x"0001";
+				divident <= x"03F8";
+				enable_div <= '1';
+				wait for 1 us;
+				enable_div <= '0';
+				wait for 20 us;
+				assert quot  = x"03F8" report "problem";
+				wait for 1 us;
+				divisor <= x"0ccc";
+				divident <= x"0ccc";
+				enable_div <= '1';
+				wait for 1 us;
+				enable_div <= '0';
+				wait for 20 us;
+				assert quot  = x"0001" report "problem";
+				wait for 1 us;
+				divisor <= x"accc";
+				divident <= x"0ccc";
+				enable_div <= '1';
+				wait for 1 us;
+				enable_div <= '0';
+				wait for 20 us;
+				assert quot  = x"0000" report "problem";
+						
+				wait for 1 us;
+				divisor <= x"001c";
+				divident <= x"0ccc";
+				enable_div <= '1';
+				wait for 1 us;
+				enable_div <= '0';
+				wait for 20 us;
+				assert quot  = x"0075" report "problem";
+							
+								
+				wait for 1000 us;	
 				
-				assert outMul  = x"FFCE" report "problem:" & integer'image( to_integer(outMul) );
-				
-				wait for 1 ns;	
-			
-				A <= x"f101";
-				B <= x"00fe";
-					
-				wait for 1 ns;	
-				
-				assert outMul  = x"ef1e" report "problem";
-				
-				wait for 1 ns;	
 
 				
-				A <= x"0c32";
-				B <= x"0751";
-					
-				wait for 1 ns;	
-				
-				assert outMul  = x"5939" report "problem";
-				
-				wait for 1 ns;	
-				
-				
-				A <= x"0022";
-				B <= x"beaa";
-					
-				wait for 1 ns;	
-				
-				assert outMul  = x"1952" report "problem";
-				
-				wait for 1 ns;	
-				
-				A <= x"02c0";
-				B <= x"0aaa";
-					
-				wait for 1 ns;	
-				
-				assert outMul  = x"1d53" report "problem";
+				--
 				
 				wait for 10 ns;		
 						
 
 			end process;
 		--
-	--
+clk_process :
+process
+begin
+	clk  <=  '0';
+	wait  for clk_period/2;
+	clk  <=  '1';
+	wait  for clk_period/2;
+end  process;
 --
 end t_behaviour;
