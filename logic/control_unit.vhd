@@ -113,8 +113,7 @@ architecture behaviour of control_unit is
 		component speed_impulse is
 			generic ( 
 				CONSTANT main_clock : integer;
-				CONSTANT work_period : integer;
-				CONSTANT out_period : integer
+				CONSTANT work_period : integer
 				);
 				
 			port(
@@ -176,8 +175,7 @@ begin
 	speed_impulse_func : speed_impulse 
 	generic map ( 
 		 main_clock =>1000000,
-		 work_period =>100,
-		 out_period => 10
+		 work_period =>2
 		)
 				
 		port map(

@@ -15,8 +15,7 @@ architecture t_behaviour of speed_tb is
 		component speed_impulse is
 			generic ( 
 				CONSTANT main_clock : integer;
-				CONSTANT work_period : integer;
-				CONSTANT out_period : integer
+				CONSTANT work_period : integer
 				);
 				
 			port(
@@ -42,9 +41,8 @@ architecture t_behaviour of speed_tb is
 		
 		module_speed: speed_impulse
 		generic map (
-			main_clock => 1000,
-			work_period => 100,
-			out_period => 10 )
+			main_clock => 100,
+			work_period => 7 )
 		
 		port map (
 					res => res,	

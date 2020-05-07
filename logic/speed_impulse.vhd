@@ -11,8 +11,7 @@ use ieee.numeric_std.all;
 entity speed_impulse is
 	generic ( 
 		CONSTANT main_clock : integer;
-		CONSTANT work_period : integer;
-		CONSTANT out_period : integer
+		CONSTANT work_period : integer
 		);
 		
 	port(
@@ -40,28 +39,22 @@ architecture behaviour of speed_impulse is
 			);
 	end component low_pass;
 	
-	component div is
-		generic (CONSTANT size : integer);
-	
-		port(
-			res : in std_logic;
-			clk : in std_logic;
-			i_enable : in std_logic;
-			
-			i_divisor	: in  unsigned(size - 1  downto 0);
-			i_divident : in  unsigned(size - 1  downto 0);
-			o_valid : out std_logic;
-			o_quotient : out unsigned(size - 1  downto 0)
-			);
-	end component div;
+		
+	component mul
+		generic (CONSTANT IntPart : integer;
+	  			 CONSTANT FracPart : integer );
+	port  (
+		A : in  unsigned(IntPart + FracPart - 1  downto 0);
+		B : in  unsigned(IntPart + FracPart - 1  downto 0);
+		outMul : out unsigned(IntPart + FracPart - 1  downto 0));
+	end component;
 		
 		signal lap_cycles	: unsigned(15 downto 0);
 		signal freq : unsigned(15  downto 0);	
-		signal valid : std_logic;
-		signal enable_div : std_logic := '0';
-		constant  base : integer := 1000;
+		constant base : integer := 10*work_period;
 		constant norm : unsigned(15 downto 0):= to_unsigned(base,16);
-	
+		constant integral : integer := 16;
+		constant fraction : integer := 0;
 		signal enable_filter : std_logic := '0';		
 			
 		constant alfa : unsigned(7 downto 0):= x"80";
@@ -75,18 +68,15 @@ architecture behaviour of speed_impulse is
 begin	
 
 
-		module_div: div
+		module_mul_prv_val: mul
 		generic map(
-		 size => 16)
+			 IntPart => integral,
+			 FracPart => fraction
+		 )
 		port map (
-		res => res,
-		clk => clk,
-		i_enable => enable_div,
-		i_divisor => lap_cycles,
-		i_divident	=> norm,
-		o_valid => valid,
-		o_quotient => freq);
-
+			A => norm,
+			B => lap_cycles,
+			outMul => freq);
 
 	module_filter : low_pass 
 			
@@ -102,14 +92,11 @@ begin
 
 process(clk)
 
-		type type_state is (idle, divide, filter);
+		type type_state is (idle, multiply, filter);
 		variable impCounted : boolean := False;
 
 		constant period_max : integer := main_clock/work_period;
-		constant out_period_max : integer := (main_clock/out_period)/period_max;
-
 		variable cnt_time_tick : integer  range period_max downto 0 := 0;
-		variable cnt_out : integer  range out_period_max downto 0 := 0;
 		
 		variable cnt_rotations : integer  range base downto 0 := 0;
 
@@ -117,18 +104,16 @@ process(clk)
 begin
 		
 		debug_cnt_time_tick <= to_unsigned(cnt_time_tick,16);
-		debug_cnt_out <= to_unsigned(cnt_out,16);
+
 		debug_cnt_rot <= to_unsigned(cnt_rotations,16);
 		
 		if rising_edge(clk)  then
 			
 			if res = '0' then
 				cnt_time_tick := 0;
-				cnt_out := 0;
 				cnt_rotations := 0;
 				rotation_speed <= (others => '0');
 				impCounted := False;
-				enable_div <= '0';
 				enable_filter <= '0';
 			else
 				if i_impulse = '1' and impCounted = False then
@@ -144,44 +129,26 @@ begin
 					
 					cnt_time_tick := 0; 
 					
-					if  cnt_out = out_period_max then
-						cnt_out := 0;
-						if state = idle then
-							
-							state := divide;
+					if state = idle then
+							state := multiply;
 							lap_cycles <= to_unsigned(cnt_rotations,lap_cycles'length);
-						end if;
-				
-					else
-						cnt_out := cnt_out + 1; 
 					end if;
+				
 					cnt_rotations := 0;
 				else
 					cnt_time_tick := cnt_time_tick + 1;
 				end if;
 				
-				if state = divide  then
+				if state = multiply  then
 				
-					if enable_div = '0' then
-            if lap_cycles = (others => '0') then
-              state := filter;
-            else
-              enable_div <=  '1';
-            end if;
-					elsif enable_div = '1' then
-						state := filter;
-						enable_div <=  '0';
-					end if;
+					state := filter;
+					enable_filter <= '1';
 					
 				elsif state = filter then
 					if enable_filter = '1' then
 						enable_filter <= '0';
 						rotation_speed <= filtered;
 						state := idle;
-					end if;
-					
-					if valid = '1' then
-						enable_filter <= '1';
 					end if;
 				
 				end if;

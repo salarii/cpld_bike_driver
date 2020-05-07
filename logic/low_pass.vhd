@@ -79,17 +79,17 @@ begin
 			prev_val <= (others => '0');
 			status := Idle;
 		else
-			if i_enable = '1'   then
-				if status =  Idle then
+			if i_enable = '1' and status =  Idle  then
+
 					status := Calculate;				
 					alpha_full(15 downto 8) <= (others =>'0');
 					alpha_full(7 downto 0) <= i_alfa;
 					alpha_complement <= x"0100" - (x"00" & i_alfa);
-				elsif status = Calculate then
+			elsif status = Calculate then
 				
 					prev_val <= now_comp + prev_comp;
 					status := Inactive;
-				end if;
+			
 			elsif i_enable = '0' then
 			
 				status := Idle;	
