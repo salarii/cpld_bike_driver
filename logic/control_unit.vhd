@@ -285,7 +285,7 @@ begin
 		variable uart_dev_status : type_uart_dev_status  := (False,False,False);
 		
 		constant glob_clk_denom : integer := 1000;
-		variable glob_clk_counter : integer range 65535 downto 0 := 0;
+		variable glob_clk_counter : integer range 1048575 downto 0 := 0;
 		variable glob_small_clk_counter : integer range glob_clk_denom downto 0  := 0;
 		variable motor_action_init : integer range 65535 downto 0 := 0;
 		variable last_motor_action : integer range 65535 downto 0 := 0;
@@ -323,7 +323,7 @@ begin
 
 					
 				if glob_clk_counter - last_motor_action > 20 then
-					last_motor_action := glob_clk_counter;
+					
 				
 					if i_busy_uart = '0' and
 					   uart_take(uart_dev_status, motor_uart_dev ) = true  then
@@ -340,12 +340,22 @@ begin
 							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
 							  when others => o_to_uart <=  (others=>'Z');
 							end case;
+							
+							if enable_uart = '1'  then
+									val_cnt := val_cnt + 1;
+							end if;
+							
+					elsif val_cnt = 6 and 
+								i_busy_uart = '1' and
+								uart_take(uart_dev_status, motor_uart_dev) = true then
+								uart_dev_status.motor := False;
+								last_motor_action := glob_clk_counter;
+								val_cnt := 0;	
+								
+							
 					end if;
 				end if;
 							
-				if enable_uart = '1' and uart_dev_status.motor = True then
-					uart_dev_status.motor := False;
-				end if;
 						
 				if en_trigger = '1' then
 					en_trigger <= '0';

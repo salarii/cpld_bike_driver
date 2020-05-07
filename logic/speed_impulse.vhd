@@ -163,7 +163,11 @@ begin
 				if state = divide  then
 				
 					if enable_div = '0' then
-						enable_div <=  '1';
+            if lap_cycles = (others => '0') then
+              state := filter;
+            else
+              enable_div <=  '1';
+            end if;
 					elsif enable_div = '1' then
 						state := filter;
 						enable_div <=  '0';
