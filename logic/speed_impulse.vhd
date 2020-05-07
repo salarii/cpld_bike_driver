@@ -62,9 +62,9 @@ architecture behaviour of speed_impulse is
 		constant  base : integer := 1000;
 		constant norm : unsigned(15 downto 0):= to_unsigned(base,16);
 	
-		signal enable_filter : std_logic;		
+		signal enable_filter : std_logic := '0';		
 			
-		constant alfa : unsigned(7 downto 0):= x"b0";
+		constant alfa : unsigned(7 downto 0):= x"80";
 		signal filtered : unsigned(15 downto 0) := (others => '0');
 
 		signal rotation_speed : unsigned(15 downto 0):= (others => '0');
@@ -129,6 +129,7 @@ begin
 				rotation_speed <= (others => '0');
 				impCounted := False;
 				enable_div <= '0';
+				enable_filter <= '0';
 			else
 				if i_impulse = '1' and impCounted = False then
 					cnt_rotations := cnt_rotations + 1;

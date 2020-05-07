@@ -6,6 +6,6 @@ ghdl -a --workdir=build spi.vhd i2c_slave.vhd flash_controller.vhd
 ghdl -a --workdir=build ./tb/temp_tb.vhd ./tb/poly_tb.vhd ./tb/uart_tb.vhd
 ghdl -a --workdir=build ./tb/motor_driver_tb.vhd ./tb/spi_tb.vhd  ./tb/uart_flash_tb.vhd
 ghdl -a --workdir=build ./tb/uart_run_motor_tb.vhd ./tb/speed_tb.vhd ./tb/div_tb.vhd
-ghdl -e --workdir=build div_tb
-ghdl -r div_tb --vcd=func.vcd  --stop-time=1000us --ieee-asserts=disable-at-0
+ghdl -e --workdir=build speed_tb
+ghdl -r speed_tb --vcd=func.vcd  --stop-time=2000us --ieee-asserts=disable-at-0
 gtkwave func.vcd
