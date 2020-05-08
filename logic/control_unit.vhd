@@ -283,6 +283,7 @@ begin
 		variable uart_dev_status : type_uart_dev_status  := (False,False,False);
 		
 		constant glob_clk_denom : integer := 1000;
+		constant send_motor_data_wait : integer := 500;
 		variable glob_clk_counter : integer range 1048575 downto 0 := 0;
 		variable glob_small_clk_counter : integer range glob_clk_denom downto 0  := 0;
 		variable motor_action_init : integer range 65535 downto 0 := 0;
@@ -320,38 +321,10 @@ begin
 				end if;
 
 					
-				if glob_clk_counter - last_motor_action > 20 then
+				if glob_clk_counter - last_motor_action > send_motor_data_wait then
 					
-				
-					if i_busy_uart = '0' and
-					   uart_take(uart_dev_status, motor_uart_dev ) = true  then
-							
-							uart_dev_status.motor := True;
-							time_tmp := to_unsigned(glob_clk_counter - motor_action_init, time_tmp'length );
-							
-							case val_cnt is
-							  when 0 =>   o_to_uart <= x"05"; -- size
-							  when 1 =>   o_to_uart <= std_logic_vector(motor_data_code);
-							  when 2 =>   o_to_uart <= std_logic_vector(speed(15 downto 8));
-							  when 3 =>   o_to_uart <= std_logic_vector(speed(7 downto 0));
-							  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
-							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
-							  when others => o_to_uart <=  (others=>'Z');
-							end case;
-							
-							if enable_uart = '1'  then
-									val_cnt := val_cnt + 1;
-							end if;
-							
-					elsif val_cnt = 6 and 
-								i_busy_uart = '1' and
-								uart_take(uart_dev_status, motor_uart_dev) = true then
-								uart_dev_status.motor := False;
-								last_motor_action := glob_clk_counter;
-								val_cnt := 0;	
-								
-							
-					end if;
+					uart_dev_status.motor := True;
+					last_motor_action := glob_clk_counter;
 				end if;
 							
 						
@@ -400,33 +373,8 @@ begin
 						end if;
 					elsif flash_read_state = send_flash_data then
 					
-						if i_busy_uart = '0' and
-						   uart_take(uart_dev_status, flash_uart_dev) = true  then
-							
 							uart_dev_status.flash := True;
-							case val_cnt is
-							  when 0 =>   o_to_uart <= x"05"; -- size
-							  when 1 =>   o_to_uart <= std_logic_vector(flash_data_code);
-							  when 2 =>   o_to_uart <= revert_byte(std_logic_vector(address_flash));
-							  when 3 =>   o_to_uart <= std_logic_vector(data_flash(23 downto 16));
-							  when 4 =>   o_to_uart <= std_logic_vector(data_flash(15 downto 8));
-							  when 5 =>   o_to_uart <= std_logic_vector(data_flash(7 downto 0));
-							  when others => o_to_uart <=  (others=>'Z');
-							end case;
-						
-							
-							if enable_uart = '1'  then
-									val_cnt := val_cnt + 1;
-							end if;
-							
-						elsif val_cnt = 6 and 
-								i_busy_uart = '1' and
-								uart_take(uart_dev_status, flash_uart_dev) = true then
-								uart_dev_status.flash := False;
-								user_command := no_command; 
-								val_cnt := 0;	
-								
-						end if;								
+										
 					end if;
 					
 				elsif user_command = run_motor then	
@@ -558,17 +506,86 @@ begin
 
 
 
-				if i_busy_uart = '0' and
-				   uart_any_taken(uart_dev_status) = True then
-				
-				   enable_uart <= '1';	
-				else
-				   enable_uart <= '0';
+				if uart_any_taken(uart_dev_status) = True then
 							
+							
+
+					if uart_dev_status.flash = True  then
+						if i_busy_uart = '0' then 
+							case val_cnt is
+								  when 0 =>   o_to_uart <= x"05"; -- size
+								  when 1 =>   o_to_uart <= std_logic_vector(flash_data_code);
+								  when 2 =>   o_to_uart <= revert_byte(std_logic_vector(address_flash));
+								  when 3 =>   o_to_uart <= std_logic_vector(data_flash(23 downto 16));
+								  when 4 =>   o_to_uart <= std_logic_vector(data_flash(15 downto 8));
+								  when 5 =>   o_to_uart <= std_logic_vector(data_flash(7 downto 0));
+								  when others => o_to_uart <=  (others=>'Z');
+							end case;
+							enable_uart <= '1';
+						elsif val_cnt = 6 and i_busy_uart = '1' then
+								
+								uart_dev_status.flash := False;
+								user_command := no_command; 
+								val_cnt := 0;	
+								
+						end if;	
+					
+					
+					elsif uart_dev_status.motor = True  then
+					 
+						if i_busy_uart = '0' then 					
+							time_tmp := to_unsigned(glob_clk_counter, time_tmp'length );
+
+							case val_cnt is
+							  when 0 =>   o_to_uart <= x"05"; -- size
+							  when 1 =>   o_to_uart <= std_logic_vector(motor_data_code);
+							  when 2 =>   o_to_uart <= std_logic_vector(speed(15 downto 8));
+							  when 3 =>   o_to_uart <= std_logic_vector(speed(7 downto 0));
+							  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
+							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
+							  when others => o_to_uart <=  (others=>'Z');
+							end case;
+							enable_uart <= '1';
+						elsif val_cnt = 6 and i_busy_uart = '1' then
+
+								uart_dev_status.motor := False;
+								
+								val_cnt := 0;	
+								
+						end if;
+					
+					
+					elsif uart_dev_status.termistor = True  then 
+					
+						if i_busy_uart = '0' then 
+						
+							case val_cnt is
+							  when 0 =>   o_to_uart <= x"06";
+							  when 1 =>   o_to_uart <= std_logic_vector(termistor_data_code);
+							  when 2 =>   o_to_uart <= data(15 downto 8);
+							  when 3 =>   o_to_uart <= data(7 downto 0);
+							  when 4 =>   o_to_uart <= std_logic_vector(time_trigger(15 downto 8));
+							  when 5 =>   o_to_uart <= std_logic_vector(time_trigger(7 downto 0));
+							  when 6 =>   o_to_uart <= std_logic_vector(poly_temperature);
+							  when others => o_to_uart <=  (others=>'Z');
+							end case;
+							enable_uart <= '1';
+						elsif val_cnt = 7 and i_busy_uart = '1' then
+							
+							uart_dev_status.termistor := False; 
+							val_cnt := 0;
+							state := Standby;							
+						end if;
+					end if;
+					if i_busy_uart = '1' then
+						if enable_uart = '1'  then
+							val_cnt := val_cnt + 1;
+							 enable_uart <= '0';
+						end if;
+					end if;
 				end if;
-
-
-
+						
+					 
 				if  state = Setup then
 					
 					o_to_i2c.transaction <= Write;
@@ -645,37 +662,11 @@ begin
 				elsif state = Cycle then
 					
 					
-					if i_busy_uart = '0' and
-					   uart_take(uart_dev_status, termistor_uart_dev) = true and
-					   enable_pc_write = '1' then
+					if i_busy_uart = '0' and enable_pc_write = '1' then
 						
 						uart_dev_status.termistor := True;
-						
-						case val_cnt is
-						  when 0 =>   o_to_uart <= x"06";
-						  when 1 =>   o_to_uart <= std_logic_vector(termistor_data_code);
-						  when 2 =>   o_to_uart <= data(15 downto 8);
-						  when 3 =>   o_to_uart <= data(7 downto 0);
-						  when 4 =>   o_to_uart <= std_logic_vector(time_trigger(15 downto 8));
-						  when 5 =>   o_to_uart <= std_logic_vector(time_trigger(7 downto 0));
-						  when 6 =>   o_to_uart <= std_logic_vector(poly_temperature);
-						  when others => o_to_uart <=  (others=>'Z');
-						end case;
-						report integer'image(val_cnt);
-						
-
-		
-						if enable_uart = '1'  then
-								val_cnt := val_cnt + 1;
-						end if;
-						
-						
-					elsif val_cnt = 7 and 
-							i_busy_uart = '1' and
-							uart_take(uart_dev_status, termistor_uart_dev) = true then
-							uart_dev_status.termistor := False; 
-							val_cnt := 0;
-							state := Standby;							
+								
+						--state := Standby;							
 					end if;
 					
 					

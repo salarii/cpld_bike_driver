@@ -16,8 +16,6 @@ type type_uart_device is (flash_uart_dev, termistor_uart_dev, motor_uart_dev);
 
 function parity_check(data: in std_logic_vector(7 downto 0); size : in integer) return std_logic;
 
-function uart_take(status: in type_uart_dev_status; dev : in type_uart_device) return boolean;
-
 function uart_any_taken(status: in type_uart_dev_status) return boolean;
 
 function revert_byte(byte: in std_logic_vector(7 downto 0) ) return std_logic_vector; 
@@ -42,17 +40,6 @@ begin
 	return parity;
 end parity_check;
 
-function uart_take(status: in type_uart_dev_status; dev : in type_uart_device) return boolean is
-		
-begin
-
-		return (dev = flash_uart_dev and status.flash = True ) or
-			   ( dev = termistor_uart_dev and status.termistor = True) or
-			   ( dev = motor_uart_dev and status.motor = True ) or
-			   (( status.flash or status.termistor or status.motor ) = False);
-	
-	
-end uart_take;
 
 function uart_any_taken(status: in type_uart_dev_status) return boolean is
 begin 
