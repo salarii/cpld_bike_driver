@@ -23,6 +23,10 @@ int main(int argc, char *argv[])
     QObject::connect(&comm, &Communication::passFlashData,
                      &w, &Widget::displayFlash);
 
+    QObject::connect(&comm, &Communication::passMotorData,
+                     &w, &Widget::serviceMotorData);
+
+
     comm.start();
     return a.exec();
 }

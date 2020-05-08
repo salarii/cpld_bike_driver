@@ -3,12 +3,7 @@
 
 #include <QThread>
 #include <QMutex>
-
-
-struct Measurement;
-struct FlashData;
-enum class DataCodes { termistor = 0, flash = 1};
-
+#include "data_types.h"
 
 class Communication : public QThread
 {
@@ -21,6 +16,7 @@ public:
 signals:
     void passMeasurement(Measurement const * _measurement);
     void passFlashData(FlashData const * _flashData);
+    void passMotorData(MotorData const * _motorData);
 
     void noSerial();
 public slots:

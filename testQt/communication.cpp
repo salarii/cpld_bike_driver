@@ -28,6 +28,7 @@ void Communication::run()
 
         Measurement measurement;
         FlashData flashData;
+        MotorData motorData;
         forever {
             mutex.lock();
             if ( messages.size() > 0 )
@@ -48,10 +49,7 @@ void Communication::run()
                 printf("problem");
 
             }
-if(bytesToRead == 5)
-{
- printf("problem");
-}
+
             int index = 0;
             while (bytesToRead)
             {
@@ -69,10 +67,10 @@ if(bytesToRead == 5)
                 }
 
             }
-
+            int shift8 = 8;
             if (readbuffer[0] == (unsigned char)DataCodes::termistor )
             {
-                int shift8 = 8;
+
                 float voltage = (readbuffer[1] << shift8)+
                             readbuffer[2];
                 voltage *=(2.048/32768.0);
@@ -97,7 +95,19 @@ if(bytesToRead == 5)
 
                 emit  passFlashData(&flashData);
             }
+            else if(readbuffer[0] == (unsigned char)DataCodes::motor )
+            {
+                float speed = 0;
 
+                speed = (float)(readbuffer[1]<< shift8);
+                speed = (float)readbuffer[2];
+                motorData.speed = 500;// (speed/10.0)*60.0;
+
+                motorData.time = ((readbuffer[3] << shift8)+
+                            readbuffer[4])/500;
+
+                emit  passMotorData(&motorData);
+            }
 
         }
         closeSerialPort(h);

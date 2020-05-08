@@ -32,6 +32,7 @@ public slots:
     void requestDataFromFlash();
     void displayFlash(FlashData const * _value);
     void serviceMeasurement(Measurement const * _value);
+    void serviceMotorData(MotorData const * _motorData);
     void startMeasurement(bool _checked);
     void serialProblem();
     void startMotor(bool _checked);
@@ -42,6 +43,7 @@ private:
 private:
     bool motorRun;
     QLineSeries* series;
+    QLineSeries* motorSeries;
     QChartView * chartView;
     QChartView * motorChartView;
     QLabel * label;

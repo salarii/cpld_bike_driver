@@ -35,6 +35,7 @@ Widget::Widget(QWidget *parent)
     chartView = new  QChartView(this);
 
     series = new QLineSeries();
+    motorSeries = new QLineSeries();
     label = new QLabel("");
 
     chartView->setChart(createChart());
@@ -238,6 +239,8 @@ Widget::motorSliderChanged()
 void
 Widget::startMotor(bool _checked)
 {
+    delete motorSeries;
+    motorSeries = new QLineSeries();
 
     if ( _checked == false )
     {
@@ -293,18 +296,20 @@ Widget::startMeasurement(bool _checked)
 QChart * Widget::createMotorChart()
 {
     QLineSeries * tmp = new QLineSeries();
-    auto list = series->points();
+    auto list = motorSeries->points();
     if ( list.size() > 100 )
     {
         list.removeFirst();
     }
 
     tmp->append(list);
-    series = tmp;
+
+    delete motorSeries;
+    motorSeries = tmp;
     QChart * newChart = new QChart;
-    series->setName("motor speed (rpm)");
+    motorSeries->setName("motor speed (rpm)");
     newChart->setTitle("Motor Data:");
-    newChart->addSeries(series);
+    newChart->addSeries(motorSeries);
 
     QValueAxis *axisX = new QValueAxis;
 
@@ -313,8 +318,8 @@ QChart * Widget::createMotorChart()
     QValueAxis *axisY = new QValueAxis;
 
     newChart->addAxis(axisY, Qt::AlignLeft);
-    series->attachAxis(axisX);
-    series->attachAxis(axisY);
+    motorSeries->attachAxis(axisX);
+    motorSeries->attachAxis(axisY);
     axisX->applyNiceNumbers();
     axisY->setRange(0.0, 2000.0);
     axisY->applyNiceNumbers();
@@ -377,6 +382,28 @@ void Widget::serviceMeasurement(Measurement const * _measurement)
     delete chartToDelete;
 
 }
+
+void Widget::serviceMotorData(MotorData const * _motorData)
+{
+    float time = ((float)_motorData->time);
+    if ( motorSeries->points().size() > 0 &&  motorSeries->points().back().x() > time )
+    {
+        motorSeries->clear();
+    }
+    motorSeries->append(time,_motorData->speed);
+    auto message = QString("Motor Speed:  ") + QString().setNum(_motorData->speed, 'g', 4) + QString(" Rpm ");
+
+    label->setText(message);
+    QChart* chartToDelete=NULL;
+    if(motorChartView->chart())
+    {
+        chartToDelete=motorChartView->chart();
+    }
+    motorChartView->setChart(createMotorChart());
+
+    delete chartToDelete;
+}
+
 
 Widget::~Widget()
 {

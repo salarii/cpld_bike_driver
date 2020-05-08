@@ -156,7 +156,6 @@ architecture behaviour of control_unit is
 		signal motor_control_setup : type_motor_control_setup;
 		signal motor_transistors : type_motor_transistors;
 		
-		signal impulse_speed :  std_logic;	
 		signal speed : unsigned(15 downto 0);
 begin	
 	o_to_i2c.address <= "1001000";
@@ -182,7 +181,7 @@ begin
 				res => res, 	
 				clk => clk,	
 				
-				i_impulse => impulse_speed,
+				i_impulse => i_impulse,
 				
 				o_speed => speed
 				);
@@ -284,10 +283,10 @@ begin
 		
 		constant glob_clk_denom : integer := 1000;
 		constant send_motor_data_wait : integer := 500;
-		variable glob_clk_counter : integer range 1048575 downto 0 := 0;
+		variable glob_clk_counter : integer := 0;
 		variable glob_small_clk_counter : integer range glob_clk_denom downto 0  := 0;
-		variable motor_action_init : integer range 65535 downto 0 := 0;
-		variable last_motor_action : integer range 65535 downto 0 := 0;
+	
+		variable last_motor_action : integer := 0;
 		
 		variable time_tmp : unsigned(15 downto 0);
 	begin
@@ -379,7 +378,6 @@ begin
 					
 				elsif user_command = run_motor then	
 					if run_motor_state = execute_run_motor then
-						motor_action_init := glob_clk_counter;
 						last_motor_action := glob_clk_counter;
 						en_trigger <= '1';
 				
@@ -421,7 +419,6 @@ begin
 						elsif i_from_uart = std_logic_vector(stop_command)  then 
 							stop_trigger <= '1';
 							motor_control_setup.enable <= '0';
-							motor_action_init := glob_clk_counter;
 							last_motor_action := glob_clk_counter;
 						end if;
 					else	
