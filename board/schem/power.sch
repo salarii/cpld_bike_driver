@@ -309,7 +309,7 @@ AR Path="/5E3A0664/5E3DB971" Ref="J?"  Part="1"
 AR Path="/5E4C3088/5E3DB971" Ref="J8"  Part="1" 
 F 0 "J8" V 1072 3030 50  0000 L CNN
 F 1 "POWER_IN" V 1163 3030 50  0000 L CNN
-F 2 "Connector_Phoenix_MSTB:PhoenixContact_MSTBA_2,5_2-G-5,08_1x02_P5.08mm_Horizontal" H 1200 2950 50  0001 C CNN
+F 2 "Connector_Phoenix_MSTB:PhoenixContact_MSTBVA_2,5_2-G-5,08_1x02_P5.08mm_Vertical" H 1200 2950 50  0001 C CNN
 F 3 "~" H 1200 2950 50  0001 C CNN
 	1    1200 2950
 	-1   0    0    1   
@@ -483,7 +483,7 @@ AR Path="/5E3A0664/5EA1D5AE" Ref="J?"  Part="1"
 AR Path="/5E4C3088/5EA1D5AE" Ref="J20"  Part="1" 
 F 0 "J20" V 1072 2430 50  0000 L CNN
 F 1 "ON/OFF" V 1163 2430 50  0000 L CNN
-F 2 "Connector_Phoenix_MSTB:PhoenixContact_MSTBA_2,5_2-G-5,08_1x02_P5.08mm_Horizontal" H 1200 2350 50  0001 C CNN
+F 2 "Connector_Phoenix_MSTB:PhoenixContact_MSTBVA_2,5_2-G-5,08_1x02_P5.08mm_Vertical" H 1200 2350 50  0001 C CNN
 F 3 "~" H 1200 2350 50  0001 C CNN
 	1    1200 2350
 	-1   0    0    1   

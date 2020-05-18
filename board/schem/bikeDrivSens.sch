@@ -21,7 +21,7 @@ U 1 1 5E3D7BDD
 P 5300 4600
 F 0 "J2" H 5380 4642 50  0000 L CNN
 F 1 "motor_out" H 5380 4551 50  0000 L CNN
-F 2 "Connector_Phoenix_MSTB:PhoenixContact_MSTBA_2,5_3-G-5,08_1x03_P5.08mm_Horizontal" H 5300 4600 50  0001 C CNN
+F 2 "Connector_Phoenix_MSTB:PhoenixContact_MSTBVA_2,5_3-G-5,08_1x03_P5.08mm_Vertical" H 5300 4600 50  0001 C CNN
 F 3 "~" H 5300 4600 50  0001 C CNN
 	1    5300 4600
 	1    0    0    -1  

@@ -1,4 +1,4 @@
-update=18.05.2020 11:37:16
+update=18.05.2020 23:18:16
 version=1
 last_client=kicad
 [general]
@@ -248,7 +248,7 @@ dPairGap=0.2
 dPairViaGap=0.25
 [pcbnew/Netclasses/1]
 Name=energy
-Clearance=1
+Clearance=0.2
 TrackWidth=3.5
 ViaDiameter=4
 ViaDrill=2
@@ -259,14 +259,14 @@ dPairGap=1
 dPairViaGap=0.25
 [pcbnew/Netclasses/2]
 Name=energy_mid
-Clearance=0.5
+Clearance=0.2
 TrackWidth=2
 ViaDiameter=0.8
 ViaDrill=0.4
 uViaDiameter=0.3
 uViaDrill=0.1
 dPairWidth=2
-dPairGap=0.5
+dPairGap=0.2
 dPairViaGap=0.25
 [pcbnew/Netclasses/3]
 Name=smal_power
@@ -277,7 +277,7 @@ ViaDrill=0.4
 uViaDiameter=0.3
 uViaDrill=0.1
 dPairWidth=1
-dPairGap=0.5
+dPairGap=0.2
 dPairViaGap=0.25
 [pcbnew/Netclasses/4]
 Name=small
