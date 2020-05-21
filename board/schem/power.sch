@@ -902,10 +902,6 @@ Wire Wire Line
 	1450 3950 1450 3800
 Wire Wire Line
 	1450 3500 1450 3400
-Wire Wire Line
-	1450 3400 2500 3400
-Wire Wire Line
-	2500 3400 2500 3950
 $Comp
 L Device:C C?
 U 1 1 5EC91EFD
@@ -930,8 +926,6 @@ Wire Wire Line
 Connection ~ 3350 3250
 Wire Wire Line
 	2950 3650 3350 3650
-Wire Wire Line
-	2500 3950 2400 3950
 $Comp
 L power:GND #PWR047
 U 1 1 5ECB02FD
@@ -1013,8 +1007,6 @@ Wire Wire Line
 	2800 5100 2800 5000
 Wire Wire Line
 	3200 5100 3200 4950
-Wire Wire Line
-	2400 4250 2450 4250
 Wire Wire Line
 	2800 4250 2800 4300
 Wire Wire Line
@@ -1150,12 +1142,7 @@ F 3 "" H 2600 4950 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	2400 4100 2550 4100
-Wire Wire Line
-	2450 4250 2450 4900
-Connection ~ 2450 4250
-Wire Wire Line
-	2450 4250 2800 4250
+	2400 4100 2450 4100
 $Comp
 L fpgaRelatedLib:HPI1260 U12
 U 1 1 5EEB78DF
@@ -1167,11 +1154,6 @@ F 3 "" H 2850 4000 50  0001 C CNN
 	1    2700 4100
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	2500 3400 2800 3400
-Wire Wire Line
-	2800 3400 2800 3250
-Connection ~ 2500 3400
 $Comp
 L power:+5V #PWR0113
 U 1 1 5F42AD1C
@@ -1201,4 +1183,22 @@ $EndComp
 Wire Wire Line
 	4000 2800 4000 2750
 Connection ~ 4000 2800
+Wire Wire Line
+	2400 3950 2800 3950
+Wire Wire Line
+	2800 3250 2800 3950
+Wire Wire Line
+	2500 3400 2500 4100
+Connection ~ 2500 4100
+Wire Wire Line
+	2500 4100 2550 4100
+Wire Wire Line
+	2400 4250 2800 4250
+Wire Wire Line
+	2450 4900 2450 4100
+Connection ~ 2450 4100
+Wire Wire Line
+	2450 4100 2500 4100
+Wire Wire Line
+	1450 3400 2500 3400
 $EndSCHEMATC
