@@ -124,6 +124,20 @@ begin
 					
 				end if;
 				
+        if state = multiply  then
+				
+					state := filter;
+					enable_filter <= '1';
+					
+				elsif state = filter then
+					if enable_filter = '1' then
+						enable_filter <= '0';
+						rotation_speed <= filtered;
+						state := idle;
+					end if;
+				
+				end if;
+				
 				
 				if 	cnt_time_tick = period_max then
 					
@@ -139,19 +153,6 @@ begin
 					cnt_time_tick := cnt_time_tick + 1;
 				end if;
 				
-				if state = multiply  then
-				
-					state := filter;
-					enable_filter <= '1';
-					
-				elsif state = filter then
-					if enable_filter = '1' then
-						enable_filter <= '0';
-						rotation_speed <= filtered;
-						state := idle;
-					end if;
-				
-				end if;
 				
 			end if;
 				

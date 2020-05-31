@@ -252,12 +252,23 @@ architecture t_behaviour of uart_run_motor_tb is
 				wait for 3 us;
 				rx_uart <= '1';
 				wait for 6 us;
+	
 							
 				wait for 520 us;
 
 				wait;
 			end process;
 		--
+impulse_process :
+process
+begin
+	impulse  <=  '0';
+	wait  for 10 us;
+	impulse  <=  '1';
+	wait  for 10 us;
+end  process;
+
+
 clk_process :
 process
 begin
