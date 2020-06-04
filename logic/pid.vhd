@@ -17,49 +17,51 @@ entity pid is
 		);
 end pid;
 
-architecture behaviour of poly is
+architecture behaviour of pid is
 		constant one : unsigned(IntPart + FracPart - 1  downto 0) := x"001000";
 		
-		signal et1 : unsigned (IntPart + FracPart - 1  downto 0) := (others=>'0');
-		signal et2 : unsigned (IntPart + FracPart - 1  downto 0) := (others=>'0');
-		signal regt1 : unsigned (IntPart + FracPart - 1  downto 0) := (others=>'0');
+		signal et1 : signed (IntPart + FracPart - 1  downto 0) := (others=>'0');
+		signal et2 : signed (IntPart + FracPart - 1  downto 0) := (others=>'0');
+		signal regt1 : signed (IntPart + FracPart - 1  downto 0) := (others=>'0');
 
-		signal mul1_out : unsigned (IntPart + FracPart - 1  downto 0);
-		signal mul2_out : unsigned (IntPart + FracPart - 1  downto 0);
-		signal mul3_out : unsigned (IntPart + FracPart - 1  downto 0);
+		signal mul1_out : signed (IntPart + FracPart - 1  downto 0);
+		signal mul2_out : signed (IntPart + FracPart - 1  downto 0);
+		signal mul3_out : signed (IntPart + FracPart - 1  downto 0);
 		
 		--- 
 		
-		constant Kp : unsigned(IntPart + FracPart - 1  downto 0) := "0110010110011110";
-		constant Ki : unsigned(IntPart + FracPart - 1  downto 0) := "0001011001000001";
-		constant Kd : unsigned(IntPart + FracPart - 1  downto 0) := "0001010111100000";
+		constant Kp : signed(IntPart + FracPart - 1  downto 0) := "0110010110011110";
+		constant Ki : signed(IntPart + FracPart - 1  downto 0) := "0001011001000001";
+		constant Kd : signed(IntPart + FracPart - 1  downto 0) := "0001010111100000";
 		
-		constant pt0 : unsigned (IntPart + FracPart - 1  downto 0) := Kp + Ki + Kd;
-		constant pt1 : unsigned (IntPart + FracPart - 1  downto 0) := Ki - Kp - shift_left(unsigned(Kd), 1);
-		constant pt2 : unsigned (IntPart + FracPart - 1  downto 0) := Kd;
+		constant pt0 : signed(IntPart + FracPart - 1  downto 0) := Kp + Ki + Kd;
+		constant pt1 : signed(IntPart + FracPart - 1  downto 0) := Ki - Kp - shift_left(signed(Kd), 1);
+		constant pt2 : signed(IntPart + FracPart - 1  downto 0) := Kd;
 		
-		component mul
-			generic (CONSTANT IntPart : integer;
-		   			 CONSTANT FracPart : integer );
-		port  (
-			A : in  unsigned(IntPart + FracPart - 1  downto 0);
-			B : in  unsigned(IntPart + FracPart - 1  downto 0);
-			outMul : out unsigned(IntPart + FracPart - 1  downto 0));
+		component two_com_mul
+				generic (CONSTANT IntPart : integer;
+			   			 CONSTANT FracPart : integer );
+			port  (
+			A : in  signed(IntPart + FracPart - 1  downto 0);
+			B : in  signed(IntPart + FracPart - 1  downto 0);
+	
+			outMul : out signed(IntPart + FracPart - 1  downto 0)
+			);
 		end component;
 				
 begin	
 
-		module_mul1: mul
+		module_mul1: two_com_mul
 		generic map(
 			 IntPart => IntPart,
 			 FracPart => FracPart
 		 )
 		port map (
 			A => pt0,
-			B => i_val,
+			B => signed(i_val),
 			outMul => mul1_out);
 
-		module_mul2: mul
+		module_mul2: two_com_mul
 		generic map(
 			 IntPart => IntPart,
 			 FracPart => FracPart
@@ -69,7 +71,7 @@ begin
 			B => et1,
 			outMul => mul2_out);
 
-		module_mul3: mul
+		module_mul3: two_com_mul
 		generic map(
 			 IntPart => IntPart,
 			 FracPart => FracPart
@@ -98,8 +100,8 @@ begin
 			if i_enable = '1' then
 			
 				regt1 <= regt1 + mul1_out + mul2_out + mul3_out;
-				et1 <= i_val;
-				et2 <= et1;
+				et1 <= signed(i_val);
+				et2 <= signed(et1);
 			end if;
 		end if;
 		
@@ -107,7 +109,7 @@ begin
 
 	process(regt1)
 	begin
-		o_reg <= regt1;
+		o_reg <= std_logic_vector(regt1);
 
 	end process;
 

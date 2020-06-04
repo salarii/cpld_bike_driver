@@ -1,15 +1,16 @@
 rm -rf work
 mkdir work
 
-ghdl -a  --work=work --workdir=work glue.vhd ../mul.vhd ../low_pass.vhd
+ghdl -a  --work=work --workdir=work glue.vhd ../two_com_mul.vhd ../pid.vhd
+ghdl -a  --work=work --workdir=work plant_tb.vhd
 gcc -c -fPIC external.c -o external.o
 gcc -c -fPIC rkf45.c -o rkf45.o
 gcc -c -fPIC lib.c -o lib.o
 gcc -c -g -fPIC plant.c -o plant.o
 
-gcc -g  plant.o rkf45.o -lm -o app
-./app
-#ar ruv libsim.a lib.o external.o rkf45.o 
+#gcc -g  plant.o rkf45.o -lm -o app
+#./app
+#ar ruv libsim.a  plant.o lib.o external.o rkf45.o 
 #ghdl -a  --work=work --workdir=work tb.vhd
 #ghdl -e -Wl,-lm  -Wl,-lsim   --ieee=synopsys -fexplicit --workdir=work -Pwork tb
 

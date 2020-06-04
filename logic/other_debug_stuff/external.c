@@ -23,3 +23,11 @@ void initFile(int _dummy)
 	emptyFile();
 }
 
+void initPlant(int _dummy)
+{
+}
+
+int regToPlant (int  integer )
+{
+	return 0;
+}

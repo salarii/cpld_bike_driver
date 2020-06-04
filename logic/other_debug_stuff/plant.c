@@ -7,6 +7,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "plant.h"
+
+#define FIXED_POINT_FRACTIONAL_BITS 8
+typedef short fixed_point_t;
+
+inline fixed_point_t float_to_fixed(double input)
+{
+    return (fixed_point_t)(round(input * (1 << FIXED_POINT_FRACTIONAL_BITS)));
+}
+
+inline double fixed_to_float(fixed_point_t input)
+{
+    return ((double)input / (double)(1 << FIXED_POINT_FRACTIONAL_BITS));
+}
+
+
 /*
 void emptyFile()
 {
