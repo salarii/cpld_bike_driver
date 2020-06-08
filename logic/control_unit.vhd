@@ -21,11 +21,6 @@ entity control_unit is
 		
 		i_spi : in type_to_spi;
 		o_spi : out type_from_spi;
-	
-
-		i_from_i2c : in type_from_i2c;
-		i2c_bus : inout std_logic_vector(7 downto 0);
-		o_to_i2c : out type_to_i2c;
 			
 					
 		i_busy_uart : in std_logic;
@@ -158,7 +153,6 @@ architecture behaviour of control_unit is
 		
 		signal speed : unsigned(15 downto 0);
 begin	
-	o_to_i2c.address <= "1001000";
 	
 	module_poly: poly
 
@@ -298,10 +292,8 @@ begin
 				state := Setup;
 				cnt :=0;
 				val_cnt := 0;
-				i2c_bus <= (others=>'Z');
 				enable_pc_write := '0';
 				enable_uart <= '0';
-				o_to_i2c.continue <= '0';
 				--leds(4 downto 2) <= (others=>'1');
 				i2c_state := i2c_index; 
 				blink_1  <= '1';
@@ -581,121 +573,9 @@ begin
 						end if;
 					end if;
 				end if;
-						
-					 
-				if  state = Setup then
 					
-					o_to_i2c.transaction <= Write;
-					data <= (others => '0');	
-					if i2c_state = i2c_index then
-						
-					
-						i2c_bus <= x"01";
-						o_to_i2c.continue <= '1'; 
-						
-						if i_from_i2c.done = '1' then
-								
-							i2c_bus <= std_logic_vector(config_register_h);	
-							i2c_state := i2c_data_H;
-						end if;
-					
-					elsif i2c_state = i2c_data_H then
-						
-						if i_from_i2c.done = '1' then	
-								
-
-							i2c_bus <= std_logic_vector(config_register_l);
-							i2c_state := i2c_data_L;
-							o_to_i2c.continue <= '0'; 
-						end if;
-						
-					elsif i2c_state = i2c_data_L then
-						if i_from_i2c.done = '1' then
-							
-
-							state := Index_Read;	
-							cnt := short_break;	
-						end if;
-					end if;
-					
-					if i_from_i2c.busy = '0' and state /= Index_Read then	
-						
-						o_to_i2c.enable <= '1';
-					elsif i_from_i2c.busy = '1' then
-						
-						o_to_i2c.enable <= '0';
-					end if;
-					
-					
-				elsif state = Index_Read then
-					if  i_from_i2c.done = '1' then
-						
-
-						cnt := short_break;
-						state := Standby;
-					elsif cnt = 0 and  i_from_i2c.busy = '0' then
-						i2c_bus <= x"00";	
-						o_to_i2c.enable <= '1';
-					elsif i_from_i2c.busy = '1' then
-						
-						o_to_i2c.enable <= '0';
-					end if;
-					
-				elsif state = Standby then		
-						
-					if cnt = 0 then
-						
-						i2c_bus <= (others=>'Z');
-						state := Cycle;
-						poly_enable <= '0';	
-						enable_pc_write := '0';
-						i2c_state := i2c_data_H;
-						cnt := period;
-						val_cnt := 0;
-					end if;
-					
-					
-					
-				elsif state = Cycle then
-					
-					
-					if i_busy_uart = '0' and enable_pc_write = '1' then
-						
-						uart_dev_status.termistor := True;
-								
-						--state := Standby;							
-					end if;
-					
-					
-					if i2c_state = i2c_data_H and i_from_i2c.done = '1'  then	
-						
-						i2c_state := i2c_data_H;
-						o_to_i2c.continue <= '0';
-						o_to_i2c.enable <= '1';
-						i2c_state := i2c_data_L;	
-						data(15 downto 8) <= i2c_bus;
-					elsif i2c_state = i2c_data_H and i_from_i2c.busy = '0' then
-						
-						o_to_i2c.transaction <= Read;
-						o_to_i2c.enable <= '1';
-						o_to_i2c.continue <= '1';	
-					elsif i2c_state = i2c_data_L and i_from_i2c.done = '1'  then
-						
-						data(7 downto 0) <= i2c_bus;
-						poly_enable <= '1';	
-		
-						poly_val <= unsigned(data);						
-						enable_pc_write := '1';
-							
-					elsif i_from_i2c.busy = '1' then
-						o_to_i2c.enable <= '0';
-					end if;
-					
-								
-				end if;	
 				cnt := cnt - 1;	
 				
-					
 			end if;
 
 		end if;
