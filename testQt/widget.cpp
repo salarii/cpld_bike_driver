@@ -321,7 +321,7 @@ QChart * Widget::createMotorChart()
     motorSeries->attachAxis(axisX);
     motorSeries->attachAxis(axisY);
     axisX->applyNiceNumbers();
-    axisY->setRange(0.0, 2000.0);
+    axisY->setRange(0.0, 300.0);
     axisY->applyNiceNumbers();
     return newChart;
 }

@@ -30,7 +30,7 @@ entity control_unit is
 		o_en_uart : out std_logic;
 		o_wave : out std_logic;
 		o_motor_transistors : out type_motor_transistors;
-		leds : out std_logic_vector(4 downto 0)
+		leds : out std_logic_vector(3 downto 0)
 		);
 end control_unit;
 
@@ -124,8 +124,6 @@ architecture behaviour of control_unit is
 		signal data : std_logic_vector(15 downto 0);	
 		signal enable_uart  : std_logic;
 		
-		signal blink_1  : std_logic := '1';
-		signal blink_2  : std_logic := '1';	
 		
 		signal poly_enable : std_logic;	
 		signal poly_temperature : unsigned(7  downto 0);	
@@ -284,9 +282,7 @@ begin
 		
 		variable time_tmp : unsigned(15 downto 0);
 	begin
-		leds(0) <= blink_1;
-		leds(1) <= blink_2;
-		leds(2) <= motor_transistors.A_p;
+
 		if rising_edge(clk)  then
 			if res = '0' then
 				state := Setup;
@@ -296,8 +292,7 @@ begin
 				enable_uart <= '0';
 				--leds(4 downto 2) <= (others=>'1');
 				i2c_state := i2c_index; 
-				blink_1  <= '1';
-				blink_2  <= '1';
+
 				user_command := no_command;	
 				uart_dev_status := (False,False,False);
 				glob_clk_counter := 0;
@@ -383,7 +378,7 @@ begin
 
 	
 				if 	i_received_uart = '1' then
-						blink_1 <= '0';
+					
 					if user_command = no_command then 
 							
 						if i_from_uart = std_logic_vector(measure_command) then
@@ -583,11 +578,12 @@ begin
 	end process;
 	
 
-	process(  enable_uart,out_trigger,motor_transistors)
+	process(  enable_uart,out_trigger,motor_transistors,i_impulse)
 	begin
 		o_wave <= out_trigger;
 		o_en_uart <= enable_uart;
 		o_motor_transistors <= motor_transistors;
+		leds(0) <= i_impulse;
 	end process;
 
 	

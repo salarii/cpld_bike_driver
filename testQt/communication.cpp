@@ -101,7 +101,7 @@ void Communication::run()
 
                 speed = (float)(readbuffer[1]<< shift8);
                 speed = (float)readbuffer[2];
-                motorData.speed = 500;// (speed/10.0)*60.0;
+                motorData.speed = speed*60/10;
 
                 motorData.time = ((readbuffer[3] << shift8)+
                             readbuffer[4])/500;

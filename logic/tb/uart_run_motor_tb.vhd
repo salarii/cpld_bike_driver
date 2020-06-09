@@ -12,20 +12,6 @@ end uart_run_motor_tb;
 
 architecture t_behaviour of uart_run_motor_tb is
 
-		component i2c_master is
-			port(
-			i_to_i2c : in type_to_i2c;
-			o_from_i2c : out type_from_i2c;
-				
-			i2c_bus : inout std_logic_vector(7 downto 0);
-			res : in std_logic;		
-			clk : in std_logic;		
-			o_slave_clk	: out  std_logic;
-			o_slave_data : out std_logic;
-			o_data_en : out std_logic;
-			i_slave_data : in std_logic
-			);
-		end component i2c_master;
 		
 		component wire is
 			port(
@@ -45,11 +31,6 @@ architecture t_behaviour of uart_run_motor_tb is
       
       i_spi : in type_to_spi;
       o_spi : out type_from_spi;
-    
-
-      i_from_i2c : in type_from_i2c;
-      i2c_bus : inout std_logic_vector(7 downto 0);
-      o_to_i2c : out type_to_i2c;
         
             
       i_busy_uart : in std_logic;
@@ -140,25 +121,7 @@ architecture t_behaviour of uart_run_motor_tb is
 		signal wave : std_logic;
 	begin	
 		
-		module_master: i2c_master
-		port map (
-				i_to_i2c => to_i2c,
-				o_from_i2c => from_i2c,
-				i2c_bus => i2c_bus,
-				res => res,
-				clk => clk,
-				o_slave_clk => bus_clk,
-				o_slave_data => o_slave_data,
-				o_data_en => o_data_en,
-				i_slave_data => i_slave_data
-				);
 
-		module_slave: i2c_slave
-		port map(
-			res => res,		
-			bus_clk	=>  bus_clk,
-			bus_data => bus_data
-			);
 			
 
 		module_wire: wire
@@ -175,13 +138,9 @@ architecture t_behaviour of uart_run_motor_tb is
 				
 				i_impulse => impulse,
 				
-				o_to_i2c => to_i2c,
-				i_from_i2c => from_i2c,
-				i2c_bus => i2c_bus,
 				i_spi => to_spi,
 				o_spi => from_spi,
 
-				leds => leds,
 				o_wave => wave,
         o_motor_transistors => motor_transistors,
 		
