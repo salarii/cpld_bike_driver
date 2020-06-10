@@ -16,7 +16,7 @@ package  glue is
 	attribute  foreign of logData : 
 	procedure is "VHPIDIRECT  logData ";
 	
-	function   regToPlant (value : in  integer ) return integer;
+	function   regToPlant (time: in  integer ;value : in  integer ) return integer;
 	attribute  foreign of regToPlant : 
 	function is "VHPIDIRECT  regToPlant ";
 
@@ -39,7 +39,7 @@ begin
 	assert  false  report "VHPI" severity  failure;
 end initPlant;
 
-function  regToPlant (value : in  integer ) return integer  is
+function  regToPlant (time: in  integer ;value : in  integer ) return integer  is
 begin
 	assert  false  report "VHPI" severity  failure;
 end regToPlant;

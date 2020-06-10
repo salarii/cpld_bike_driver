@@ -7,19 +7,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "plant.h"
+#include "lib.h"
 
-#define FIXED_POINT_FRACTIONAL_BITS 8
-typedef short fixed_point_t;
 
-inline fixed_point_t float_to_fixed(double input)
-{
-    return (fixed_point_t)(round(input * (1 << FIXED_POINT_FRACTIONAL_BITS)));
-}
 
-inline double fixed_to_float(fixed_point_t input)
-{
-    return ((double)input / (double)(1 << FIXED_POINT_FRACTIONAL_BITS));
-}
+
 
 
 /*
@@ -92,13 +84,13 @@ void r4_f1 ( float t, float y[], float yp[] )
 
 void init(void)
 {
-	 //emptyFile();
+	  emptyFile();
 	  y[1] = 0.0;
 	  y[2] = 0.0;
 	  t = 0;
 }
 
-float step (int _step, int _force )
+float step (int _step, float _force )
 {
 	force = _force;
 
@@ -118,19 +110,18 @@ float step (int _step, int _force )
 
     	flag = 2;
     }
-    //t += timeStep;
-
-   // appendToFile(t,y[0]);
+    printf("log %f %f %f\n",t,force,y[0]);
+    logToFile(t,y[0]);
   return (float)(y[0]);
 }
-
+/*
 int  main()
 {
 	init();
-	for (int i =0;i <5; i++)
+	for (int i =0;i <50; i++)
 	{
-		printf( "iteration:%f ,%f\n", t, step (10000,1));
+		printf( "iteration:%f ,%f\n", t, step (1000,1));
 	}
 	return 1;
 }
-
+*/

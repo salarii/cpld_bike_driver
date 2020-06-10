@@ -12,13 +12,13 @@ entity pid is
 		res : in std_logic;
 		clk : in std_logic;
 		i_enable : in std_logic;
-		i_val	: in  std_logic_vector(IntPart + FracPart -1  downto 0);
-		o_reg : out std_logic_vector(IntPart + FracPart -1  downto 0)
+		i_val	: in  signed(IntPart + FracPart -1  downto 0);
+		o_reg : out signed(IntPart + FracPart -1  downto 0)
 		);
 end pid;
 
 architecture behaviour of pid is
-		constant one : unsigned(IntPart + FracPart - 1  downto 0) := x"001000";
+		constant one : unsigned(IntPart + FracPart - 1  downto 0) := x"0100";
 		
 		signal et1 : signed (IntPart + FracPart - 1  downto 0) := (others=>'0');
 		signal et2 : signed (IntPart + FracPart - 1  downto 0) := (others=>'0');
@@ -30,9 +30,9 @@ architecture behaviour of pid is
 		
 		--- 
 		
-		constant Kp : signed(IntPart + FracPart - 1  downto 0) := "0110010110011110";
-		constant Ki : signed(IntPart + FracPart - 1  downto 0) := "0001011001000001";
-		constant Kd : signed(IntPart + FracPart - 1  downto 0) := "0001010111100000";
+		constant Kp : signed(IntPart + FracPart - 1  downto 0) := x"0001";
+		constant Ki : signed(IntPart + FracPart - 1  downto 0) := (others=>'0');--"0001011001000001";
+		constant Kd : signed(IntPart + FracPart - 1  downto 0) := (others=>'0');--"0001010111100000";
 		
 		constant pt0 : signed(IntPart + FracPart - 1  downto 0) := Kp + Ki + Kd;
 		constant pt1 : signed(IntPart + FracPart - 1  downto 0) := Ki - Kp - shift_left(signed(Kd), 1);
@@ -109,7 +109,7 @@ begin
 
 	process(regt1)
 	begin
-		o_reg <= std_logic_vector(regt1);
+		o_reg <= regt1;
 
 	end process;
 

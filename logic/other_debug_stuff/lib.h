@@ -1,7 +1,7 @@
 #ifndef  LIB
 #define LIB
 
-int logToFile(int _step, int _force );
+int logToFile(float _step, float _force );
 void emptyFile(void);
 
 #endif

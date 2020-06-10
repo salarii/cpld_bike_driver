@@ -8,14 +8,14 @@ gcc -c -fPIC rkf45.c -o rkf45.o
 gcc -c -fPIC lib.c -o lib.o
 gcc -c -g -fPIC plant.c -o plant.o
 
-#gcc -g  plant.o rkf45.o -lm -o app
+#gcc -g lib.o plant.o rkf45.o -lm -o app
 #./app
-#ar ruv libsim.a  plant.o lib.o external.o rkf45.o 
+ar ruv libsim.a  plant.o lib.o external.o rkf45.o 
 #ghdl -a  --work=work --workdir=work tb.vhd
-#ghdl -e -Wl,-lm  -Wl,-lsim   --ieee=synopsys -fexplicit --workdir=work -Pwork tb
+ghdl -e -Wl,-lm  -Wl,-lsim   --ieee=synopsys -fexplicit --workdir=work -Pwork tb
 
-#ghdl -r tb  --wave=tbench.ghw  --stop-time=10000us
+ghdl -r tb  --wave=tbench.ghw  --stop-time=300ms
 
-#gnuplot -e "plot 'data.txt' using 1:2; pause -1"
+gnuplot -e "plot 'data.txt' using 1:2; pause -1"
 
 #gtkwave tbench.ghw a.gtkw

@@ -12,6 +12,21 @@
 #include <errno.h>
 
 #include "lib.h"
+#include "plant.h"
+
+
+#define FIXED_POINT_FRACTIONAL_BITS 8
+typedef short fixed_point_t;
+
+fixed_point_t float_to_fixed(double input)
+{
+    return (fixed_point_t)(round(input * (1 << FIXED_POINT_FRACTIONAL_BITS)));
+}
+
+double fixed_to_float(fixed_point_t input)
+{
+    return ((double)input / (double)(1 << FIXED_POINT_FRACTIONAL_BITS));
+}
 
 void logData( int _time, int _value )
 {
@@ -25,9 +40,13 @@ void initFile(int _dummy)
 
 void initPlant(int _dummy)
 {
+	emptyFile();
 }
 
-int regToPlant (int  integer )
+int regToPlant (int _time, int _force )
 {
-	return 0;
+	float adjusted = fixed_to_float(_force );
+printf("%f\n",adjusted);
+
+	return float_to_fixed(step(_time,adjusted ));
 }

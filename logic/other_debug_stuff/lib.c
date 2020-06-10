@@ -39,8 +39,9 @@ void appendToFile(float _time,float _val)
 }
 
 
-void logToFile(int _time, int _value )
+void logToFile(float _time, float _value )
 {
+	printf("acctual  parameters %d %f \n",_time, _value);
     appendToFile(_time, _value);
 }
 
