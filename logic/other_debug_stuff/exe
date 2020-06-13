@@ -1,7 +1,7 @@
 rm -rf work
 mkdir work
 
-ghdl -a  --work=work --workdir=work glue.vhd ../two_com_mul.vhd ../pid.vhd
+ghdl -a  --work=work --workdir=work glue.vhd ../two_com_mul.vhd ../low_pass.vhd ../pid.vhd ../pd.vhd
 ghdl -a  --work=work --workdir=work plant_tb.vhd
 gcc -c -fPIC external.c -o external.o
 gcc -c -fPIC rkf45.c -o rkf45.o
@@ -14,7 +14,7 @@ ar ruv libsim.a  plant.o lib.o external.o rkf45.o
 #ghdl -a  --work=work --workdir=work tb.vhd
 ghdl -e -Wl,-lm  -Wl,-lsim   --ieee=synopsys -fexplicit --workdir=work -Pwork tb
 
-ghdl -r tb  --wave=tbench.ghw  --stop-time=300ms
+ghdl -r tb  --wave=tbench.ghw  --stop-time=60000ms
 
 gnuplot -e "plot 'data.txt' using 1:2; pause -1"
 

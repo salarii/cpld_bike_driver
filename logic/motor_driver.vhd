@@ -161,7 +161,22 @@ end generate;
 			else
 				if i_motor_control_setup.enable = '1' then
 					if i_motor_control_setup.hal = '1' then
-						
+						  case i_motor_control_setup.hal_data is
+									when "101" =>  
+									     set_transistors(A_B);
+								  	when "100"  =>  
+							      		 set_transistors(A_C);
+								  	when "110"  =>  
+									     set_transistors(B_C);
+								  	when "010"  =>  
+									     set_transistors(B_A);
+								  	when "011"  =>  
+								    	 set_transistors(C_A);
+								  	when "001"  =>  
+									     set_transistors(C_B);
+								  	when others => 
+									     set_transistors(transistors_path);
+								    end case;
 
 					else
 						divisor(7 downto 0) <= i_req_speed;
@@ -224,6 +239,7 @@ end generate;
 
 					end if;
 				else
+					set_transistors(No_path);
 					status := initialise_control;
 				end if;
 			

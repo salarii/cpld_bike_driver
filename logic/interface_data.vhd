@@ -40,6 +40,27 @@ type type_motor_control_setup is record
 end record;
 
 
+type type_control_box_setup is record
+	hal : std_logic;
+	enable : std_logic;		
+	temperature : std_logic;	
+	-- neutral pid motor
+	-- neutral temperature
+	
+end record;
+
+type control_data_type is (
+	 t_Kmp, t_Kmd, t_Kmi, t_Ktp, t_Ktd, t_Kti );
+
+
+type type_control_box_data is record
+	hal : unsigned(15 downto 0);	
+	temperature : control_data_type;	
+	-- neutral pid motor
+	-- neutral temperature
+	
+end record;
+
 end package;
 
 

@@ -70,14 +70,20 @@ void appendToFile(float _time,float _val)
 
   float t_step = 0.001;
 
-  float  force = 0.0;
-  float mass = 1;
+  float  voltage = 0.0;
 
+  float Kt = 0.000458;//4.5877e-04;
+  float J  = 0.00000289;//2.8966e-06;
+  float L =  0.0000152;//1.5278e-05;
+  float R =  0.53;
+  float Ke =  0.000528;//5.2877e-04;
 
 void r4_f1 ( float t, float y[], float yp[] )
 {
-	yp[0] = y[1];
-    yp[1] = force;
+
+
+	yp[0] = (Kt*y[1])/J;
+    yp[1] = (voltage - R*y[1] - Ke*y[0])/L;
 
     return;
 }
@@ -92,7 +98,7 @@ void init(void)
 
 float step (int _step, float _force )
 {
-	force = _force;
+	voltage = _force;
 
 	float  timeStep = (float)_step * t_step;
 
@@ -110,7 +116,7 @@ float step (int _step, float _force )
 
     	flag = 2;
     }
-    printf("log %f %f %f\n",t,force,y[0]);
+    printf("log %f %f %f\n",t,voltage,y[0]);
     logToFile(t,y[0]);
   return (float)(y[0]);
 }
