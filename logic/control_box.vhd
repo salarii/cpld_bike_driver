@@ -16,13 +16,37 @@ entity control_box is
 		res : in  std_logic;
 		
 		i_control_box_setup : in type_control_box_setup;
+		i_hal_data : in std_logic_vector(2 downto 0);
 		o_motor_transistors : out type_motor_transistors
 		);
 end control_box;
 
-architecture behaviour of control_unit is
+architecture behaviour of control_box is
 
-
+		component mul
+			generic (CONSTANT IntPart : integer;
+		  			 CONSTANT FracPart : integer );
+		port  (
+			A : in  unsigned(IntPart + FracPart - 1  downto 0);
+			B : in  unsigned(IntPart + FracPart - 1  downto 0);
+			outMul : out unsigned(IntPart + FracPart - 1  downto 0));
+		end component;
+	
+		component div is
+			generic (CONSTANT size : integer);
+		
+			port(
+				res : in std_logic;
+				clk : in std_logic;
+				i_enable : in std_logic;
+				
+				i_divisor	: in  unsigned(size - 1  downto 0);
+				i_divident : in  unsigned(size - 1  downto 0);
+				o_valid : out std_logic;
+				o_quotient : out unsigned(size - 1  downto 0)
+				);
+		end component div;	
+	
 		component poly is
 
 		
@@ -97,9 +121,10 @@ architecture behaviour of control_unit is
 				);
 		end component pid;
 
-		signal data : std_logic_vector(15 downto 0);	
-		signal enable_uart  : std_logic;
+		constant IntPart : integer := 8;
+		constant FracPart : integer := 8;
 		
+		signal data : std_logic_vector(15 downto 0);	
 		
 		signal poly_enable : std_logic;	
 		signal poly_temperature : unsigned(7  downto 0);	
@@ -108,21 +133,38 @@ architecture behaviour of control_unit is
 		signal en_trigger : std_logic;	
 		signal out_trigger : std_logic;
 		signal time_trigger : unsigned(15  downto 0);
-		signal period_trigger : unsigned(15 downto 0);
 		signal pulse_trigger : unsigned(15 downto 0);	
 		signal stop_trigger : std_logic;
 		
+		signal enable_div : std_logic;
+		signal valid : std_logic;
 		
+		
+		signal impulse : std_logic;
+		
+		constant battery_voltage : unsigned(15 downto 0) := x"0000";--36V
+		constant offset_voltage : unsigned(15 downto 0) := x"0000";--3V 
+
+		constant period_trigger : unsigned(15 downto 0);
 		
 		signal req_speed_motor : unsigned(7 downto 0);
 		signal motor_control_setup : type_motor_control_setup;
 		signal motor_transistors : type_motor_transistors;
 		
-		signal speed : unsigned(15 downto 0);
+		signal speed : unsigned(15 downto 0)
+
+		signal out_reg : signed(IntPart + FracPart -1  downto 0);
+		signal modified_reg : signed(IntPart + FracPart -1  downto 0);
+		signal quot : unsigned(IntPart + FracPart -1  downto 0);
+
+		signal mul_a : signed(31  downto 0);
+		signal mul_b : unsigned(31  downto 0);
+		signal mul_out : unsigned(31  downto 0);
 begin	
 	
-	module_poly: poly
 
+	
+	module_poly: poly
 	port map (
 		res => res,
 		clk => clk,
@@ -135,14 +177,14 @@ begin
 	speed_impulse_func : speed_impulse 
 	generic map ( 
 		 main_clock =>1000000,
-		 work_period =>2
+		 work_period =>10
 		)
 				
 		port map(
 				res => res, 	
 				clk => clk,	
 				
-				i_impulse => i_impulse,
+				i_impulse => impulse,
 				
 				o_speed => speed
 				);
@@ -163,9 +205,8 @@ begin
 				o_current_time => time_trigger
 		);
 
-		motor_driver_func : motor_driver
-		
-			port map( 
+	motor_driver_func : motor_driver
+		port map( 
 				res => res, 	
 				clk => clk,		
 				i_req_speed => req_speed_motor,
@@ -175,8 +216,28 @@ begin
 				o_motor_transistors => motor_transistors
 				);
 
+	module_div: div
+		generic map(
+		 size => 16)
+		port map (
+		res => res,
+		clk => clk,
+		i_enable => enable_div,
+		i_divisor => to_unsigned(modified_reg),
+		i_divident	=> battery_voltage,
+		o_valid => valid,
+		o_quotient => quot);
 	
-	
+	module_mul: mul
+	generic map(
+			 IntPart =>16,
+			 FracPart => 16
+		 )
+		port map (
+			A => mul_a,
+			B => mul_b,
+			outMul => mul_out);
+			
 	process(clk)
 		variable uart_sized : boolean := False; 
 	
@@ -189,12 +250,8 @@ begin
 		constant short_break : integer := 50;
 		variable cnt : integer := 0;			
 		variable val_cnt : integer  range 7 downto 0 := 0;
-		variable state : state_type := Setup;
-		variable i2c_state : type_i2c_operations := i2c_index;
-		variable enable_pc_write : std_logic;
+
 		
-		variable user_command : type_user_commands := no_command;
-		variable trigger_phase : type_init_trigger_phase;
 		variable run_motor_state : type_run_motor_state;
 		variable uart_dev_status : type_uart_dev_status  := (False,False,False);
 		
@@ -206,13 +263,36 @@ begin
 		variable last_motor_action : integer := 0;
 		
 		variable time_tmp : unsigned(15 downto 0);
+	
+		variable sp : unsigned(15 downto 0);
+		
+		variable last_hal_data : std_logic_vector(2 downto 0);
+	
+		
 	begin
 
+	
+	modified_reg := out_reg + offset_voltage;
+	if modified_reg < 0 then  
+		modified_reg := (others => '0');
+	elsif modified_reg > battery_voltage then
+		modified_reg := battery_voltage;
+	end if;
+	
+
+	
+	
 		if rising_edge(clk)  then
 			if res = '0' then
 
 			else
-		
+				if impulse = '1' then
+					impulse <= '0';
+				elsif i_hal_data /= last_hal_data then
+					last_hal_data := i_hal_data;
+					impulse <= '1';
+				end if; 
+				
 				
 			end if;
 
