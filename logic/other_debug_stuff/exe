@@ -16,6 +16,6 @@ ghdl -e -Wl,-lm  -Wl,-lsim   --ieee=synopsys -fexplicit --workdir=work -Pwork tb
 
 ghdl -r tb  --wave=tbench.ghw  --stop-time=60000ms
 
-gnuplot -e "plot 'data.txt' using 1:2; pause -1"
+#gnuplot -e "plot 'data.txt' using 1:2; pause -1"
 
 #gtkwave tbench.ghw a.gtkw
