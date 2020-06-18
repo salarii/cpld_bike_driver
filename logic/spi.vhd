@@ -17,7 +17,6 @@ entity spi is
 			
 			io_data : inout std_logic_vector(7 downto 0);
 			i_spi : in type_to_spi;
-			i_transaction : transaction_type;
 			i_enable : in std_logic;
 			
 			o_spi : out type_from_spi;
@@ -51,8 +50,8 @@ process(clk)
 		
 		variable bit_cnt : integer  range 15 downto 0;
 				
-		variable shift_reg: unsigned(7 downto 0) := (others => '0');
-	
+		variable shift_reg_read: unsigned(7 downto 0) := (others => '0');
+		variable shift_reg_write: unsigned(7 downto 0) := (others => '0');	
 	
 
 begin
@@ -63,7 +62,7 @@ begin
 			
 		bit_cnt_debug  <= to_unsigned(bit_cnt, bit_cnt_debug'length); 
 		cycle_cnt_debug  <= to_unsigned(cnt, cycle_cnt_debug'length);
-		shift_reg_debug <= shift_reg;
+		shift_reg_debug <= shift_reg_read;
 		if res = '0' then
 			
 				busy_internal <= '0';
@@ -73,10 +72,12 @@ begin
 				io_data <= (others => 'Z');
 				mosi <= '1';
 				sck <= '1';
-				shift_reg := (others => '0');
+				shift_reg_read := (others => '0');
+				shift_reg_write := (others => '0');
 		else
 				if  received_internal = '1' then
 					received_internal <= '0';
+					io_data <= (others => 'Z');
 				end if;
 				
 				if i_enable = '1' or busy_internal = '1' then	
@@ -86,11 +87,11 @@ begin
 						busy_internal <= '1';
 			
 						cnt := period-1;
-						shift_reg := (others => '0');
+						shift_reg_read := (others => '0');
 						bit_cnt := 0;
-						if i_transaction = Write then
-							io_data <= (others => 'Z');
-						end if;
+						
+						io_data <= (others => 'Z');
+						
 					else
 						if cnt = half  then 
 							sck <= '0';
@@ -98,34 +99,30 @@ begin
 
 							if bit_cnt = 0 then
 									
-									if i_transaction = Read then
-										shift_reg := (others  => '0');
-										shift_reg(7) := i_spi.miso; 
-										mosi <= '1';	
-									elsif i_transaction = Write then
-										shift_reg := unsigned(io_data);	 
-									end if;
-							end if;
-							if i_transaction = Write then
-								mosi <= shift_reg(0);							
+									shift_reg_read := (others  => '0');
+									shift_reg_read(0) := i_spi.miso; 
+									--mosi <= '1';	
+									shift_reg_write := unsigned(io_data);	 
 							
-							end if;	
+							end if;
+							
+							mosi <= shift_reg_write(7);							
+
 
 						elsif cnt = 0  then 
 							sck <= '1';
-							shift_reg := shift_right(shift_reg, 1);
-							if i_transaction = Read then
-									
-									shift_reg(7) := i_spi.miso;
-							end if;	
+							shift_reg_read := shift_left(shift_reg_read, 1);
+							shift_reg_write := shift_left(shift_reg_write, 1);
+							
+							shift_reg_read(0) := i_spi.miso;
+							
 							if bit_cnt = 7  then
 								cnt:= separate;
 								bit_cnt := 0;
 								busy_internal <= '0';
-								if i_transaction = Read then
-								    io_data <= std_logic_vector(shift_reg);
-									received_internal <= '1';
-								end if;
+								io_data <= std_logic_vector(shift_reg_read);
+								received_internal <= '1';
+								
 							else
 
 							

@@ -44,7 +44,6 @@ architecture behaviour of flash_controller is
 				
 				io_data : inout std_logic_vector(7 downto 0);
 				i_spi : in type_to_spi;
-				i_transaction : transaction_type;
 				i_enable : in std_logic;
 				
 				o_spi : out type_from_spi;
@@ -75,7 +74,6 @@ begin
 					
 					io_data => data_spi,
 					i_spi => i_spi,
-					i_transaction =>transaction_spi,
 					i_enable => en_spi,
 					
 					o_spi => o_spi,
