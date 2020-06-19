@@ -15,10 +15,11 @@ entity spi is
 			res : in std_logic;		
 			clk : in std_logic;	
 			
-			io_data : inout std_logic_vector(7 downto 0);
+			i_data : in std_logic_vector(7 downto 0);
 			i_spi : in type_to_spi;
 			i_enable : in std_logic;
 			
+			o_data : out std_logic_vector(7 downto 0);
 			o_spi : out type_from_spi;
 			o_received : out std_logic;
 			o_busy	: out std_logic
@@ -69,7 +70,7 @@ begin
 				received_internal <= '0';
 				bit_cnt := 0;
 				ss <= '1';
-				io_data <= (others => 'Z');
+
 				mosi <= '1';
 				sck <= '1';
 				shift_reg_read := (others => '0');
@@ -77,12 +78,13 @@ begin
 		else
 				if  received_internal = '1' then
 					received_internal <= '0';
-					io_data <= (others => 'Z');
 				end if;
 				
 				if i_enable = '1' or busy_internal = '1' then	
 				
 					ss <= '0';
+					
+
 					if  busy_internal = '0' then
 						busy_internal <= '1';
 			
@@ -90,25 +92,31 @@ begin
 						shift_reg_read := (others => '0');
 						bit_cnt := 0;
 						
-						io_data <= (others => 'Z');
-						
+							
 					else
 						if cnt = half  then 
-							sck <= '0';
 							
+							
+							if bit_cnt = 8  then
+								cnt:= separate;
+								bit_cnt := 0;
+								busy_internal <= '0';
+								o_data <= std_logic_vector(shift_reg_read);
+								received_internal <= '1';
+								
+							else
 
-							if bit_cnt = 0 then
-									
-									shift_reg_read := (others  => '0');
-									shift_reg_read(0) := i_spi.miso; 
-									--mosi <= '1';	
-									shift_reg_write := unsigned(io_data);	 
+								if bit_cnt = 0 then
+									if i_enable = '1' then
+										shift_reg_write := unsigned(i_data);
+									end if;
+
 							
+								end if;
+								sck <= '0';
+								mosi <= shift_reg_write(7);							
+
 							end if;
-							
-							mosi <= shift_reg_write(7);							
-
-
 						elsif cnt = 0  then 
 							sck <= '1';
 							shift_reg_read := shift_left(shift_reg_read, 1);
@@ -116,21 +124,8 @@ begin
 							
 							shift_reg_read(0) := i_spi.miso;
 							
-							if bit_cnt = 7  then
-								cnt:= separate;
-								bit_cnt := 0;
-								busy_internal <= '0';
-								io_data <= std_logic_vector(shift_reg_read);
-								received_internal <= '1';
-								
-							else
-
-							
-								cnt:= period;
-								bit_cnt := bit_cnt + 1;
-
-							end if;
-	
+							cnt:= period;
+							bit_cnt := bit_cnt + 1;
 
 						end if;
 						
@@ -138,8 +133,6 @@ begin
 					end if;	
 					
 				else
-					io_data <= (others => 'Z');
-					
 					ss <= '1';
 					mosi <= '1';
 					sck <= '1';

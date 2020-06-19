@@ -53,7 +53,7 @@ architecture t_behaviour of adc_tb is
 		
 		module_adc : adc
 		generic map (
-				adc_mesur_per_sec => 10,
+				adc_mesur_per_sec => 50,
 				freq => 1000000,
 				spi_bound => 10000 )
 			
@@ -91,7 +91,7 @@ architecture t_behaviour of adc_tb is
 		wait  for clk_period/2;
 	end  process;
 	
-	miso <= to_spi.miso;
+	to_spi.miso <= miso;
 	sck <= from_spi.sck;
 	ss <= from_spi.ss;	
 	mosi <= from_spi.mosi;
