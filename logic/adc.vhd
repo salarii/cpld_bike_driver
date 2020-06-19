@@ -21,7 +21,7 @@ entity adc is
 		i_channel : in unsigned( 2 downto 0 );
 		
 		i_spi : in type_to_spi;
-		o_measurement : out unsigned( 15 downto 0 );
+		o_measurement : out unsigned( 9 downto 0 );
 		o_spi : out type_from_spi
 
 		);
@@ -53,7 +53,7 @@ architecture behaviour of adc is
 
 		signal enable_uart  : std_logic;
 		
-		signal channels_data : std_logic_vector(39 downto 0);
+		signal channels_data : unsigned(39 downto 0):= (others => '0');
 
 
 		signal data_spi : std_logic_vector(7 downto 0):= (others => 'Z');
@@ -99,9 +99,23 @@ begin
 			if res = '0' then
 				cnt :=0;
 				channel_cnt := 0;
+				channels_data <= (others => '0');
 			else
+			
+			
+				case i_channel is
+				  when "000" =>   o_measurement <= channels_data( 9 downto 0 );
+				  when "001" =>   o_measurement <= channels_data( 19 downto 10 );
+				  when "010" =>   o_measurement <= channels_data( 29 downto 20 );
+				  when "011" =>   o_measurement <= channels_data( 39 downto 30 );
+				  when others => o_measurement <= (others => '0');
+				end case;
+			
+			
+			
 				if cnt = wait_cnt then
 					cnt := 0;
+					state := setup_adc;
 				else
 					cnt := cnt + 1;
 				end if;

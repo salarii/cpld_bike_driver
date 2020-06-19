@@ -7,6 +7,6 @@ ghdl -a --workdir=build ./tb/poly_tb.vhd ./tb/uart_tb.vhd ./tb/adc_tb.vhd
 ghdl -a --workdir=build ./tb/motor_driver_tb.vhd ./tb/spi_tb.vhd  ./tb/uart_flash_tb.vhd
 ghdl -a --workdir=build ./tb/uart_run_motor_tb.vhd ./tb/speed_tb.vhd ./tb/div_tb.vhd
 ghdl -a --workdir=build ./tb/control_box_tb.vhd
-ghdl -e --workdir=build uart_flash_tb
-#ghdl -r uart_flash_tb --vcd=func.vcd  --stop-time=10ms --ieee-asserts=disable-at-0
-#gtkwave func.vcd
+ghdl -e --workdir=build adc_tb
+ghdl -r adc_tb --vcd=func.vcd  --stop-time=200ms --ieee-asserts=disable-at-0
+gtkwave func.vcd
