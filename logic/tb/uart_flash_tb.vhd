@@ -156,7 +156,7 @@ architecture t_behaviour of uart_flash_tb is
 				
 				-- 0x02  0 1100 0000 0
 				
-				to_spi.miso <= '0';
+				to_spi.miso <= '1';
 				
 				rx_uart <= '0';
 				wait for 1 us;

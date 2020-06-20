@@ -107,10 +107,8 @@ begin
 							else
 
 								if bit_cnt = 0 then
-									if i_enable = '1' then
-										shift_reg_write := unsigned(i_data);
-									end if;
-
+									
+									shift_reg_write := unsigned(i_data);
 							
 								end if;
 								sck <= '0';

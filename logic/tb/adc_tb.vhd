@@ -75,8 +75,8 @@ architecture t_behaviour of adc_tb is
 			--wait for 10 us;				
 			--res <= '1';
 			miso <= '1';
-	
-	
+			wait for 45 ms;
+			miso <= '0';
 			wait;
 	end process;
 	

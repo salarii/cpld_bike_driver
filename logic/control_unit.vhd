@@ -447,7 +447,7 @@ begin
 						elsif user_command = flash_erase then
 							
 							if flash_erase_state = get_flash_erase_addr then
-								address_flash <= revert_byte(i_from_uart);									
+								address_flash <= i_from_uart;									
 								flash_erase_state := get_flash_erase_byte2;
 							elsif flash_erase_state = get_flash_erase_byte2 then
 								data_flash(23 downto 16) <= i_from_uart;
@@ -462,7 +462,7 @@ begin
 						elsif user_command = flash_write then
 							
 							if flash_write_state = get_flash_write_addr then
-								address_flash <= revert_byte(i_from_uart);									
+								address_flash <= i_from_uart;									
 								flash_write_state := get_flash_write_byte2;
 							elsif flash_write_state = get_flash_write_byte2 then
 								data_flash(23 downto 16) <= i_from_uart;
@@ -478,7 +478,7 @@ begin
 						elsif user_command = flash_read then
 							if flash_read_state = get_flash_read_addr then
 								
-								address_flash <= revert_byte(i_from_uart);
+								address_flash <= i_from_uart;
 								flash_read_state := execute_flash_read;
 							end if;
 						end if;
@@ -499,7 +499,7 @@ begin
 							case val_cnt is
 								  when 0 =>   o_to_uart <= x"05"; -- size
 								  when 1 =>   o_to_uart <= std_logic_vector(flash_data_code);
-								  when 2 =>   o_to_uart <= revert_byte(std_logic_vector(address_flash));
+								  when 2 =>   o_to_uart <= std_logic_vector(address_flash);
 								  when 3 =>   o_to_uart <= std_logic_vector(data_flash(23 downto 16));
 								  when 4 =>   o_to_uart <= std_logic_vector(data_flash(15 downto 8));
 								  when 5 =>   o_to_uart <= std_logic_vector(data_flash(7 downto 0));
