@@ -335,8 +335,21 @@ begin
 							
 						end if;
 					end if;
-									
+				elsif user_command = flash_erase then	
+					if flash_erase_state = execute_flash_erase  then
+						if busy_flash = '0' then
+							en_flash <= '1';
+							transaction_flash <= Erase;
+							
+						elsif busy_flash = '1' then
+						
+							en_flash <= '0';
+							user_command := no_command;
+					
+						end if;		
+					end if;	
 				elsif user_command = flash_read then								
+
 					if flash_read_state = execute_flash_read  then
 						if busy_flash = '0' then
 							en_flash <= '1';
@@ -348,8 +361,7 @@ begin
 							en_flash <= '0';
 							flash_read_state := progress_flash_read;
 					
-						end if;	
-							
+						end if;		
 					elsif flash_read_state = progress_flash_read then
 						if received_flash = '1' then
 						

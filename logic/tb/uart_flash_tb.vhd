@@ -154,7 +154,7 @@ architecture t_behaviour of uart_flash_tb is
 
 
 				
-				-- 0x02  0 1100 0000 0
+				-- 0x03  0 1100 0000 0
 				
 				to_spi.miso <= '1';
 				
@@ -264,8 +264,92 @@ architecture t_behaviour of uart_flash_tb is
 				rx_uart <= '0';
 				wait for 1 us;
 				rx_uart <= '1';
+				wait for 120 us;
+				
+				-- 0x04  0 0010 0000 1
+				-- 0x00  0 1100 0000 0
+				-- 0xaa  0 0101 0101 0
+				-- 0xff  0 1111 1111 0
+
+
+				wait for 10 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 2 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 5 us;
+				rx_uart <= '1';
+				wait for 3 us;
+
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 2 us;
+				rx_uart <= '0';
+				wait for 7 us;
+				rx_uart <= '1';
+				wait for 4 us;
+
+
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 5 us;
+				
+								
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 8 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 3 us;
 				
 				
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+
 				wait for 265 us;
 				res <= '0';
 				wait for 195 us;				

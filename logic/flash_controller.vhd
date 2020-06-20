@@ -118,6 +118,7 @@ begin
 		 		write_flash := write_idle;
 				read_flash := read_idle;
 				io_data <= (others => 'Z');
+				en_spi <= '0';
 		else		
 		
 				if  received_internal = '1' then
@@ -132,6 +133,7 @@ begin
 					if  busy_internal = '0' then
 						busy_internal <= '1';
 						flash_operation := no_flash_operation;
+
 					else
 						
 						if flash_operation = no_flash_operation then
@@ -181,6 +183,7 @@ begin
 										i_data_spi <= i_address;
 										erase_flash := erase_conclude;
 										cnt := 2;
+										en_spi <= '0';
 									else
 										i_data_spi <= x"00";
 										cnt := cnt - 1;
