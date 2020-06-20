@@ -104,8 +104,6 @@ architecture t_behaviour of uart_flash_tb is
 	begin	
 		
 
-
-		
 		control_func: control_unit
 		port map (
 				res => res,
