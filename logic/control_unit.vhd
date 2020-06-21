@@ -19,13 +19,21 @@ entity control_unit is
 		
 		i_impulse : in std_logic;
 		
-		i_spi : in type_to_spi;
-		o_spi : out type_from_spi;
+		i_flash_spi : in type_to_spi;
+		
 			
 					
 		i_busy_uart : in std_logic;
 		i_from_uart : in std_logic_vector(7 downto 0);
 		i_received_uart : in std_logic;
+		
+		i_adc_spi : in type_to_spi;
+			
+			
+		o_flash_spi : out type_from_spi;
+			
+		o_adc_spi : out type_from_spi;
+		
 		o_to_uart : out std_logic_vector(7 downto 0);
 		o_en_uart : out std_logic;
 		o_wave : out std_logic;
@@ -48,24 +56,7 @@ architecture behaviour of control_unit is
 				o_temp : out std_logic_vector(7  downto 0)
 				);
 		end component;
-		
-		component trigger is
-			generic ( 
-				CONSTANT time_divider : integer
-				);
-				
-		port(
-				res : in std_logic;		
-				clk : in std_logic;	
-				i_enable : in std_logic;
-				i_stop : in std_logic;
-				i_period : in unsigned(15 downto 0);
-				i_pulse : in unsigned(15 downto 0);
-				
-				o_trigger : out std_logic;
-				o_current_time : out unsigned(15 downto 0)
-				);
-		end component;
+
 
 		component flash_controller is
 			generic ( 
@@ -121,7 +112,25 @@ architecture behaviour of control_unit is
 				);
 		end component speed_impulse;
 
-		signal data : std_logic_vector(15 downto 0);	
+		component adc is
+			generic (
+				adc_mesur_per_sec	: integer;	
+				freq : integer;
+				spi_bound : integer);
+		
+			port(
+				clk : in  std_logic;
+				res : in  std_logic;
+				
+				i_channel : in unsigned( 2 downto 0 );
+				
+				i_spi : in type_to_spi;
+				o_measurement : out unsigned( 9 downto 0 );
+				o_spi : out type_from_spi
+		
+				);
+		end component adc;
+	
 		signal enable_uart  : std_logic;
 		
 		
@@ -131,7 +140,6 @@ architecture behaviour of control_unit is
 
 		signal en_trigger : std_logic;	
 		signal out_trigger : std_logic;
-		signal time_trigger : unsigned(15  downto 0);
 		signal period_trigger : unsigned(15 downto 0);
 		signal pulse_trigger : unsigned(15 downto 0);	
 		signal stop_trigger : std_logic;
@@ -150,9 +158,11 @@ architecture behaviour of control_unit is
 		signal motor_transistors : type_motor_transistors;
 		
 		signal speed : unsigned(15 downto 0);
+		signal adc_channel : unsigned(2 downto 0);
+		signal adc_measurement : unsigned(15 downto 0);
 begin	
 	
-	module_poly: poly
+	poly_module: poly
 
 	port map (
 		res => res,
@@ -163,7 +173,7 @@ begin
 		);	
 
 
-	speed_impulse_func : speed_impulse 
+	speed_impulse_module : speed_impulse 
 	generic map ( 
 		 main_clock =>1000000,
 		 work_period =>2
@@ -178,23 +188,9 @@ begin
 				o_speed => speed
 				);
 
-	trigger_func : trigger
-	generic map (
-	 	time_divider => 100000 )
-				
-		port map(
-				res => res, 		
-				clk => clk,	
-				i_enable => en_trigger,
-				i_stop => stop_trigger,
-				i_period => period_trigger,
-				i_pulse => pulse_trigger,
-				
-				o_trigger => out_trigger,
-				o_current_time => time_trigger
-		);
 
-		motor_driver_func : motor_driver
+
+		motor_driver_module : motor_driver
 		
 			port map( 
 				res => res, 	
@@ -206,7 +202,7 @@ begin
 				o_motor_transistors => motor_transistors
 				);
 	
-		flash_function : flash_controller
+		flash_module : flash_controller
 			generic map ( 
 		 	freq => 1000000,
 			bound => 100000 )
@@ -219,15 +215,32 @@ begin
 					i_address => address_flash,
 					i_transaction => transaction_flash,
 					i_enable => en_flash,
-					i_spi => i_spi,
+					i_spi => i_flash_spi,
 					i_put_bus_high =>	put_bus_high_flash,
 					
 					o_received => received_flash,
-					o_spi => o_spi,
+					o_spi => o_flash_spi,
 					o_busy => busy_flash
 				);
 	
-	
+		
+		adc_module :  adc
+			generic map(
+				adc_mesur_per_sec => 10,	
+				freq => 1000000,
+				spi_bound => 12000 )
+		
+			port map(
+					res => res,		
+					clk => clk,
+				
+					i_channel => adc_channel,
+				
+					i_spi => i_adc_spi,
+					o_measurement => adc_measurement(9 downto 0),
+					o_spi => o_adc_spi
+				);
+		
 	process(clk)
 		variable uart_sized : boolean := False; 
 	
@@ -252,7 +265,7 @@ begin
 		constant flash_erase_command : unsigned(7 downto 0) := x"04";
 		constant run_motor_command : unsigned(7 downto 0) := x"05";		
 				
-		constant termistor_data_code : unsigned(7 downto 0) := x"00";
+		constant adc_data_code : unsigned(7 downto 0) := x"00";
 		constant flash_data_code : unsigned(7 downto 0) := x"01";
 		constant motor_data_code : unsigned(7 downto 0) := x"02";
 		
@@ -275,11 +288,13 @@ begin
 		
 		constant glob_clk_denom : integer := 1000;
 		constant send_motor_data_wait : integer := 500;
+		constant send_adc_data_wait : integer := 500;
 		variable glob_clk_counter : integer := 0;
 		variable glob_small_clk_counter : integer range glob_clk_denom downto 0  := 0;
 	
 		variable last_motor_action : integer := 0;
-		
+		variable last_adc_data_send : integer := 0;
+				
 		variable time_tmp : unsigned(15 downto 0);
 	begin
 
@@ -298,6 +313,7 @@ begin
 				glob_clk_counter := 0;
 				glob_small_clk_counter := 0;
 				last_motor_action := 0;
+				last_adc_data_send := 0;
 		else
 				if glob_small_clk_counter = glob_clk_denom  then
 					glob_small_clk_counter := 0;
@@ -311,6 +327,9 @@ begin
 					
 					uart_dev_status.motor := True;
 					last_motor_action := glob_clk_counter;
+				elsif glob_clk_counter - last_adc_data_send > send_adc_data_wait then
+					uart_dev_status.adc_data := True;
+					last_adc_data_send := glob_clk_counter;
 				end if;
 							
 						
@@ -551,24 +570,24 @@ begin
 						end if;
 					
 					
-					elsif uart_dev_status.termistor = True  then 
+					elsif uart_dev_status.adc_data = True  then 
 					
 						if i_busy_uart = '0' then 
+							time_tmp := to_unsigned(glob_clk_counter, time_tmp'length );
 						
 							case val_cnt is
 							  when 0 =>   o_to_uart <= x"06";
-							  when 1 =>   o_to_uart <= std_logic_vector(termistor_data_code);
-							  when 2 =>   o_to_uart <= data(15 downto 8);
-							  when 3 =>   o_to_uart <= data(7 downto 0);
-							  when 4 =>   o_to_uart <= std_logic_vector(time_trigger(15 downto 8));
-							  when 5 =>   o_to_uart <= std_logic_vector(time_trigger(7 downto 0));
-							  when 6 =>   o_to_uart <= std_logic_vector(poly_temperature);
+							  when 1 =>   o_to_uart <= std_logic_vector(adc_data_code);
+							  when 2 =>   o_to_uart <= std_logic_vector(adc_measurement(15 downto 8));
+							  when 3 =>   o_to_uart <= std_logic_vector(adc_measurement(7 downto 0));
+							  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
+							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
 							  when others => o_to_uart <=  (others=>'Z');
 							end case;
 							enable_uart <= '1';
-						elsif val_cnt = 7 and i_busy_uart = '1' then
+						elsif val_cnt = 6 and i_busy_uart = '1' then
 							
-							uart_dev_status.termistor := False; 
+							uart_dev_status.adc_data := False; 
 							val_cnt := 0;
 							state := Standby;							
 						end if;

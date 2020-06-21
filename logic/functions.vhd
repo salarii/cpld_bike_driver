@@ -7,7 +7,7 @@ package functions is
 
 type type_uart_dev_status is record	
 	flash : boolean;
-	termistor : boolean;	
+	adc_data : boolean;	
 	motor : boolean;	
 end record;
 
@@ -43,7 +43,7 @@ end parity_check;
 
 function uart_any_taken(status: in type_uart_dev_status) return boolean is
 begin 
-	return ( status.flash  or status.termistor or status.motor );
+	return ( status.flash  or status.adc_data or status.motor );
 end uart_any_taken;
 
 function revert_byte(byte: in std_logic_vector(7 downto 0) ) return std_logic_vector is

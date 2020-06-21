@@ -20,13 +20,21 @@ architecture t_behaviour of uart_flash_tb is
 				
 				i_impulse : in std_logic;
 				
-				i_spi : in type_to_spi;
-				o_spi : out type_from_spi;
+				i_flash_spi : in type_to_spi;
+				
 					
 							
 				i_busy_uart : in std_logic;
 				i_from_uart : in std_logic_vector(7 downto 0);
 				i_received_uart : in std_logic;
+				
+				i_adc_spi : in type_to_spi;
+					
+					
+				o_flash_spi : out type_from_spi;
+					
+				o_adc_spi : out type_from_spi;
+				
 				o_to_uart : out std_logic_vector(7 downto 0);
 				o_en_uart : out std_logic;
 				o_wave : out std_logic;
@@ -100,6 +108,8 @@ architecture t_behaviour of uart_flash_tb is
 
 		signal to_spi : type_to_spi;
 		signal from_spi : type_from_spi;
+		signal to_adc_spi : type_to_spi;
+		signal from_adc_spi : type_from_spi;
 		signal wave : std_logic;
 	begin	
 		
@@ -109,8 +119,11 @@ architecture t_behaviour of uart_flash_tb is
 				res => res,
 				clk => clk,
 				
-				i_spi => to_spi,
-				o_spi => from_spi,
+				i_flash_spi => to_spi,
+				o_flash_spi => from_spi,
+				
+				i_adc_spi => to_adc_spi,
+				o_adc_spi => from_adc_spi,
 
 				i_impulse => '0',
 

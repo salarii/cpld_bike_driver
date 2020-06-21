@@ -75,8 +75,7 @@ architecture behaviour of control_box is
 				i_period : in unsigned(15 downto 0);
 				i_pulse : in unsigned(15 downto 0);
 				
-				o_trigger : out std_logic;
-				o_current_time : out unsigned(15 downto 0)
+				o_trigger : out std_logic
 				);
 		end component;
 
@@ -149,7 +148,6 @@ architecture behaviour of control_box is
 
 		signal en_trigger : std_logic;	
 		signal out_trigger : std_logic;
-		signal time_trigger : unsigned(upper_limit  downto 0);
 		signal pulse_trigger : unsigned(upper_limit downto 0) := (others => '0');	
 		signal stop_trigger : std_logic;
 
@@ -287,8 +285,7 @@ begin
 				i_period => period_trigger,
 				i_pulse => pulse_trigger,
 				
-				o_trigger => out_trigger,
-				o_current_time => time_trigger
+				o_trigger => out_trigger
 		);
 
 	motor_driver_func : motor_driver

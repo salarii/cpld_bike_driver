@@ -21,15 +21,13 @@ entity trigger is
 			i_period : in unsigned(15 downto 0);
 			i_pulse : in unsigned(15 downto 0);
 			
-			o_trigger : out std_logic;
-			o_current_time : out unsigned(15 downto 0)
+			o_trigger : out std_logic
 		);
 end trigger;
 
 architecture behaviour of trigger is
 	signal trigger_internal : std_logic := '0';
 	signal  debug : std_logic;
-	signal current_time : unsigned(15 downto 0) := (others => '0');
 begin	
 
 
@@ -52,13 +50,11 @@ begin
 				trigger_internal <= '0';
 				time_cnt := 0;
 				time_div := time_divider-1;
-				activated := '0';
-				current_time <= (others => '0');			
+				activated := '0';			
 			else
 			
 				if time_div = 0 then
 						time_div := time_divider;
-						current_time <= to_unsigned(time_cnt, current_time'length);
 						time_cnt :=	time_cnt + 1;
 				else
 						time_div := time_div - 1;
@@ -74,8 +70,7 @@ begin
 						pulse_cnt := to_integer(i_pulse);
 						activated := '1';
 						time_cnt := 0;
-						time_div := time_divider-1;
-						current_time <= (others => '0');						
+						time_div := time_divider-1;					
 					end if;
 
 					if 	period_cnt = 0 then
@@ -101,11 +96,10 @@ begin
 
 end  process;
 
-process(trigger_internal,current_time)
+process(trigger_internal)
 
 begin
 	o_trigger <= trigger_internal;
-	o_current_time <= current_time;
 end process;
 
 
