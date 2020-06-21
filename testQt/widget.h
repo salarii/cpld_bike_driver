@@ -36,6 +36,7 @@ public slots:
     void startMeasurement(bool _checked);
     void serialProblem();
     void startMotor(bool _checked);
+    void setMeasurementChannel(int _index);
     void motorSliderChanged();
 private:
     QChart *  createChart();
@@ -56,6 +57,8 @@ private:
     QLabel * labelSpeed;
     QLabel * labelForce;
     QPushButton * runMotorButton;
+
+    QComboBox *  adcChannelList;
 
     QComboBox *  parameterList;
     QLineEdit * valInput;

@@ -49,6 +49,10 @@ Widget::Widget(QWidget *parent)
 
     auto title = new QLabel("Generate wave: ");
 
+    adcChannelList = new QComboBox();
+    QStringList channels = { "adc channel 0", "adc channel 1", "adc channel 2" , "adc channel 3"};
+    adcChannelList->addItems(channels);
+
     frequency = new QSpinBox();
     frequency->setRange(20, 100000);
     frequency->setSingleStep(10);
@@ -67,7 +71,9 @@ Widget::Widget(QWidget *parent)
     interfaceLayout->addWidget(hz);
     interfaceLayout->addWidget(pulseWidth);
     interfaceLayout->addWidget(percent);
+
     interfaceLayout->addWidget(startButton);
+    interfaceLayout->addWidget(adcChannelList);
     startButton->setCheckable(true);
 
 
@@ -155,6 +161,9 @@ Widget::Widget(QWidget *parent)
     functionsTabs->addTab(flashWidget, "Flash");
     functionsTabs->addTab(blcdWidget, "Motor");
     triggerWidget->setMaximumHeight(80);
+
+    QObject::connect(adcChannelList,QOverload<int>::of(&QComboBox::activated),
+                     this,&Widget::setMeasurementChannel);
 }
 
 void
@@ -194,6 +203,18 @@ Widget::requestDataFromFlash()
     emit sendToHardware(sendBuff, 2);
 
 }
+
+
+void
+Widget::setMeasurementChannel(int _index)
+{
+
+    sendBuff[0] = (unsigned  char)CommandCodes::ChangeADCChannel;
+    sendBuff[1] = _index;
+    emit sendToHardware(sendBuff, 2);
+
+}
+
 
 void
 Widget::sendDataToFlash()
@@ -283,7 +304,7 @@ Widget::startMeasurement(bool _checked)
         freq = MainClockFreq/frequency->value();
         pulse = (pulseWidth->value()* freq)/100;
 
-        sendBuff[0] = (unsigned  char)CommandCodes::TriggerTermistorOpCode;
+        //sendBuff[0] = (unsigned  char)CommandCodes::TriggerTermistorOpCode;
         sendBuff[1] = freq >> 8;
         sendBuff[2] = freq  & 0xff;
         sendBuff[3] = pulse  >> 8;

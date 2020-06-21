@@ -25,7 +25,7 @@ struct FlashData
 
 enum class DataCodes { termistor = 0, flash = 1, motor = 2};
 
-enum class CommandCodes { StopOpCode = 0, TriggerTermistorOpCode = 1,WriteFlashOpCode = 2,ReadFlashOpCode =3, EraseFlashOpCode =4, StartMotorOpCode = 5 };
+enum class CommandCodes { StopOpCode = 0, ChangeADCChannel = 1,WriteFlashOpCode = 2,ReadFlashOpCode =3, EraseFlashOpCode =4, StartMotorOpCode = 5 };
 
 
 #endif // DATA_TYPES_H
