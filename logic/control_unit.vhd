@@ -159,7 +159,7 @@ architecture behaviour of control_unit is
 		
 		signal speed : unsigned(15 downto 0);
 		signal adc_channel : unsigned(2 downto 0);
-		signal adc_measurement : unsigned(15 downto 0);
+		signal adc_measurement : unsigned(15 downto 0) := (others => '0');
 begin	
 	
 	poly_module: poly
@@ -248,7 +248,7 @@ begin
 		
 		type type_i2c_operations is ( i2c_index, i2c_data_H, i2c_data_L );
 		
-		type type_user_commands is (no_command,wave_and_termistor,  flash_write, flash_read, flash_erase, run_motor );
+		type type_user_commands is (no_command,wave_and_termistor, adc_channel_change, flash_write, flash_read, flash_erase, run_motor );
 		
 		type type_init_trigger_phase is ( unit_step_freq_h,unit_step_freq_l, unit_step_pulse_h,unit_step_pulse_l);
 		
@@ -414,8 +414,7 @@ begin
 							
 						if i_from_uart = std_logic_vector(measure_command) then
 								
-								user_command := wave_and_termistor;
-								trigger_phase := unit_step_freq_h;
+								user_command := adc_channel_change;
 						elsif i_from_uart = std_logic_vector(flash_write_command) then
 								put_bus_high_flash <= '1';
 								user_command := flash_write; 
@@ -461,6 +460,11 @@ begin
 										
 								en_trigger <= '1';
 							end if;
+
+						elsif user_command = adc_channel_change then
+					
+							adc_channel <= unsigned(i_from_uart(2 downto 0));
+							user_command := no_command;
 						elsif user_command = run_motor then
 						
 							
@@ -576,7 +580,7 @@ begin
 							time_tmp := to_unsigned(glob_clk_counter, time_tmp'length );
 						
 							case val_cnt is
-							  when 0 =>   o_to_uart <= x"06";
+							  when 0 =>   o_to_uart <= x"05";
 							  when 1 =>   o_to_uart <= std_logic_vector(adc_data_code);
 							  when 2 =>   o_to_uart <= std_logic_vector(adc_measurement(15 downto 8));
 							  when 3 =>   o_to_uart <= std_logic_vector(adc_measurement(7 downto 0));

@@ -505,12 +505,12 @@ Wire Wire Line
 	7650 1850 7650 1900
 Connection ~ 7000 1850
 Wire Wire Line
-	7000 1850 7650 1850
+	7000 1850 7450 1850
 Wire Wire Line
 	7650 1700 7650 1850
 Connection ~ 7650 1850
 Wire Wire Line
-	7400 1300 7650 1300
+	7400 1300 7450 1300
 Wire Wire Line
 	7650 1300 7650 1400
 Wire Wire Line
@@ -1201,4 +1201,28 @@ Wire Wire Line
 	2450 4100 2500 4100
 Wire Wire Line
 	1450 3400 2500 3400
+$Comp
+L Device:R R?
+U 1 1 5F490E5A
+P 7450 1550
+AR Path="/5F490E5A" Ref="R?"  Part="1" 
+AR Path="/5E3A0664/5F490E5A" Ref="R?"  Part="1" 
+AR Path="/5E4C3088/5F490E5A" Ref="R68"  Part="1" 
+F 0 "R68" H 7520 1596 50  0000 L CNN
+F 1 "120" H 7520 1505 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric" V 7380 1550 50  0001 C CNN
+F 3 "~" H 7450 1550 50  0001 C CNN
+	1    7450 1550
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	7450 1400 7450 1300
+Connection ~ 7450 1300
+Wire Wire Line
+	7450 1300 7650 1300
+Wire Wire Line
+	7450 1700 7450 1850
+Connection ~ 7450 1850
+Wire Wire Line
+	7450 1850 7650 1850
 $EndSCHEMATC

@@ -174,9 +174,9 @@ architecture t_behaviour of temp_tb is
 				rx_uart <= '0';
 				wait for 1 us;
 				rx_uart <= '1';
-				wait for 2 us;
+				wait for 1 us;
 				rx_uart <= '0';
-				wait for 7 us;
+				wait for 8 us;
 				rx_uart <= '1';
 				wait for 5 us;
 				

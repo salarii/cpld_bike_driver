@@ -73,10 +73,10 @@ void Communication::run()
 
                 float voltage = (readbuffer[1] << shift8)+
                             readbuffer[2];
-                voltage *=(2.048/32768.0);
+                //voltage *=(2.048/32768.0);
                 int time = (readbuffer[3] << shift8)+
                             readbuffer[4];
-                measurement.temperature = readbuffer[5];
+                measurement.temperature = 0;
                 measurement.voltage = voltage;
                 measurement.time = time;
                 emit  passMeasurement(&measurement);
