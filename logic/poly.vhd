@@ -12,50 +12,50 @@ entity poly is
 		res : in std_logic;
 		clk : in std_logic;
 		i_enable : in std_logic;
-		i_val	: in  std_logic_vector(15  downto 0);
+		i_val	: in  std_logic_vector(9  downto 0);
 		o_temp : out std_logic_vector(7  downto 0)
 		);
 end poly;
 
 architecture behaviour of poly is
-		constant one : unsigned(IntPart + FracPart - 1  downto 0) := x"001000";
+		constant one : signed(IntPart + FracPart - 1  downto 0) := x"001000";
 		
-		signal translated_input : unsigned (IntPart + FracPart - 1  downto 0);
-		signal stored_val_power : unsigned (IntPart + FracPart - 1  downto 0) := one;
-		signal out_mul_1 : unsigned (IntPart + FracPart - 1  downto 0);
-		signal mul2_in : unsigned (IntPart + FracPart - 1  downto 0);
-		signal out_mul_2 : unsigned (IntPart + FracPart - 1  downto 0);
-		signal result : unsigned (IntPart + FracPart - 1  downto 0) := (others=>'0');
+		signal translated_input : signed (IntPart + FracPart - 1  downto 0):= (others => '0');
+		signal stored_val_power : signed (IntPart + FracPart - 1  downto 0) := one;
+		signal out_mul_1 : signed (IntPart + FracPart - 1  downto 0);
+		signal mul2_in : signed (IntPart + FracPart - 1  downto 0);
+		signal out_mul_2 : signed (IntPart + FracPart - 1  downto 0);
+		signal result : signed (IntPart + FracPart - 1  downto 0) := (others=>'0');
 		
-		--- 6.3511 17.3911 -1.3672 0.0495          
+		---    0.8444  56.9365  -12.7778  1.3186          
 		
-		constant par_0 : unsigned(IntPart + FracPart - 1  downto 0) := "000000000110010110011110";
-		constant par_1 : unsigned(IntPart + FracPart - 1  downto 0) := "000000010001011001000001";
-		constant par_2 : unsigned(IntPart + FracPart - 1  downto 0) := "000000000001010111100000";
-		constant par_3 : unsigned(IntPart + FracPart - 1  downto 0) := "000000000000000011001010";
+		constant par_0 : signed(IntPart + FracPart - 1  downto 0) := "000000000000110110000010";
+		constant par_1 : signed(IntPart + FracPart - 1  downto 0) := "000000111000111011111011";
+		constant par_2 : signed(IntPart + FracPart - 1  downto 0) := "111111110011001110001111";
+		constant par_3 : signed(IntPart + FracPart - 1  downto 0) := "000000000001010100011000";
 
-		component mul
+		component two_com_mul
 			generic (CONSTANT IntPart : integer;
 		   			 CONSTANT FracPart : integer );
 		port  (
-			A : in  unsigned(IntPart + FracPart - 1  downto 0);
-			B : in  unsigned(IntPart + FracPart - 1  downto 0);
-			outMul : out unsigned(IntPart + FracPart - 1  downto 0));
+			A : in  signed(IntPart + FracPart - 1  downto 0);
+			B : in  signed(IntPart + FracPart - 1  downto 0);
+			outMul : out signed(IntPart + FracPart - 1  downto 0));
 		end component;
 				
 begin	
 
-		module_mul1: mul
+		module_mul1: two_com_mul
 		generic map(
 			 IntPart => IntPart,
 			 FracPart => FracPart
 		 )
 		port map (
 			A => stored_val_power,
-			B => unsigned(translated_input),
+			B => signed(translated_input),
 			outMul => out_mul_1);
 
-		module_mul2: mul
+		module_mul2: two_com_mul
 		generic map(
 			 IntPart => IntPart,
 			 FracPart => FracPart
@@ -97,11 +97,9 @@ begin
 				  when others => mul2_in <= (others=>'0');
 				end case;
 				
-				if cnt = 2 then
-					result <= result - out_mul_2;
-				else
-					result <= result + out_mul_2;
-				end if;
+				
+				result <= result + out_mul_2;
+				
 				
 				if cnt = 3 then
 					stored_val_power <= one;
@@ -118,7 +116,7 @@ begin
 
 	process(result,i_val)
 	begin
-		translated_input(16 downto 1) <= unsigned(i_val);
+		translated_input(14 downto 5) <= signed(i_val);
 		o_temp <= std_logic_vector(result(IntPart + FracPart - 5  downto FracPart));
 	
 
