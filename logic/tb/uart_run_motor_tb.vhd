@@ -13,44 +13,36 @@ end uart_run_motor_tb;
 architecture t_behaviour of uart_run_motor_tb is
 
 		
-		component wire is
-			port(
-			bus_clk	: inout  std_logic;
-			bus_data : inout std_logic
-			);
-		end component wire;
-		
-		
-		
 		component control_unit is
 			port(
-      clk : in  std_logic;
-      res : in  std_logic;
-      
-      i_impulse : in std_logic;
-      
-      i_spi : in type_to_spi;
-      o_spi : out type_from_spi;
-        
-            
-      i_busy_uart : in std_logic;
-      i_from_uart : in std_logic_vector(7 downto 0);
-      i_received_uart : in std_logic;
-      o_to_uart : out std_logic_vector(7 downto 0);
-      o_en_uart : out std_logic;
-      o_wave : out std_logic;
-      o_motor_transistors : out type_motor_transistors;
-      leds : out std_logic_vector(4 downto 0)
+				clk : in  std_logic;
+				res : in  std_logic;
+				
+				i_impulse : in std_logic;
+				
+				i_flash_spi : in type_to_spi;
+				
+					
+							
+				i_busy_uart : in std_logic;
+				i_from_uart : in std_logic_vector(7 downto 0);
+				i_received_uart : in std_logic;
+				
+				i_adc_spi : in type_to_spi;
+					
+					
+				o_flash_spi : out type_from_spi;
+					
+				o_adc_spi : out type_from_spi;
+				
+				o_to_uart : out std_logic_vector(7 downto 0);
+				o_en_uart : out std_logic;
+				o_wave : out std_logic;
+				o_motor_transistors : out type_motor_transistors;
+				leds : out std_logic_vector(3 downto 0)
 			);
 		end component control_unit;
-	
-		component i2c_slave is
-			port(
-				res : in std_logic;		
-				bus_clk	: in  std_logic;
-				bus_data : inout std_logic
-				);
-		end component i2c_slave;
+
 	
 		component uart is
 			generic ( 
@@ -77,11 +69,8 @@ architecture t_behaviour of uart_run_motor_tb is
 
 	 
 	 
-	 	signal leds : std_logic_vector(4 downto 0);
+	 	signal leds : std_logic_vector(3 downto 0);
 	 
-		signal to_i2c : type_to_i2c;
-		signal from_i2c : type_from_i2c;
-		signal i2c_bus : std_logic_vector(7 downto 0);
 		
 		signal res : std_logic;	
 		signal clk : std_logic;		
@@ -116,39 +105,39 @@ architecture t_behaviour of uart_run_motor_tb is
 		signal rx_uart : std_logic;
 		signal err_uart : std_logic;		
 
+
 		signal to_spi : type_to_spi;
 		signal from_spi : type_from_spi;
+		signal to_adc_spi : type_to_spi;
+		signal from_adc_spi : type_from_spi;
 		signal wave : std_logic;
 	begin	
 		
 
-			
-
-		module_wire: wire
-		port map (
-				bus_clk => bus_clk,
-				bus_data => bus_data
-				);
-
+		
 		
 		control_func: control_unit
 		port map (
 				res => res,
 				clk => clk,
 				
-				i_impulse => impulse,
+				i_flash_spi => to_spi,
+				o_flash_spi => from_spi,
 				
-				i_spi => to_spi,
-				o_spi => from_spi,
+				i_adc_spi => to_adc_spi,
+				o_adc_spi => from_adc_spi,
 
+				i_impulse => '0',
+
+				leds => leds,
 				o_wave => wave,
-        o_motor_transistors => motor_transistors,
 		
 				i_received_uart => received_uart,
 				i_from_uart => from_uart,
 				i_busy_uart => busy_uart,
 				o_to_uart => to_uart,
-				o_en_uart => en_uart
+				o_en_uart => en_uart,
+				o_motor_transistors => motor_transistors
 				);
 
  
@@ -237,13 +226,7 @@ begin
 	wait  for clk_period/2;
 end  process;
 
-	address <= to_i2c.address;
-	enable <= to_i2c.enable;		
-	continue <= to_i2c.continue;
-	
-	busy <= from_i2c.busy;
-	done <= from_i2c.done;
-	error <= from_i2c.error;
+
 			
 			
 	i_slave_data <= bus_data;

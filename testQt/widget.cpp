@@ -185,7 +185,7 @@ void
 Widget::displayFlash(FlashData const * _value)
 {
      auto idx = _value->address /3;
-idx-=shift;
+    idx-=shift;
      unsigned int value = (unsigned int)_value->data[2] +
     (((unsigned int)_value->data[1])<<8) +
     (((unsigned int)_value->data[0])<<16);
@@ -275,7 +275,9 @@ Widget::startMotor(bool _checked)
     }
     else
     {
+        series->clear();
         motorRun = true;
+        motorTriggerTime = lastTime;
         runMotorButton->setText("Stop");
         motorSliderChanged();
     }
@@ -352,7 +354,7 @@ QChart * Widget::createChart()
 {
     QLineSeries * tmp = new QLineSeries();
     auto list = series->points();
-    if ( list.size() > 100 )
+    if ( list.size() > 100 && !motorRun  )
     {
         list.removeFirst();
     }
@@ -374,7 +376,7 @@ QChart * Widget::createChart()
     series->attachAxis(axisX);
     series->attachAxis(axisY);
     axisX->applyNiceNumbers();
-    axisY->setRange(25.0, 130.0);
+    axisY->setRange(25.0, 90.0);
     axisY->applyNiceNumbers();
     return newChart;
 }
@@ -382,26 +384,37 @@ QChart * Widget::createChart()
 
 void Widget::serviceMeasurement(Measurement const * _measurement)
 {
-    float time = ((float)_measurement->time)/10.0;
+    float time = ((float)_measurement->time)/1000.0;
+    if ( series->points().size() == 0 )
+    {
+        tempTime = time;
+    }
     if ( series->points().size() > 0 &&  series->points().back().x() > time )
     {
+        tempTime = time;
         series->clear();
     }
-    series->append(time,_measurement->temperature);
+    series->append(time-tempTime,_measurement->temperature);
 
     auto message = labelText + QString().setNum(_measurement->voltage, 'g', 4) + QString(" V ");
     message += QString(" Temperature:") + QString().setNum(_measurement->temperature) + QString(" Celsius");
 
     label->setText(message);
     QChart* chartToDelete=NULL;
-    if(chartView->chart())
+    lastTime = time;
+
+    if ((( lastTime - motorTriggerTime < measurementSpan ) && motorRun )|| !motorRun )
     {
-        chartToDelete=chartView->chart();
+        if(
+           chartView->chart()
+           )
+        {
+            chartToDelete=chartView->chart();
+        }
+        chartView->setChart(createChart());
+
+        delete chartToDelete;
     }
-    chartView->setChart(createChart());
-
-    delete chartToDelete;
-
 }
 
 void Widget::serviceMotorData(MotorData const * _motorData)
@@ -414,7 +427,7 @@ void Widget::serviceMotorData(MotorData const * _motorData)
     motorSeries->append(time,_motorData->speed);
     auto message = QString("Motor Speed:  ") + QString().setNum(_motorData->speed, 'g', 4) + QString(" Rpm ");
 
-    label->setText(message);
+    //label->setText(message);
     QChart* chartToDelete=NULL;
     if(motorChartView->chart())
     {

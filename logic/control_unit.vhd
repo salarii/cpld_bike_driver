@@ -52,7 +52,7 @@ architecture behaviour of control_unit is
 				res : in std_logic;
 				clk : in std_logic;
 				i_enable : in std_logic;
-				i_val	: in  std_logic_vector(15  downto 0);
+				i_val	: in  std_logic_vector(9  downto 0);
 				o_temp : out std_logic_vector(7  downto 0)
 				);
 		end component;
@@ -81,6 +81,24 @@ architecture behaviour of control_unit is
 				);
 				
 		end component flash_controller;
+
+		component trigger is
+			generic ( 
+				CONSTANT time_divider : integer
+				);
+				
+		port(
+				res : in std_logic;		
+				clk : in std_logic;	
+				i_enable : in std_logic;
+				i_stop : in std_logic;
+				i_period : in unsigned(15 downto 0);
+				i_pulse : in unsigned(15 downto 0);
+				
+				o_trigger : out std_logic
+				);
+		end component;
+
 
 		component motor_driver is
 		
@@ -136,7 +154,6 @@ architecture behaviour of control_unit is
 		
 		signal poly_enable : std_logic;	
 		signal poly_temperature : unsigned(7  downto 0);	
-		signal poly_val : unsigned(15 downto 0) := (others => '0');
 
 		signal en_trigger : std_logic;	
 		signal out_trigger : std_logic;
@@ -168,9 +185,24 @@ begin
 		res => res,
 		clk => clk,
 		i_enable => poly_enable,
-		i_val	=> std_logic_vector(poly_val),
+		i_val	=> std_logic_vector(adc_measurement(9 downto 0)),
 		unsigned(o_temp) => poly_temperature 
 		);	
+
+	trigger_func : trigger
+	generic map (
+	 	time_divider => 100000 )
+				
+		port map(
+				res => res, 		
+				clk => clk,	
+				i_enable => en_trigger,
+				i_stop => stop_trigger,
+				i_period => period_trigger,
+				i_pulse => pulse_trigger,
+				
+				o_trigger => out_trigger
+		);
 
 
 	speed_impulse_module : speed_impulse 
@@ -273,7 +305,7 @@ begin
 		constant config_register_l : unsigned(7 downto 0) := "01100011";
 		constant short_break : integer := 50;
 		variable cnt : integer := 0;			
-		variable val_cnt : integer  range 7 downto 0 := 0;
+		variable val_cnt : integer  range 15 downto 0 := 0;
 		variable state : state_type := Setup;
 		variable i2c_state : type_i2c_operations := i2c_index;
 		variable enable_pc_write : std_logic;
@@ -295,7 +327,7 @@ begin
 		variable last_motor_action : integer := 0;
 		variable last_adc_data_send : integer := 0;
 				
-		variable time_tmp : unsigned(15 downto 0);
+		variable time_tmp : unsigned(31 downto 0);
 	begin
 
 		if rising_edge(clk)  then
@@ -556,16 +588,17 @@ begin
 							time_tmp := to_unsigned(glob_clk_counter, time_tmp'length );
 
 							case val_cnt is
-							  when 0 =>   o_to_uart <= x"05"; -- size
+							  when 0 =>   o_to_uart <= x"06"; -- size
 							  when 1 =>   o_to_uart <= std_logic_vector(motor_data_code);
 							  when 2 =>   o_to_uart <= std_logic_vector(speed(15 downto 8));
 							  when 3 =>   o_to_uart <= std_logic_vector(speed(7 downto 0));
-							  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
-							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
+							  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(23 downto 16));
+							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
+							  when 6 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
 							  when others => o_to_uart <=  (others=>'Z');
 							end case;
 							enable_uart <= '1';
-						elsif val_cnt = 6 and i_busy_uart = '1' then
+						elsif val_cnt = 7 and i_busy_uart = '1' then
 
 								uart_dev_status.motor := False;
 								
@@ -579,17 +612,25 @@ begin
 						if i_busy_uart = '0' then 
 							time_tmp := to_unsigned(glob_clk_counter, time_tmp'length );
 						
+              if val_cnt = 0 then
+                poly_enable <=  '1';
+              else
+                poly_enable <=  '0';
+              end if;
+						
 							case val_cnt is
-							  when 0 =>   o_to_uart <= x"05";
+							  when 0 =>   o_to_uart <= x"07";
 							  when 1 =>   o_to_uart <= std_logic_vector(adc_data_code);
 							  when 2 =>   o_to_uart <= std_logic_vector(adc_measurement(15 downto 8));
 							  when 3 =>   o_to_uart <= std_logic_vector(adc_measurement(7 downto 0));
-							  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
-							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
+							  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(23 downto 16));
+							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
+							  when 6 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
+							  when 7 =>   o_to_uart <= std_logic_vector(poly_temperature);
 							  when others => o_to_uart <=  (others=>'Z');
 							end case;
 							enable_uart <= '1';
-						elsif val_cnt = 6 and i_busy_uart = '1' then
+						elsif val_cnt = 8 and i_busy_uart = '1' then
 							
 							uart_dev_status.adc_data := False; 
 							val_cnt := 0;

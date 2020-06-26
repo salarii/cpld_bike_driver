@@ -65,5 +65,11 @@ private:
     unsigned char * sendBuff;
 
     float idx;
+
+    const int measurementSpan = 300;
+    int lastTime;
+    int tempTime;
+    int motorTriggerTime;
+
 };
 #endif // WIDGET_H
