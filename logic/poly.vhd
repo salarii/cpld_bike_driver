@@ -13,6 +13,7 @@ entity poly is
 		clk : in std_logic;
 		i_enable : in std_logic;
 		i_val	: in  std_logic_vector(9  downto 0);
+		o_calculated : out std_logic;
 		o_temp : out std_logic_vector(7  downto 0)
 		);
 end poly;
@@ -26,7 +27,7 @@ architecture behaviour of poly is
 		signal mul2_in : signed (IntPart + FracPart - 1  downto 0);
 		signal out_mul_2 : signed (IntPart + FracPart - 1  downto 0);
 		signal result : signed (IntPart + FracPart - 1  downto 0) := (others=>'0');
-		
+		signal calculated : std_logic := '0';
 		---    0.8444  56.9365  -12.7778  1.3186          
 		
 		constant par_0 : signed(IntPart + FracPart - 1  downto 0) := "000000000000110110000010";
@@ -66,8 +67,8 @@ begin
 			outMul => out_mul_2);
 
 	process(clk)
-		type state_type is (Inactive, Active, Calculated);
-		variable state : state_type := Inactive;
+		type state_type is (inactive_state, active_state, calculated_state);
+		variable state : state_type := inactive_state;
 
 		variable fracRange : integer := IntPart + FracPart;
 		variable cnt : integer range 3 downto 0 := 0;
@@ -77,18 +78,20 @@ begin
 			
 		if  res = '0' then
 			cnt := 0;
-			state := Inactive;
+			state := inactive_state;
 			stored_val_power <= one;
 			result <= (others=>'0');
+			calculated <= '0';
 		elsif  rising_edge(clk) then
 			
-			if i_enable = '1' and state = Inactive then 
-				state := Active;
+			if i_enable = '1' and state = inactive_state then 
+				state := active_state;
 				result <= par_0;
-			elsif  i_enable = '0' and state = Calculated then
-				state := Inactive;
+				calculated <= '0';
+			elsif  i_enable = '0' and state = calculated_state then
+				state := inactive_state;
 				cnt := 0;
-			elsif state = Active then
+			elsif state = active_state then
 			
 				case cnt is
 				  when 0 => mul2_in <= par_1;
@@ -103,7 +106,8 @@ begin
 				
 				if cnt = 3 then
 					stored_val_power <= one;
-					state := Calculated; 
+					state := calculated_state;
+					calculated <= '1'; 
 				else
 					stored_val_power <= out_mul_1;
 					cnt := cnt + 1;
@@ -114,11 +118,11 @@ begin
 		
 	end process;
 
-	process(result,i_val)
+	process(result,i_val,calculated)
 	begin
 		translated_input(14 downto 5) <= signed(i_val);
 		o_temp <= std_logic_vector(result(IntPart + FracPart - 5  downto FracPart));
-	
+		o_calculated <= calculated;
 
 	end process;
 

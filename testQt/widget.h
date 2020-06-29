@@ -66,7 +66,7 @@ private:
 
     float idx;
 
-    const int measurementSpan = 300;
+    const int measurementSpan =800;
     int lastTime;
     int tempTime;
     int motorTriggerTime;

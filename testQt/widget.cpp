@@ -376,7 +376,7 @@ QChart * Widget::createChart()
     series->attachAxis(axisX);
     series->attachAxis(axisY);
     axisX->applyNiceNumbers();
-    axisY->setRange(25.0, 90.0);
+    axisY->setRange(25.0, 80.0);
     axisY->applyNiceNumbers();
     return newChart;
 }

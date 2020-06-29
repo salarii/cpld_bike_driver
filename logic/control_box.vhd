@@ -58,20 +58,17 @@ architecture behaviour of control_box is
 				clk : in std_logic;
 				i_enable : in std_logic;
 				i_val	: in  std_logic_vector(9  downto 0);
+				o_calculated : out std_logic;
 				o_temp : out std_logic_vector(7  downto 0)
 				);
 		end component;
 		
 		component trigger is
-			generic ( 
-				CONSTANT time_divider : integer
-				);
 				
 		port(
 				res : in std_logic;		
 				clk : in std_logic;	
 				i_enable : in std_logic;
-				i_stop : in std_logic;
 				i_period : in unsigned(15 downto 0);
 				i_pulse : in unsigned(15 downto 0);
 				
@@ -143,12 +140,12 @@ architecture behaviour of control_box is
 		signal data : std_logic_vector(upper_limit downto 0);	
 		
 		signal poly_enable : std_logic;	
-		signal poly_temperature : unsigned(7  downto 0);	
+		signal poly_calculated : std_logic;	
+		signal poly_temperature : signed(15  downto 0) := (others => '0');	
+		signal req_temperature : signed(15  downto 0) := (others => '0');
 
-		signal en_trigger : std_logic;	
 		signal out_trigger : std_logic;
 		signal pulse_trigger : unsigned(upper_limit downto 0) := (others => '0');	
-		signal stop_trigger : std_logic;
 
 
 		signal enable_pid : std_logic;
@@ -168,8 +165,7 @@ architecture behaviour of control_box is
 		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0400";-- 4 , 40% wave user  cap
 		constant wave_limit : unsigned(upper_limit downto 0) := x"0a00";--10 , 100% wave equvalent
 		constant max_temperature : unsigned(upper_limit downto 0) := x"0200";-- Celsius
-		constant offset_temperature : unsigned(upper_limit downto 0) := x"0200";-- 80
-		constant offset_tmp_voltage : unsigned(upper_limit downto 0) := x"0000";--0V 
+		constant offset_tmp_wave : unsigned(upper_limit downto 0) := x"0000";--0V 
 		
 		constant period_trigger : unsigned(upper_limit downto 0) := x"01fe";--
 		
@@ -197,7 +193,7 @@ architecture behaviour of control_box is
 		signal divisor : unsigned(upper_limit  downto 0);
 		
 		constant clk_freq : integer := 1000000;
-		constant periods_per_sec : integer := 10;
+		constant periods_per_sec : integer := 2;
 
 
 begin	
@@ -230,7 +226,8 @@ begin
 		clk => clk,
 		i_enable => poly_enable,
 		i_val	=> std_logic_vector(i_temp_transistors),
-		unsigned(o_temp) => poly_temperature 
+		o_calculated => poly_calculated,
+		signed(o_temp) => poly_temperature(15 downto 8) 
 		);	
 
 
@@ -274,15 +271,11 @@ begin
 			o_reg => out_reg
 			);
 
-	trigger_func : trigger
-	generic map (
-	 	time_divider => 100000 )
-				
+	trigger_func : trigger	
 		port map(
 				res => res, 		
 				clk => clk,	
-				i_enable => en_trigger,
-				i_stop => stop_trigger,
+				i_enable => i_control_box_setup.enable,
 				i_period => period_trigger,
 				i_pulse => pulse_trigger,
 				
@@ -315,7 +308,7 @@ begin
 	process(clk)
 		variable uart_sized : boolean := False; 
 	
-		type type_regulator_state is ( regulator_idle,regulator_speed_check,regulator_init,regulator_valid, regulator_processing_output, regulator_initiate_trigger );
+		type type_regulator_state is ( regulator_idle,regulator_speed_check,calculate_temperature,regulator_init,regulator_valid, regulator_processing_output, regulator_initiate_trigger );
 			
 		constant config_register_h : unsigned(7 downto 0) := "01000100";
 		constant config_register_l : unsigned(7 downto 0) := "01100011";
@@ -364,10 +357,22 @@ begin
 						mul_a(23 downto 8) <= max_speed;
 						mul_b(15 downto 8) <= i_req_speed;
 						
-						regulator_state := regulator_init;
+						
+						poly_enable <= '1';
+						regulator_state := calculate_temperature;	
+					elsif regulator_state = calculate_temperature then
+
+						
+						if poly_enable = '1' then
+							poly_enable <= '0';
+
+						elsif poly_calculated = '1' then	
+							regulator_state := regulator_init;		
+						end if;
+
 					elsif regulator_state = regulator_init then
 
-						in_temperature_reg <= signed(poly_temperature) + signed(max_temperature);
+						in_temperature_reg <= (req_temperature - poly_temperature);
 						
 						req_speed_motor <= mul_out(23 downto 8 );
 						in_reg <= signed(mul_out(23 downto 8 )) - signed(speed);
@@ -380,8 +385,8 @@ begin
 						end if;
 						
 					elsif regulator_state = regulator_valid then
-						modified_reg := out_reg + signed(offset_voltage);
-						modified_temp_reg := out_temperature_reg + signed(offset_tmp_voltage);
+						modified_reg := out_reg;
+						modified_temp_reg := out_temperature_reg + signed(offset_tmp_wave);
 
 						if modified_temp_reg < 0 then  
 							modified_temp_reg := (others => '0');
@@ -396,17 +401,17 @@ begin
 						end if;
 						
 						if modified_temp_reg < modified_reg then
-							mul_a(31 downto 16) <= wave_limit;
+							mul_a(31 downto 16) <= period_trigger;
 							mul_b(23 downto 8) <= unsigned(modified_temp_reg);
 							
 						else
-							mul_a(31 downto 16) <= wave_limit;
+							mul_a(31 downto 16) <= period_trigger;
 							mul_b(23 downto 8) <= unsigned(modified_reg);
 							
 						end if;
 						
 						divisor <= (others => '0');
-						divisor(7 downto 0) <= battery_voltage(15 downto 8);
+						divisor(7 downto 0) <= wave_limit(15 downto 8);
 						enable_div <= '1';
 						regulator_state := regulator_processing_output;
 					elsif regulator_state = regulator_processing_output then
@@ -437,6 +442,9 @@ begin
 
 	end process;
 
-
+process(i_req_temperature)
+begin
+	req_temperature(15 downto 8) <= signed(i_req_temperature);
+end process;
 	
 end behaviour;
