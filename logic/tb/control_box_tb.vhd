@@ -18,7 +18,7 @@ architecture t_behaviour of control_box_tb is
 				clk : in  std_logic;
 				res : in  std_logic;
 				
-				i_temp_transistors : in unsigned(15 downto 0);
+				i_temp_transistors : in unsigned(9 downto 0);
 				i_req_speed : in unsigned(7 downto 0);
 				i_req_temperature : in unsigned(7 downto 0);
 				i_control_box_setup : in type_control_box_setup;
@@ -34,7 +34,7 @@ architecture t_behaviour of control_box_tb is
 	 
 		constant hal_period : time := 20 ms;
 
-		signal temp_transistors : unsigned(15 downto 0);
+		signal temp_transistors : unsigned(9 downto 0);
 		signal req_temperature : unsigned(7 downto 0);
 		signal req_speed : unsigned(7 downto 0) := x"7f";
 		signal control_box_setup : type_control_box_setup;

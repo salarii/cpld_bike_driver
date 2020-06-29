@@ -15,7 +15,7 @@ entity control_box is
 		clk : in  std_logic;
 		res : in  std_logic;
 		
-		i_temp_transistors : in unsigned(15 downto 0);
+		i_temp_transistors : in unsigned(9 downto 0);
 		i_req_speed : in unsigned(7 downto 0);
 		i_req_temperature : in unsigned(7 downto 0);
 		i_control_box_setup : in type_control_box_setup;
@@ -57,7 +57,7 @@ architecture behaviour of control_box is
 				res : in std_logic;
 				clk : in std_logic;
 				i_enable : in std_logic;
-				i_val	: in  std_logic_vector(15  downto 0);
+				i_val	: in  std_logic_vector(9  downto 0);
 				o_temp : out std_logic_vector(7  downto 0)
 				);
 		end component;
@@ -144,7 +144,6 @@ architecture behaviour of control_box is
 		
 		signal poly_enable : std_logic;	
 		signal poly_temperature : unsigned(7  downto 0);	
-		signal poly_val : unsigned(upper_limit downto 0) := (others => '0');
 
 		signal en_trigger : std_logic;	
 		signal out_trigger : std_logic;
@@ -166,11 +165,13 @@ architecture behaviour of control_box is
 		constant max_speed : unsigned(upper_limit downto 0) := x"2800";--40km/h
 		constant battery_voltage : unsigned(upper_limit downto 0) := x"2400";--36V
 
+		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0400";-- 4 , 40% wave user  cap
+		constant wave_limit : unsigned(upper_limit downto 0) := x"0a00";--10 , 100% wave equvalent
 		constant max_temperature : unsigned(upper_limit downto 0) := x"0200";-- Celsius
 		constant offset_temperature : unsigned(upper_limit downto 0) := x"0200";-- 80
-		constant offset_tmp_voltage : unsigned(upper_limit downto 0) := x"0300";--10V 
+		constant offset_tmp_voltage : unsigned(upper_limit downto 0) := x"0000";--0V 
 		
-		constant period_trigger : unsigned(upper_limit downto 0) := x"01fe";
+		constant period_trigger : unsigned(upper_limit downto 0) := x"01fe";--
 		
 		signal req_speed_motor : unsigned(upper_limit downto 0);
 		signal motor_control_setup : type_motor_control_setup;
@@ -228,7 +229,7 @@ begin
 		res => res,
 		clk => clk,
 		i_enable => poly_enable,
-		i_val	=> std_logic_vector(poly_val),
+		i_val	=> std_logic_vector(i_temp_transistors),
 		unsigned(o_temp) => poly_temperature 
 		);	
 
@@ -384,8 +385,8 @@ begin
 
 						if modified_temp_reg < 0 then  
 							modified_temp_reg := (others => '0');
-						elsif modified_temp_reg > signed(battery_voltage) then
-							modified_temp_reg := signed(battery_voltage);
+						elsif modified_temp_reg > signed(wave_user_limit) then
+							modified_temp_reg := signed(wave_user_limit);
 						end if;
 												
 						if modified_reg < 0 then  
@@ -395,11 +396,11 @@ begin
 						end if;
 						
 						if modified_temp_reg < modified_reg then
-							mul_a(31 downto 16) <= period_trigger;
+							mul_a(31 downto 16) <= wave_limit;
 							mul_b(23 downto 8) <= unsigned(modified_temp_reg);
 							
 						else
-							mul_a(31 downto 16) <= period_trigger;
+							mul_a(31 downto 16) <= wave_limit;
 							mul_b(23 downto 8) <= unsigned(modified_reg);
 							
 						end if;
