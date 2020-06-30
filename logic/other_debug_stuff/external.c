@@ -10,6 +10,7 @@
 #include <sys/poll.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <math.h>
 
 #include "lib.h"
 #include "plant.h"
@@ -41,12 +42,17 @@ void initFile(int _dummy)
 void initPlant(int _dummy)
 {
 	emptyFile();
+	init();
 }
 
 int regToPlant (int _time, int _force )
 {
-	float adjusted = fixed_to_float(_force );
-printf("%f\n",adjusted);
+	//float adjusted = fixed_to_float(_force );
 
-	return float_to_fixed(step(_time,adjusted ));
+
+
+	 float  temp = step(_time,(float)_force );
+	// printf("%4f\n",temp);
+	 return -0.0002 * pow(temp,3) + 0.0695*pow(temp,2) -1.1323 *temp + 38.5540;;
+
 }

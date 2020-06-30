@@ -55,7 +55,7 @@ void appendToFile(float _time,float _val)
 
 
 
-# define NEQN 2
+# define NEQN 1
 
   float abserr;
   int flag= 1;
@@ -68,9 +68,8 @@ void appendToFile(float _time,float _val)
   float y[NEQN];
   float yp[NEQN];
 
-  float t_step = 0.001;
+  float t_step = 0.000001;
 
-  float  voltage = 0.0;
 
   float Kt = 0.000458;//4.5877e-04;
   float J  = 0.00000289;//2.8966e-06;
@@ -78,28 +77,30 @@ void appendToFile(float _time,float _val)
   float R =  0.53;
   float Ke =  0.000528;//5.2877e-04;
 
+  float T0 = 1.0/260.0;
+  float T1 = 220.0/260.0;
+  float wave = 0.0;
+
 void r4_f1 ( float t, float y[], float yp[] )
 {
 
+	yp[0] = wave/T1 - y[0]*(T0/T1);
 
-	yp[0] = (Kt*y[1])/J;
-    yp[1] = (voltage - R*y[1] - Ke*y[0])/L;
-
+	//printf("%4f,%4f,%4f\n",yp[0],-0.1/T1, y[0]*(T0/T1));
     return;
 }
 
 void init(void)
 {
 	  emptyFile();
-	  y[1] = 0.0;
-	  y[2] = 0.0;
+	  y[0] = 20;
 	  t = 0;
+	  //printf("init\n");
 }
 
 float step (int _step, float _force )
 {
-	voltage = _force;
-
+	wave = _force;
 	float  timeStep = (float)_step * t_step;
 
 	abserr = sqrt ( r4_epsilon ( ) );
@@ -116,7 +117,7 @@ float step (int _step, float _force )
 
     	flag = 2;
     }
-    printf("log %f %f %f\n",t,voltage,y[0]);
+    //printf("log %f %f %f\n",t,voltage,y[0]);
     logToFile(t,y[0]);
   return (float)(y[0]);
 }

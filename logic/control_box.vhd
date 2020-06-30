@@ -162,14 +162,14 @@ architecture behaviour of control_box is
 		constant max_speed : unsigned(upper_limit downto 0) := x"2800";--40km/h
 		constant battery_voltage : unsigned(upper_limit downto 0) := x"2400";--36V
 
-		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0400";-- 4 , 40% wave user  cap
+		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0a00";-- 10 , 100% wave user  cap
 		constant wave_limit : unsigned(upper_limit downto 0) := x"0a00";--10 , 100% wave equvalent
 		constant max_temperature : unsigned(upper_limit downto 0) := x"0200";-- Celsius
 		constant offset_tmp_wave : unsigned(upper_limit downto 0) := x"0000";--0V 
 		
 		constant period_trigger : unsigned(upper_limit downto 0) := x"01fe";--
 		
-		signal req_speed_motor : unsigned(upper_limit downto 0);
+		signal req_speed_motor : unsigned(upper_limit downto 0):=(others=>'0');
 		signal motor_control_setup : type_motor_control_setup;
 		signal motor_transistors : type_motor_transistors;
 		
@@ -345,7 +345,7 @@ begin
 					if cnt = glob_clk_denom then
 						cnt := 0;
 						regulator_state := regulator_speed_check; 
-	
+
 					else 
 						cnt := cnt + 1;
 					end if;
@@ -356,13 +356,11 @@ begin
 						mul_b <= (others => '0');
 						mul_a(23 downto 8) <= max_speed;
 						mul_b(15 downto 8) <= i_req_speed;
-						
-						
+							
 						poly_enable <= '1';
 						regulator_state := calculate_temperature;	
 					elsif regulator_state = calculate_temperature then
 
-						
 						if poly_enable = '1' then
 							poly_enable <= '0';
 
@@ -371,9 +369,10 @@ begin
 						end if;
 
 					elsif regulator_state = regulator_init then
-
+						report integer'image(to_integer(poly_temperature(15 downto 8)));
+						report integer'image(to_integer(req_temperature(15 downto 8)));
 						in_temperature_reg <= (req_temperature - poly_temperature);
-						
+	
 						req_speed_motor <= mul_out(23 downto 8 );
 						in_reg <= signed(mul_out(23 downto 8 )) - signed(speed);
 						
@@ -385,9 +384,10 @@ begin
 						end if;
 						
 					elsif regulator_state = regulator_valid then
+							
 						modified_reg := out_reg;
 						modified_temp_reg := out_temperature_reg + signed(offset_tmp_wave);
-
+						
 						if modified_temp_reg < 0 then  
 							modified_temp_reg := (others => '0');
 						elsif modified_temp_reg > signed(wave_user_limit) then
@@ -400,15 +400,20 @@ begin
 							modified_reg := signed(battery_voltage);
 						end if;
 						
-						if modified_temp_reg < modified_reg then
-							mul_a(31 downto 16) <= period_trigger;
-							mul_b(23 downto 8) <= unsigned(modified_temp_reg);
+						mul_a(31 downto 16) <= period_trigger;
+						mul_b(23 downto 8) <= unsigned(modified_temp_reg);
+						report integer'image(to_integer(modified_temp_reg));
 							
-						else
-							mul_a(31 downto 16) <= period_trigger;
-							mul_b(23 downto 8) <= unsigned(modified_reg);
-							
-						end if;
+						
+						--if modified_temp_reg < modified_reg then
+--							mul_a(31 downto 16) <= period_trigger;
+--							mul_b(23 downto 8) <= unsigned(modified_temp_reg);
+--							
+--						else
+--							mul_a(31 downto 16) <= period_trigger;
+--							mul_b(23 downto 8) <= unsigned(modified_reg);
+--							
+--						end if;
 						
 						divisor <= (others => '0');
 						divisor(7 downto 0) <= wave_limit(15 downto 8);
@@ -416,14 +421,17 @@ begin
 						regulator_state := regulator_processing_output;
 					elsif regulator_state = regulator_processing_output then
 						if enable_div = '1' then
+						report integer'image(to_integer(divisor));
+						report integer'image(to_integer(mul_out(31 downto 16)));							
+
 							 enable_div <= '0';
-						end if;
-						if valid = '1' then
+						elsif valid = '1' then	 
 							regulator_state := regulator_initiate_trigger;
 						end if;
 							
 					elsif regulator_state = regulator_initiate_trigger then
 						pulse_trigger <= quot;
+						
 						regulator_state := regulator_idle;
 					end if;
 			
@@ -442,8 +450,15 @@ begin
 
 	end process;
 
-process(i_req_temperature)
+process(i_req_temperature,motor_transistors,i_hal_data,i_control_box_setup)
 begin
+	
+	
+	motor_control_setup.hal <= '0'; 
+	motor_control_setup.enable <= i_control_box_setup.enable;
+	motor_control_setup.hal_data <= i_hal_data;
+	
+	o_motor_transistors <= motor_transistors;
 	req_temperature(15 downto 8) <= signed(i_req_temperature);
 end process;
 	

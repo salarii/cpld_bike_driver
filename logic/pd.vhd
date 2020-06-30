@@ -28,8 +28,8 @@ architecture behaviour of pd is
 		
 		--- 
 		
-		constant Kp : signed(IntPart + FracPart - 1  downto 0) := x"0012";
-		constant Kd : signed(IntPart + FracPart - 1  downto 0) := x"0068";
+		constant Kp : signed(IntPart + FracPart - 1  downto 0) := x"009d";
+		constant Kd : signed(IntPart + FracPart - 1  downto 0) := x"0027";
 		
 		constant pt0 : signed(IntPart + FracPart - 1  downto 0) := Kp +Kd;
 		constant pt1 : signed(IntPart + FracPart - 1  downto 0) := -Kd;

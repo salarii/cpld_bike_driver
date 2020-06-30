@@ -50,10 +50,11 @@ begin
 						period_cnt := to_integer(i_period)-1;
 						if i_pulse > 0 then
 							pulse_cnt := to_integer(i_pulse)-1;
+							trigger_internal <= '1';
 						else
 							pulse_cnt := 0;
 						end if;
-						trigger_internal <= '1';
+						
 					else
 						if pulse_cnt = 0 then
 							trigger_internal <= '0';

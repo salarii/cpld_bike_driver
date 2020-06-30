@@ -2,7 +2,8 @@ rm -rf work
 mkdir work
 
 ghdl -a  --work=work --workdir=work glue.vhd ../two_com_mul.vhd ../low_pass.vhd ../pid.vhd ../pd.vhd
-ghdl -a  --work=work --workdir=work plant_tb.vhd
+ghdl -a  --work=work --workdir=work ../functions.vhd ../interface_data.vhd ../div.vhd ../mul.vhd ../poly.vhd ../trigger.vhd ../motor_driver.vhd ../speed_impulse.vhd ../control_box.vhd 
+ghdl -a  --work=work --workdir=work control_box_tb.vhd
 gcc -c -fPIC external.c -o external.o
 gcc -c -fPIC rkf45.c -o rkf45.o
 gcc -c -fPIC lib.c -o lib.o
@@ -11,11 +12,10 @@ gcc -c -g -fPIC plant.c -o plant.o
 #gcc -g lib.o plant.o rkf45.o -lm -o app
 #./app
 ar ruv libsim.a  plant.o lib.o external.o rkf45.o 
-#ghdl -a  --work=work --workdir=work tb.vhd
-ghdl -e -Wl,-lm  -Wl,-lsim   --ieee=synopsys -fexplicit --workdir=work -Pwork tb
+ghdl -e -Wl,-lm  -Wl,-lsim   --ieee=synopsys -fexplicit --workdir=work -Pwork control_box_tb
 
-ghdl -r tb  --wave=tbench.ghw  --stop-time=60000ms
+ghdl -r control_box_tb  --wave=tbench.ghw  --stop-time=60000ms
 
-#gnuplot -e "plot 'data.txt' using 1:2; pause -1"
+gnuplot -e "plot 'data.txt' using 1:2; pause -1"
 
 #gtkwave tbench.ghw a.gtkw

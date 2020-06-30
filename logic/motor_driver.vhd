@@ -182,11 +182,16 @@ end generate;
 						divisor(7 downto 0) <= i_req_speed;
 						divisor(size -1 downto 8) <= (others => '0');
 						if status = initialise_control then
-							tick_cnt := tick_period-1;							
-							status := active_control;
-							enable_div <= '1';	
+							tick_cnt := tick_period-1;	
 							transistors_path := No_path;
-							cnt := max_steps_per_cycle /100;
+							set_transistors(No_path);
+							
+							if 	i_req_speed > 0 then					
+								status := active_control;
+								enable_div <= '1';	
+
+								cnt := max_steps_per_cycle /100;
+							end if;
 						elsif status = active_control then
 							
 						
