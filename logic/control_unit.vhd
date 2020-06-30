@@ -82,6 +82,21 @@ architecture behaviour of control_unit is
 				
 		end component flash_controller;
 
+
+		component control_box is
+		port(
+					clk : in  std_logic;
+					res : in  std_logic;
+					
+					i_temp_transistors : in unsigned(9 downto 0);
+					i_req_speed : in unsigned(7 downto 0);
+					i_req_temperature : in unsigned(7 downto 0);
+					i_control_box_setup : in type_control_box_setup;
+					i_hal_data : in std_logic_vector(2 downto 0);
+					o_motor_transistors : out type_motor_transistors
+					);
+		end component control_box;
+
 		component trigger is
 			generic ( 
 				CONSTANT time_divider : integer
@@ -150,18 +165,7 @@ architecture behaviour of control_unit is
 		end component adc;
 	
 		signal enable_uart  : std_logic;
-		
-		
-		signal poly_enable : std_logic;	
-		signal poly_temperature : unsigned(7  downto 0);	
 
-		signal en_trigger : std_logic;	
-		signal out_trigger : std_logic;
-		signal period_trigger : unsigned(15 downto 0);
-		signal pulse_trigger : unsigned(15 downto 0);	
-		signal stop_trigger : std_logic;
-		
-		
 		signal data_flash : std_logic_vector(23 downto 0);
 		signal address_flash : std_logic_vector(7 downto 0);
 		signal busy_flash : std_logic;
@@ -170,38 +174,31 @@ architecture behaviour of control_unit is
 		signal transaction_flash : transaction_type;
 		signal put_bus_high_flash : std_logic;
 		
-		signal req_speed_motor : unsigned(7 downto 0);
-		signal motor_control_setup : type_motor_control_setup;
-		signal motor_transistors : type_motor_transistors;
-		
 		signal speed : unsigned(15 downto 0);
 		signal adc_channel : unsigned(2 downto 0);
 		signal adc_measurement : unsigned(15 downto 0) := (others => '0');
+
+		signal temp_transistors : unsigned(9 downto 0);
+		signal req_temperature : unsigned(7 downto 0);
+		signal req_speed : unsigned(7 downto 0) := x"7f";
+		signal control_box_setup : type_control_box_setup;
+		signal motor_transistors : type_motor_transistors;
+		signal hal_data : std_logic_vector(2 downto 0);
+			
+
 begin	
 	
-	poly_module: poly
-
+	module_control_box: control_box
 	port map (
-		res => res,
-		clk => clk,
-		i_enable => poly_enable,
-		i_val	=> std_logic_vector(adc_measurement(9 downto 0)),
-		unsigned(o_temp) => poly_temperature 
-		);	
-
-	trigger_func : trigger
-	generic map (
-	 	time_divider => 100000 )
-				
-		port map(
-				res => res, 		
+				res => res,	
 				clk => clk,	
-				i_enable => en_trigger,
-				i_stop => stop_trigger,
-				i_period => period_trigger,
-				i_pulse => pulse_trigger,
-				
-				o_trigger => out_trigger
+						
+				i_temp_transistors => temp_transistors,
+				i_req_speed => req_speed,
+				i_req_temperature => req_temperature,
+				i_control_box_setup => control_box_setup,
+				i_hal_data => hal_data,
+				o_motor_transistors => motor_transistors 
 		);
 
 
@@ -220,20 +217,6 @@ begin
 				o_speed => speed
 				);
 
-
-
-		motor_driver_module : motor_driver
-		
-			port map( 
-				res => res, 	
-				clk => clk,		
-				i_req_speed => req_speed_motor,
-				i_work_wave => out_trigger,
-				i_motor_control_setup => motor_control_setup,
-		
-				o_motor_transistors => motor_transistors
-				);
-	
 		flash_module : flash_controller
 			generic map ( 
 		 	freq => 1000000,
@@ -364,14 +347,6 @@ begin
 					last_adc_data_send := glob_clk_counter;
 				end if;
 							
-						
-				if en_trigger = '1' then
-					en_trigger <= '0';
-				end if;
-				
-				if stop_trigger <= '1' then
-					stop_trigger <= '0';
-				end if;
 				
 				
 				if user_command = flash_write then
@@ -429,10 +404,12 @@ begin
 				elsif user_command = run_motor then	
 					if run_motor_state = execute_run_motor then
 						last_motor_action := glob_clk_counter;
-						en_trigger <= '1';
-				
-						motor_control_setup.hal <= '0';
-						motor_control_setup.enable <= '1';
+						
+
+						control_box_setup.hal <= '1';
+						control_box_setup.enable <= '1';
+						control_box_setup.temperature <= '1';
+						
 						user_command := no_command; 
 					end if;
 					
@@ -466,8 +443,8 @@ begin
 								flash_erase_state := get_flash_erase_addr;
 						
 						elsif i_from_uart = std_logic_vector(stop_command)  then 
-							stop_trigger <= '1';
-							motor_control_setup.enable <= '0';
+							
+							control_box_setup.enable <= '0';
 							last_motor_action := glob_clk_counter;
 						end if;
 					else	
@@ -476,21 +453,21 @@ begin
 							
 							if trigger_phase = unit_step_freq_h then
 							
-								period_trigger(15 downto 8) <= unsigned(i_from_uart);
+								control_box_setup.period_trigger(15 downto 8) <= unsigned(i_from_uart);
 								trigger_phase := unit_step_freq_l;
 							elsif trigger_phase = unit_step_freq_l then
 							
-								period_trigger(7 downto 0) <= unsigned(i_from_uart);
+								control_box_setup.period_trigger(7 downto 0) <= unsigned(i_from_uart);
 								trigger_phase := unit_step_pulse_h;
 							elsif trigger_phase = unit_step_pulse_h then
-								pulse_trigger(15 downto 8) <= unsigned(i_from_uart);					
+								control_box_setup.pulse_trigger(15 downto 8) <= unsigned(i_from_uart);					
 										
 								trigger_phase := unit_step_pulse_l;
 							elsif trigger_phase = unit_step_pulse_l then
 							
-								pulse_trigger(7 downto 0) <= unsigned(i_from_uart);					
+								control_box_setup.pulse_trigger(7 downto 0) <= unsigned(i_from_uart);					
 										
-								en_trigger <= '1';
+								--en_trigger <= '1';
 							end if;
 
 						elsif user_command = adc_channel_change then
@@ -501,14 +478,14 @@ begin
 						
 							
 							if run_motor_state = run_motor_get_speed then
-   								req_speed_motor <= unsigned(i_from_uart);
+   								control_box_setup.req_speed_motor <= unsigned(i_from_uart);
 								run_motor_state := run_motor_get_pulse_width;	
 							elsif run_motor_state = run_motor_get_pulse_width then
-								period_trigger(7 downto 0) <= x"fe";
-								period_trigger(15 downto 8) <= x"01";
+								control_box_setup.period_trigger(7 downto 0) <= x"fe";
+								control_box_setup.period_trigger(15 downto 8) <= x"01";
 								
-								pulse_trigger <= (others => '0');
-								pulse_trigger(8 downto 1) <= unsigned(i_from_uart);
+								control_box_setup.pulse_trigger <= (others => '0');
+								control_box_setup.pulse_trigger(8 downto 1) <= unsigned(i_from_uart);
 								run_motor_state := execute_run_motor;	
 							end if;								
 						elsif user_command = flash_erase then
@@ -612,11 +589,7 @@ begin
 						if i_busy_uart = '0' then 
 							time_tmp := to_unsigned(glob_clk_counter, time_tmp'length );
 						
-              if val_cnt = 0 then
-                poly_enable <=  '1';
-              else
-                poly_enable <=  '0';
-              end if;
+ 
 						
 							case val_cnt is
 							  when 0 =>   o_to_uart <= x"07";
@@ -626,7 +599,7 @@ begin
 							  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(23 downto 16));
 							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
 							  when 6 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
-							  when 7 =>   o_to_uart <= std_logic_vector(poly_temperature);
+							  when 7 =>   o_to_uart <= std_logic_vector();
 							  when others => o_to_uart <=  (others=>'Z');
 							end case;
 							enable_uart <= '1';
@@ -654,9 +627,8 @@ begin
 	end process;
 	
 
-	process(  enable_uart,out_trigger,motor_transistors,i_impulse)
+	process(  enable_uart,motor_transistors,i_impulse)
 	begin
-		o_wave <= out_trigger;
 		o_en_uart <= enable_uart;
 		o_motor_transistors <= motor_transistors;
 		leds(0) <= i_impulse;

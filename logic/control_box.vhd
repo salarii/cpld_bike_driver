@@ -20,6 +20,7 @@ entity control_box is
 		i_req_temperature : in unsigned(7 downto 0);
 		i_control_box_setup : in type_control_box_setup;
 		i_hal_data : in std_logic_vector(2 downto 0);
+		o_temperature : out unsigned(7 downto 0);
 		o_motor_transistors : out type_motor_transistors
 		);
 end control_box;
@@ -369,8 +370,7 @@ begin
 						end if;
 
 					elsif regulator_state = regulator_init then
-						report integer'image(to_integer(poly_temperature(15 downto 8)));
-						report integer'image(to_integer(req_temperature(15 downto 8)));
+						
 						in_temperature_reg <= (req_temperature - poly_temperature);
 	
 						req_speed_motor <= mul_out(23 downto 8 );
@@ -402,8 +402,7 @@ begin
 						
 						mul_a(31 downto 16) <= period_trigger;
 						mul_b(23 downto 8) <= unsigned(modified_temp_reg);
-						report integer'image(to_integer(modified_temp_reg));
-							
+						
 						
 						--if modified_temp_reg < modified_reg then
 --							mul_a(31 downto 16) <= period_trigger;
@@ -421,9 +420,7 @@ begin
 						regulator_state := regulator_processing_output;
 					elsif regulator_state = regulator_processing_output then
 						if enable_div = '1' then
-						report integer'image(to_integer(divisor));
-						report integer'image(to_integer(mul_out(31 downto 16)));							
-
+					
 							 enable_div <= '0';
 						elsif valid = '1' then	 
 							regulator_state := regulator_initiate_trigger;

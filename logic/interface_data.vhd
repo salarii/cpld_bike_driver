@@ -43,9 +43,10 @@ end record;
 type type_control_box_setup is record
 	hal : std_logic;
 	enable : std_logic;		
-	temperature : std_logic;	
-	-- neutral pid motor
-	-- neutral temperature
+	temperature : std_logic;
+	period_trigger : unsigned(15 downto 0);	
+	pulse_trigger : unsigned(15 downto 0);	
+	req_speed_motor : unsigned(7 downto 0);
 	
 end record;
 

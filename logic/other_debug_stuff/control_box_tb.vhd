@@ -36,8 +36,8 @@ ARCHITECTURE  behavior  OF  control_box_tb  IS
 	constant FracPart : integer := 8;
 	
 		
-		component control_box is
-		port(
+	component control_box is
+	port(
 				clk : in  std_logic;
 				res : in  std_logic;
 				
@@ -48,7 +48,7 @@ ARCHITECTURE  behavior  OF  control_box_tb  IS
 				i_hal_data : in std_logic_vector(2 downto 0);
 				o_motor_transistors : out type_motor_transistors
 				);
-		end component control_box;
+	end component control_box;
 BEGIN
 
 		
