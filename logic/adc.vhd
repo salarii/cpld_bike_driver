@@ -23,7 +23,7 @@ entity adc is
 		i_spi : in type_to_spi;
 		o_measurement : out unsigned( 9 downto 0 );
 		o_spi : out type_from_spi
-
+		o_temp  : out unsigned( 9 downto 0 );
 		);
 end adc;
 
@@ -50,12 +50,31 @@ architecture behaviour of adc is
 				);
 		end component spi;
 
+		component poly is
+
+		
+			port(
+				res : in std_logic;
+				clk : in std_logic;
+				i_enable : in std_logic;
+				i_val	: in  std_logic_vector(9  downto 0);
+				o_calculated : out std_logic;
+				o_temp : out std_logic_vector(9  downto 0)
+				);
+		end component;
+
+
 		constant wait_cnt : integer := freq/adc_mesur_per_sec;
 
 		signal enable_uart  : std_logic;
 		
 		signal channels_data : unsigned(39 downto 0):= (others => '0');
 		
+		signal poly_enable : std_logic;	
+		signal poly_calculated : std_logic;	
+		signal poly_temperature : unsigned(9  downto 0) := (others => '0');
+		signal poly_temp_out : unsigned(9  downto 0) := (others => '0');
+
 
 		signal i_data_spi : std_logic_vector(7 downto 0):= (others => '0');
 		signal o_data_spi : std_logic_vector(7 downto 0);
@@ -82,6 +101,17 @@ begin
 					o_received =>received_spi,
 					o_busy	=> busy_spi
 				);
+	
+		module_poly: poly
+		port map (
+				res => res,
+				clk => clk,
+				i_enable => poly_enable,
+				i_val	=> std_logic_vector(channels_data( 9 downto 0 )),
+				o_calculated => poly_calculated,
+				signed(o_temp) => poly_temp_out
+			);	
+	
 	
 	process(clk)
 		variable uart_sized : boolean := False; 
@@ -152,13 +182,32 @@ begin
 				  			when others => channels_data <= (others => '0');
 						end case;
 
+
+						regulator_state := calculate_temperature;
+						if channel_cnt = 0 then
+							poly_enable <= '1';	
+						end if;
+					elsif regulator_state = calculate_temperature then
+
 						if channel_cnt = 3 then
 							channel_cnt :=  0;
 							state := wait_adc;
-
+						
 						else
-							state := setup_adc;
-							channel_cnt := channel_cnt +1;
+							if channel_cnt = 0 then
+								if poly_enable = '1' then
+									poly_enable <= '0';
+	
+								elsif poly_calculated = '1' then	
+									poly_temperature <= poly_temp_out;
+									state := setup_adc;
+									channel_cnt := channel_cnt +1;	
+								end if;
+							else
+								state := setup_adc;
+								channel_cnt := channel_cnt +1;							
+							end if;
+
 						end if;
 					else
 						if busy_spi = '1' then
@@ -175,6 +224,9 @@ begin
 
 	end process;
 
-
+	process(poly_temperature)
+	begin
+		o_temp <= unsigned(poly_temperature);
+	end process;
 	
 end behaviour;

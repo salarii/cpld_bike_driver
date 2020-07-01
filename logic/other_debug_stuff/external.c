@@ -52,7 +52,8 @@ int regToPlant (int _time, int _force )
 
 
 	 float  temp = step(_time,(float)_force );
-	// printf("%4f\n",temp);
-	 return -0.0002 * pow(temp,3) + 0.0695*pow(temp,2) -1.1323 *temp + 38.5540;;
+	 return temp;
+	 // printf("%4f\n",temp);
+	// return -0.0002 * pow(temp,3) + 0.0695*pow(temp,2) -1.1323 *temp + 38.5540;;
 
 }

@@ -14,7 +14,7 @@ entity poly is
 		i_enable : in std_logic;
 		i_val	: in  std_logic_vector(9  downto 0);
 		o_calculated : out std_logic;
-		o_temp : out std_logic_vector(7  downto 0)
+		o_temp : out std_logic_vector(9  downto 0)
 		);
 end poly;
 
@@ -100,9 +100,11 @@ begin
 				  when others => mul2_in <= (others=>'0');
 				end case;
 				
-				
-				result <= result + out_mul_2;
-				
+				if result + out_mul_2 > 0 then
+					result <= result + out_mul_2;
+				else
+					result <= (others => '0'); 
+				end if;
 				
 				if cnt = 3 then
 					stored_val_power <= one;
@@ -121,7 +123,7 @@ begin
 	process(result,i_val,calculated)
 	begin
 		translated_input(14 downto 5) <= signed(i_val);
-		o_temp <= std_logic_vector(result(IntPart + FracPart - 5  downto FracPart));
+		o_temp <= std_logic_vector(result(IntPart + FracPart - 3  downto FracPart));
 		o_calculated <= calculated;
 
 	end process;

@@ -14,7 +14,7 @@ gcc -c -g -fPIC plant.c -o plant.o
 ar ruv libsim.a  plant.o lib.o external.o rkf45.o 
 ghdl -e -Wl,-lm  -Wl,-lsim   --ieee=synopsys -fexplicit --workdir=work -Pwork control_box_tb
 
-ghdl -r control_box_tb  --wave=tbench.ghw  --stop-time=60000ms
+ghdl -r control_box_tb  --wave=tbench.ghw  --stop-time=50000ms
 
 gnuplot -e "plot 'data.txt' using 1:2; pause -1"
 

@@ -45,18 +45,6 @@ end control_unit;
 architecture behaviour of control_unit is
 
 
-		component poly is
-
-		
-			port(
-				res : in std_logic;
-				clk : in std_logic;
-				i_enable : in std_logic;
-				i_val	: in  std_logic_vector(9  downto 0);
-				o_temp : out std_logic_vector(7  downto 0)
-				);
-		end component;
-
 
 		component flash_controller is
 			generic ( 
@@ -97,36 +85,7 @@ architecture behaviour of control_unit is
 					);
 		end component control_box;
 
-		component trigger is
-			generic ( 
-				CONSTANT time_divider : integer
-				);
-				
-		port(
-				res : in std_logic;		
-				clk : in std_logic;	
-				i_enable : in std_logic;
-				i_stop : in std_logic;
-				i_period : in unsigned(15 downto 0);
-				i_pulse : in unsigned(15 downto 0);
-				
-				o_trigger : out std_logic
-				);
-		end component;
 
-
-		component motor_driver is
-		
-			port( 
-				res : in std_logic;		
-				clk : in std_logic;		
-				i_req_speed : in unsigned(7 downto 0);
-				i_work_wave : in std_logic;
-				i_motor_control_setup : in type_motor_control_setup;
-		
-				o_motor_transistors : out type_motor_transistors
-				);
-		end component motor_driver;
 
 
 		component speed_impulse is
