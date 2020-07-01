@@ -22,8 +22,8 @@ entity adc is
 		
 		i_spi : in type_to_spi;
 		o_measurement : out unsigned( 9 downto 0 );
-		o_spi : out type_from_spi
-		o_temp  : out unsigned( 9 downto 0 );
+		o_spi : out type_from_spi;
+		o_temp  : out unsigned( 9 downto 0 )
 		);
 end adc;
 
@@ -109,14 +109,14 @@ begin
 				i_enable => poly_enable,
 				i_val	=> std_logic_vector(channels_data( 9 downto 0 )),
 				o_calculated => poly_calculated,
-				signed(o_temp) => poly_temp_out
+				unsigned(o_temp) => poly_temp_out
 			);	
 	
 	
 	process(clk)
 		variable uart_sized : boolean := False; 
 	
-		type state_type is (wait_adc, setup_adc,read_adc_h,read_adc_l);
+		type state_type is (wait_adc, setup_adc,calculate_temperature,read_adc_h,read_adc_l);
 		
 
 		variable cnt : integer := 0;			
@@ -183,11 +183,16 @@ begin
 						end case;
 
 
-						regulator_state := calculate_temperature;
+						state := calculate_temperature;
 						if channel_cnt = 0 then
 							poly_enable <= '1';	
 						end if;
-					elsif regulator_state = calculate_temperature then
+					else
+						if busy_spi = '1' then
+							en_spi <= '0';
+						end if;
+					end if;
+				elsif state = calculate_temperature then
 
 						if channel_cnt = 3 then
 							channel_cnt :=  0;
@@ -209,13 +214,7 @@ begin
 							end if;
 
 						end if;
-					else
-						if busy_spi = '1' then
-							en_spi <= '0';
-						end if;
-					end if;
 
-				
 				end if;			
 			
 			end if;

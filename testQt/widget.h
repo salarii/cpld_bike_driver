@@ -10,6 +10,7 @@
 #include <QPushButton>
 #include <QSlider>
 #include <QComboBox>
+#include <QCheckBox>
 
 struct Measurement;
 struct FlashData;
@@ -49,15 +50,13 @@ private:
     QChartView * motorChartView;
     QLabel * label;
     QLabel * parLabels[4];
-    QSpinBox * pulseWidth;
-    QSpinBox * frequency;
-    QPushButton * startButton;
+    QSpinBox * celsius;
     QSlider * sliderSpeed;
     QSlider * sliderForce;
     QLabel * labelSpeed;
     QLabel * labelForce;
     QPushButton * runMotorButton;
-
+    QCheckBox * hal;
     QComboBox *  adcChannelList;
 
     QComboBox *  parameterList;

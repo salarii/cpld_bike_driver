@@ -172,7 +172,7 @@ architecture t_behaviour of uart_run_motor_tb is
 				-- 0x05  0 1010 0000 0
 				-- 0x80  0 0000 0001 1
 				-- 0x30  0 0000 1100 0
-				
+				-- 0x40  0 0000 0010 1
 				
 				rx_uart <= '0';
 				wait for 1 us;
@@ -200,8 +200,16 @@ architecture t_behaviour of uart_run_motor_tb is
 				wait for 3 us;
 				rx_uart <= '1';
 				wait for 6 us;
-	
-							
+		
+
+				rx_uart <= '0';
+				wait for 7 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 6 us;		
 				wait for 520 us;
 
 				wait;

@@ -27,8 +27,8 @@ architecture t_behaviour of adc_tb is
 				
 				i_spi : in type_to_spi;
 				o_measurement : out unsigned( 9 downto 0 );
-				o_spi : out type_from_spi
-		
+				o_spi : out type_from_spi;
+        o_temp  : out unsigned( 9 downto 0 )
 				);
 		end component adc;
 	
@@ -39,7 +39,8 @@ architecture t_behaviour of adc_tb is
 
 		signal channel : unsigned( 2 downto 0 );				
 		signal measurement : unsigned( 9 downto 0 );
-
+		signal temp : unsigned( 9 downto 0 );
+		
 		signal to_spi : type_to_spi;
 		signal from_spi : type_from_spi;
 		
@@ -64,7 +65,8 @@ architecture t_behaviour of adc_tb is
 			i_channel => channel,
 			i_spi => to_spi,
 			o_measurement => measurement,
-			o_spi => from_spi
+			o_spi => from_spi,
+			o_temp => temp
 		);
 
 	process

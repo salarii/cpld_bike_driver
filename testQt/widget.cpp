@@ -47,35 +47,24 @@ Widget::Widget(QWidget *parent)
     this->setMinimumSize(900, 900);
     this->adjustSize();
 
-    auto title = new QLabel("Generate wave: ");
+    auto title = new QLabel("Max temperature: ");
 
     adcChannelList = new QComboBox();
     QStringList channels = { "adc channel 0", "adc channel 1", "adc channel 2" , "adc channel 3"};
     adcChannelList->addItems(channels);
 
-    frequency = new QSpinBox();
-    frequency->setRange(20, 100000);
-    frequency->setSingleStep(10);
-    frequency->setValue(1000);
-    auto hz = new QLabel(" Hz ");
-    pulseWidth = new QSpinBox();
+    celsius = new QSpinBox();
+    celsius->setRange(50, 120);
+    celsius->setSingleStep(1);
+    celsius->setValue(70);
+    auto unit = new QLabel(" °C ");
 
-    pulseWidth->setRange(1, 100);
-    pulseWidth->setSingleStep(10);
-    pulseWidth->setValue(100);
-    auto percent = new QLabel(" % ");
-
-    startButton = new QPushButton( "Start" );
+;
     interfaceLayout->addWidget(title);
-    interfaceLayout->addWidget(frequency);
-    interfaceLayout->addWidget(hz);
-    interfaceLayout->addWidget(pulseWidth);
-    interfaceLayout->addWidget(percent);
+    interfaceLayout->addWidget(celsius);
+    interfaceLayout->addWidget(unit);
 
-    interfaceLayout->addWidget(startButton);
     interfaceLayout->addWidget(adcChannelList);
-    startButton->setCheckable(true);
-
 
     QWidget * flashWidget = new QWidget;
     QVBoxLayout *flashLayout = new QVBoxLayout;
@@ -117,7 +106,7 @@ Widget::Widget(QWidget *parent)
     auto titleBlcd = new QLabel("Manage BLCD motor");
     blcdLayout->addWidget(titleBlcd);
 
-    labelSpeed = new QLabel("Current speed: 0");
+    labelSpeed = new QLabel("Set speed: 0");
     blcdLayout->addWidget(labelSpeed);
 
     sliderSpeed = new QSlider();
@@ -139,7 +128,16 @@ Widget::Widget(QWidget *parent)
 
     runMotorButton =  new QPushButton("Run motor");
     runMotorButton->setCheckable(true);
-    blcdLayout->addWidget(runMotorButton);
+
+    QCheckBox * hal = new QCheckBox;
+    QLabel * halLabel = new QLabel("Use hal: ");
+    QHBoxLayout * botLayout = new QHBoxLayout;
+
+    botLayout->addWidget(halLabel);
+    botLayout->addWidget(hal);
+    botLayout->addWidget(runMotorButton);
+
+    blcdLayout->addLayout(botLayout);
 
     QObject::connect(runMotorButton, &QPushButton::clicked,
                      this, &Widget::startMotor);
@@ -154,8 +152,8 @@ Widget::Widget(QWidget *parent)
     layoutTCW->addWidget(triggerWidget);
     layoutTCW->addWidget(chartView);
 
-    QObject::connect(startButton, &QPushButton::clicked,
-                     this, &Widget::startMeasurement);
+    //QObject::connect(startButton, &QPushButton::clicked,
+    //                 this, &Widget::startMeasurement);
 
     functionsTabs->addTab(triggAndChartWidget, "Waveform");
     functionsTabs->addTab(flashWidget, "Flash");
@@ -244,7 +242,7 @@ Widget::motorSliderChanged()
 
         char unsigned speed = sliderSpeed->value();
         char unsigned pulse = sliderForce->value();
-        labelSpeed->setText( QString("Current speed: ") + QString().number(speed, 10));
+        labelSpeed->setText( QString("Set speed: ") + QString().number(speed, 10));
 
         labelForce->setText( QString("Pulse width: ")+ QString().number(pulse, 10) +QString(" %"));
         if (motorRun == true)
@@ -252,8 +250,8 @@ Widget::motorSliderChanged()
             sendBuff[0] = (unsigned  char)CommandCodes::StartMotorOpCode;
             sendBuff[1] = speed;
             sendBuff[2] = (unsigned  char)255.0*((float)pulse/100.0);
-
-            emit sendToHardware(sendBuff, 3);
+            sendBuff[3] = celsius->value();
+            emit sendToHardware(sendBuff, 4);
         }
 }
 
@@ -287,7 +285,7 @@ Widget::startMotor(bool _checked)
 void
 Widget::startMeasurement(bool _checked)
 {
-
+/*
     if ( _checked == false )
     {
         startButton->setText("Start");
@@ -314,6 +312,7 @@ Widget::startMeasurement(bool _checked)
 
         emit sendToHardware(sendBuff, 5);
     }
+*/
 }
 
 QChart * Widget::createMotorChart()
