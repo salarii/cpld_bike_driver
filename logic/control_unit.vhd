@@ -542,7 +542,7 @@ begin
 							  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(23 downto 16));
 							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
 							  when 6 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
-							  when 7 =>   o_to_uart <= std_logic_vector(adc_temp(7 downto 0));
+							  when 7 =>   o_to_uart <= std_logic_vector(adc_temp(9 downto 2));
 							  when others => o_to_uart <=  (others=>'Z');
 							end case;
 							enable_uart <= '1';

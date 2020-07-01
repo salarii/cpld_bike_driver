@@ -123,7 +123,7 @@ begin
 	process(result,i_val,calculated)
 	begin
 		translated_input(14 downto 5) <= signed(i_val);
-		o_temp <= std_logic_vector(result(IntPart + FracPart - 3  downto FracPart));
+		o_temp <= std_logic_vector(result(IntPart + FracPart - 5  downto FracPart-2));
 		o_calculated <= calculated;
 
 	end process;

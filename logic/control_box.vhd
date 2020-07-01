@@ -420,7 +420,7 @@ begin
 process(i_temp_transistors,i_req_temperature,motor_transistors,i_hal_data,i_control_box_setup)
 begin
 	
-	poly_temperature(15 downto 8) <= signed(i_temp_transistors(7 downto 0));
+	poly_temperature(15 downto 6) <= signed(i_temp_transistors);
 	motor_control_setup.hal <= '0'; 
 	motor_control_setup.enable <= i_control_box_setup.enable;
 	motor_control_setup.hal_data <= i_hal_data;
