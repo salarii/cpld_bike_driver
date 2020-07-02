@@ -129,7 +129,7 @@ Widget::Widget(QWidget *parent)
     runMotorButton =  new QPushButton("Run motor");
     runMotorButton->setCheckable(true);
 
-    QCheckBox * hal = new QCheckBox;
+    hal = new QCheckBox;
     QLabel * halLabel = new QLabel("Use hal: ");
     QHBoxLayout * botLayout = new QHBoxLayout;
 
@@ -251,7 +251,15 @@ Widget::motorSliderChanged()
             sendBuff[1] = speed;
             sendBuff[2] = (unsigned  char)255.0*((float)pulse/100.0);
             sendBuff[3] = celsius->value();
-            emit sendToHardware(sendBuff, 4);
+            if (hal->isChecked())
+            {
+                sendBuff[4] = 1;
+            }
+            else
+            {
+                sendBuff[4] = 0;
+            }
+            emit sendToHardware(sendBuff, 5);
         }
 }
 

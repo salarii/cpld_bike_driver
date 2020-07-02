@@ -102,10 +102,7 @@ process(clk)
 
 		variable state : type_state;
 begin
-		
-		--debug_cnt_time_tick <= to_unsigned(cnt_time_tick,16);
-
-		--debug_cnt_rot <= to_unsigned(cnt_rotations,16);
+	
 		
 		if rising_edge(clk)  then
 			

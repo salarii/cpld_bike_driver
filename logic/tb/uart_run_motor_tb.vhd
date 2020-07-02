@@ -18,7 +18,7 @@ architecture t_behaviour of uart_run_motor_tb is
 				clk : in  std_logic;
 				res : in  std_logic;
 				
-				i_impulse : in std_logic;
+				i_hal_data : in std_logic_vector(2 downto 0);
 				
 				i_flash_spi : in type_to_spi;
 				
@@ -88,6 +88,7 @@ architecture t_behaviour of uart_run_motor_tb is
 		
 		signal data : std_logic_vector(15 downto 0);
 		signal address : std_logic_vector(6 downto 0);
+		signal hal_data : std_logic_vector(2 downto 0);
 		
 		signal enable : std_logic;		
 		signal busy	: std_logic;
@@ -127,7 +128,7 @@ architecture t_behaviour of uart_run_motor_tb is
 				i_adc_spi => to_adc_spi,
 				o_adc_spi => from_adc_spi,
 
-				i_impulse => '0',
+				i_hal_data => hal_data,
 
 				leds => leds,
 				o_wave => wave,
@@ -166,14 +167,14 @@ architecture t_behaviour of uart_run_motor_tb is
 				--res <= '0';	
 				wait for 10 us;				
 				res <= '1';
-
+        hal_data<= "100";
 
 				-- run motor
 				-- 0x05  0 1010 0000 0
 				-- 0x80  0 0000 0001 1
 				-- 0x30  0 0000 1100 0
 				-- 0x40  0 0000 0010 1
-				
+				-- 0x01  0 1000 0000 1
 				rx_uart <= '0';
 				wait for 1 us;
 				rx_uart <= '1';
@@ -210,6 +211,15 @@ architecture t_behaviour of uart_run_motor_tb is
 				wait for 1 us;
 				rx_uart <= '1';
 				wait for 6 us;		
+
+				rx_uart <= '0';
+				wait for 1 us;
+				rx_uart <= '1';
+				wait for 1 us;
+				rx_uart <= '0';
+				wait for 7 us;
+				rx_uart <= '1';
+				wait for 6 us;	
 				wait for 520 us;
 
 				wait;

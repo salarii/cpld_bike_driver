@@ -97,9 +97,9 @@ VCCIO2                       : 26        : power  :                   : 3.3V    
 GND                          : 27        : gnd    :                   :         :           :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 28        :        :                   :         : 2         :                
 VCCINT                       : 29        : power  :                   : 1.2V    :           :                
-i_impulse                    : 30        : input  : 3.3-V LVTTL       :         : 2         : Y              
-RESERVED_INPUT_WITH_WEAK_PULLUP : 31        :        :                   :         : 2         :                
-RESERVED_INPUT_WITH_WEAK_PULLUP : 32        :        :                   :         : 2         :                
+i_hal_data[2]                : 30        : input  : 3.3-V LVTTL       :         : 2         : Y              
+i_hal_data[1]                : 31        : input  : 3.3-V LVTTL       :         : 2         : Y              
+i_hal_data[0]                : 32        : input  : 3.3-V LVTTL       :         : 2         : Y              
 o_adc_spi.sck                : 33        : output : 3.3-V LVTTL       :         : 2         : Y              
 i_adc_spi.miso               : 34        : input  : 3.3-V LVTTL       :         : 2         : Y              
 VCCA1                        : 35        : power  :                   : 2.5V    :           :                

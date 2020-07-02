@@ -150,7 +150,7 @@ architecture behaviour of control_box is
 		constant max_speed : unsigned(upper_limit downto 0) := x"2800";--40km/h
 		constant battery_voltage : unsigned(upper_limit downto 0) := x"2400";--36V
 
-		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0300";-- 3 , 30% wave user  cap
+		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0500";-- 3 , 30% wave user  cap
 		constant wave_limit : unsigned(upper_limit downto 0) := x"0a00";--10 , 100% wave equvalent
 		constant max_temperature : unsigned(upper_limit downto 0) := x"0200";-- Celsius
 		constant offset_tmp_wave : unsigned(upper_limit downto 0) := x"0000";--0V 
@@ -421,7 +421,7 @@ process(i_temp_transistors,i_req_temperature,motor_transistors,i_hal_data,i_cont
 begin
 	
 	poly_temperature(15 downto 6) <= signed(i_temp_transistors);
-	motor_control_setup.hal <= '0'; 
+  motor_control_setup.hal <= i_control_box_setup.hal;
 	motor_control_setup.enable <= i_control_box_setup.enable;
 	motor_control_setup.hal_data <= i_hal_data;
 	

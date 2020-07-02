@@ -17,10 +17,9 @@ entity control_unit is
 		clk : in  std_logic;
 		res : in  std_logic;
 		
-		i_impulse : in std_logic;
 		
 		i_flash_spi : in type_to_spi;
-		
+		i_hal_data : in std_logic_vector(2 downto 0);
 			
 					
 		i_busy_uart : in std_logic;
@@ -142,7 +141,7 @@ architecture behaviour of control_unit is
 		signal req_speed : unsigned(7 downto 0) := x"7f";
 		signal control_box_setup : type_control_box_setup;
 		signal motor_transistors : type_motor_transistors;
-		signal hal_data : std_logic_vector(2 downto 0);
+		
 			
 
 begin	
@@ -156,7 +155,7 @@ begin
 				i_req_speed => req_speed,
 				i_req_temperature => req_temperature,
 				i_control_box_setup => control_box_setup,
-				i_hal_data => hal_data,
+				i_hal_data => i_hal_data,
 				o_motor_transistors => motor_transistors 
 		);
 
@@ -171,7 +170,7 @@ begin
 				res => res, 	
 				clk => clk,	
 				
-				i_impulse => i_impulse,
+				i_impulse => '0',
 				
 				o_speed => speed
 				);
@@ -230,7 +229,7 @@ begin
 		type type_flash_write_state is ( get_flash_write_addr, get_flash_write_byte2, get_flash_write_byte1, get_flash_write_byte0, execute_flash_write );
 		type type_flash_read_state is ( get_flash_read_addr, execute_flash_read,progress_flash_read, read_flash_done, send_flash_data );
 		type type_flash_erase_state is ( get_flash_erase_addr, get_flash_erase_byte2, get_flash_erase_byte1, get_flash_erase_byte0, execute_flash_erase );
-		type type_run_motor_state is ( run_motor_get_speed, run_motor_get_pulse_width, run_motor_max_temp,execute_run_motor );
+		type type_run_motor_state is ( run_motor_get_speed, run_motor_get_pulse_width, run_motor_max_temp,run_motor_hal,execute_run_motor );
 			
 				
 		constant stop_command : unsigned(7 downto 0) := x"00";
@@ -366,7 +365,7 @@ begin
 						last_motor_action := glob_clk_counter;
 						
 
-						control_box_setup.hal <= '0';
+						
 						control_box_setup.enable <= '1';
 						control_box_setup.temperature <= '1';
 						
@@ -429,6 +428,14 @@ begin
 								run_motor_state := run_motor_max_temp;
 							elsif run_motor_state = run_motor_max_temp then
 								req_temperature <= unsigned(i_from_uart);
+								run_motor_state := run_motor_hal;
+							elsif run_motor_state = run_motor_hal then
+								if i_from_uart = x"00" then
+									control_box_setup.hal <= '0';
+								else
+									control_box_setup.hal <= '1';
+								end if;
+							
 								run_motor_state := execute_run_motor;	
 							end if;								
 						elsif user_command = flash_erase then
@@ -570,11 +577,11 @@ begin
 	end process;
 	
 
-	process(  enable_uart,motor_transistors,i_impulse)
+	process(  enable_uart,motor_transistors)
 	begin
 		o_en_uart <= enable_uart;
 		o_motor_transistors <= motor_transistors;
-		leds(0) <= i_impulse;
+		leds(0) <= '1';
 	end process;
 
 	
