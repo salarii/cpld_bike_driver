@@ -108,6 +108,9 @@ void Communication::run()
                         (readbuffer[4] << shift8)+
                         readbuffer[5];
 
+                motorData.rot_cnt = (readbuffer[6] << shift16)+
+                        (readbuffer[7] << shift8)+
+                        readbuffer[8];
                 emit  passMotorData(&motorData);
             }
 

@@ -69,6 +69,7 @@ private:
     int lastTime;
     int tempTime;
     int motorTriggerTime;
+    int rotation_cnt;
 
 };
 #endif // WIDGET_H

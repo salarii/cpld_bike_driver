@@ -8,6 +8,8 @@ unsigned int const MainClockFreq = 1000000;
 
 using namespace QtCharts;
 
+
+
 const QStringList flashParamsMess ={
     "Plynomial parameter 0: ",
     "Plynomial parameter 1: ",
@@ -20,6 +22,7 @@ QString const labelText = "Current Voltage: ";
 Widget::Widget(QWidget *parent)
     : QWidget(parent),motorRun(false)
 {
+    rotation_cnt =0;
     sendBuff = new unsigned char(10);
 
     QVBoxLayout *layout = new QVBoxLayout;
@@ -405,7 +408,7 @@ void Widget::serviceMeasurement(Measurement const * _measurement)
 
     auto message = labelText + QString().setNum(_measurement->voltage, 'g', 4) + QString(" V ");
     message += QString(" Temperature:") + QString().setNum(_measurement->temperature) + QString(" Celsius");
-
+    message += QString(" Rotation cnt:") + QString().setNum(rotation_cnt);
     label->setText(message);
     QChart* chartToDelete=NULL;
     lastTime = time;
@@ -432,8 +435,8 @@ void Widget::serviceMotorData(MotorData const * _motorData)
         motorSeries->clear();
     }
     motorSeries->append(time,_motorData->speed);
-    auto message = QString("Motor Speed:  ") + QString().setNum(_motorData->speed, 'g', 4) + QString(" Rpm ");
-
+    //auto message = QString("Motor Speed:  ") + QString().setNum(_motorData->speed, 'g', 4) + QString(" Rpm ");
+    rotation_cnt = _motorData->rot_cnt;
     //label->setText(message);
     QChart* chartToDelete=NULL;
     if(motorChartView->chart())

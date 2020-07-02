@@ -150,7 +150,7 @@ architecture behaviour of control_box is
 		constant max_speed : unsigned(upper_limit downto 0) := x"2800";--40km/h
 		constant battery_voltage : unsigned(upper_limit downto 0) := x"2400";--36V
 
-		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0500";-- 3 , 30% wave user  cap
+		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0400";-- 3 , 30% wave user  cap
 		constant wave_limit : unsigned(upper_limit downto 0) := x"0a00";--10 , 100% wave equvalent
 		constant max_temperature : unsigned(upper_limit downto 0) := x"0200";-- Celsius
 		constant offset_tmp_wave : unsigned(upper_limit downto 0) := x"0000";--0V 

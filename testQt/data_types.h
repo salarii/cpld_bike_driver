@@ -14,6 +14,7 @@ struct MotorData
 {
   float  speed;
   int time;
+  int rot_cnt;
 };
 
 struct FlashData
