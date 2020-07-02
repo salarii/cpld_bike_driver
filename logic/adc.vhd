@@ -83,24 +83,24 @@ architecture behaviour of adc is
 		signal received_spi : std_logic;
 begin	
 	
-		spi_function : spi
-			generic map ( 
-		 	freq => freq,
-			bound => spi_bound )
-				
-			port map(
-					res => res,		
-					clk => clk,
-					
-					i_data => i_data_spi,
-					i_spi => i_spi,
-					i_enable => en_spi,
-					
-					o_data => o_data_spi,
-					o_spi => o_spi,
-					o_received =>received_spi,
-					o_busy	=> busy_spi
-				);
+--		spi_function : spi
+--			generic map ( 
+--		 	freq => freq,
+--			bound => spi_bound )
+--				
+--			port map(
+--					res => res,		
+--					clk => clk,
+--					
+--					i_data => i_data_spi,
+--					i_spi => i_spi,
+--					i_enable => en_spi,
+--					
+--					o_data => o_data_spi,
+--					o_spi => o_spi,
+--					o_received =>received_spi,
+--					o_busy	=> busy_spi
+--				);
 	
 		module_poly: poly
 		port map (

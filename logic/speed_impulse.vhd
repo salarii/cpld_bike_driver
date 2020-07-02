@@ -62,9 +62,6 @@ architecture behaviour of speed_impulse is
 
 		signal rotation_speed : unsigned(15 downto 0):= (others => '0');
 
-		signal debug_cnt_time_tick   : unsigned(15 downto 0);
-		signal debug_cnt_out   : unsigned(15 downto 0); 
-		signal debug_cnt_rot   : unsigned(15 downto 0); 
 begin	
 
 
@@ -98,7 +95,7 @@ process(clk)
 		constant period_max : integer := main_clock/work_period;
 		variable cnt_time_tick : integer  range period_max downto 0 := 0;
 		
-		variable cnt_rotations : integer  range base downto 0 := 0;
+		variable cnt_rotations : integer := 0;
 
 		variable state : type_state;
 begin
@@ -142,6 +139,7 @@ begin
 					
 					if state = idle then
 							state := multiply;
+							report integer'image(cnt_rotations);
 							lap_cycles <= to_unsigned(cnt_rotations,lap_cycles'length);
 					end if;
 				

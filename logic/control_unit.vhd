@@ -44,7 +44,6 @@ end control_unit;
 architecture behaviour of control_unit is
 
 
-
 		component flash_controller is
 			generic ( 
 				freq : integer;
@@ -83,8 +82,6 @@ architecture behaviour of control_unit is
 					o_motor_transistors : out type_motor_transistors
 					);
 		end component control_box;
-
-
 
 
 		component speed_impulse is
@@ -141,9 +138,8 @@ architecture behaviour of control_unit is
 		signal req_speed : unsigned(7 downto 0) := x"7f";
 		signal control_box_setup : type_control_box_setup;
 		signal motor_transistors : type_motor_transistors;
+		signal speed_impulse_sig : std_logic := '0';	
 		
-			
-
 begin	
 	
 	module_control_box: control_box
@@ -170,7 +166,7 @@ begin
 				res => res, 	
 				clk => clk,	
 				
-				i_impulse => '0',
+				i_impulse => speed_impulse_sig,
 				
 				o_speed => speed
 				);
@@ -270,6 +266,10 @@ begin
 		variable last_adc_data_send : integer := 0;
 				
 		variable time_tmp : unsigned(31 downto 0);
+		
+		variable prev_hal : std_logic_vector(2 downto 0):= (others=> '0');
+		variable hal_imp_cnt : unsigned(23 downto 0):= (others=> '0');
+		
 	begin
 
 		if rising_edge(clk)  then
@@ -288,7 +288,16 @@ begin
 				glob_small_clk_counter := 0;
 				last_motor_action := 0;
 				last_adc_data_send := 0;
-		else
+				hal_imp_cnt := (others=>'0');
+			else
+				if prev_hal /= i_hal_data then
+					hal_imp_cnt := hal_imp_cnt + 1;
+					prev_hal := i_hal_data;
+					speed_impulse_sig <= '1';
+				else
+					speed_impulse_sig <= '0';
+				end if;
+			
 				if glob_small_clk_counter = glob_clk_denom  then
 					glob_small_clk_counter := 0;
 					glob_clk_counter := glob_clk_counter + 1; 
@@ -515,17 +524,21 @@ begin
 							time_tmp := to_unsigned(glob_clk_counter, time_tmp'length );
 
 							case val_cnt is
-							  when 0 =>   o_to_uart <= x"06"; -- size
+							  when 0 =>   o_to_uart <= x"09"; -- size
 							  when 1 =>   o_to_uart <= std_logic_vector(motor_data_code);
 							  when 2 =>   o_to_uart <= std_logic_vector(speed(15 downto 8));
 							  when 3 =>   o_to_uart <= std_logic_vector(speed(7 downto 0));
 							  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(23 downto 16));
 							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
 							  when 6 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
+							  when 7 =>   o_to_uart <= std_logic_vector(hal_imp_cnt(23 downto 16));
+							  when 8 =>   o_to_uart <= std_logic_vector(hal_imp_cnt(15 downto 8));
+							  when 9 =>   o_to_uart <= std_logic_vector(hal_imp_cnt(7 downto 0));
+							  
 							  when others => o_to_uart <=  (others=>'Z');
 							end case;
 							enable_uart <= '1';
-						elsif val_cnt = 7 and i_busy_uart = '1' then
+						elsif val_cnt = 10 and i_busy_uart = '1' then
 
 								uart_dev_status.motor := False;
 								
