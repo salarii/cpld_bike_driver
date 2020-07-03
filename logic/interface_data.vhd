@@ -35,7 +35,7 @@ end record;
 type type_motor_control_setup is record
 	hal : std_logic;
 	enable : std_logic;		
-	
+			
 	hal_data : std_logic_vector(2 downto 0);
 end record;
 
@@ -44,6 +44,7 @@ type type_control_box_setup is record
 	hal : std_logic;
 	enable : std_logic;		
 	temperature : std_logic;
+	manual : std_logic;	
 	period_trigger : unsigned(15 downto 0);	
 	pulse_trigger : unsigned(15 downto 0);	
 	req_speed_motor : unsigned(7 downto 0);

@@ -51,7 +51,7 @@ architecture behaviour of speed_impulse is
 		
 		signal lap_cycles	: unsigned(15 downto 0);
 		signal freq : unsigned(15  downto 0);	
-		constant base : integer := 10*work_period;
+		constant base : integer := work_period;
 		constant norm : unsigned(15 downto 0):= to_unsigned(base,16);
 		constant integral : integer := 16;
 		constant fraction : integer := 0;

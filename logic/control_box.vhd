@@ -17,6 +17,7 @@ entity control_box is
 		
 		i_temp_transistors : in unsigned(9 downto 0);
 		i_req_speed : in unsigned(7 downto 0);
+		i_speed : unsigned(15 downto 0);
 		i_req_temperature : in unsigned(7 downto 0);
 		i_control_box_setup : in type_control_box_setup;
 		i_hal_data : in std_logic_vector(2 downto 0);
@@ -142,8 +143,6 @@ architecture behaviour of control_box is
 		signal valid : std_logic;
 		
 		
-		signal impulse : std_logic;
-		
 
 		constant offset_voltage : unsigned(upper_limit downto 0) := x"0300";--3V 
 
@@ -198,31 +197,7 @@ begin
 			B => mul_b,
 			outMul => mul_out);
 
---	module_mul_2: mul
---	generic map(
---			 IntPart =>16,
---			 FracPart => 16
---		 )
---		port map (
---			A => mul_a_2,
---			B => mul_b_2,
---			outMul => mul_out_2);
 
-
-
-	speed_impulse_func : speed_impulse 
-	generic map ( 
-		 main_clock =>clk_freq,
-		 work_period =>periods_per_sec
-		)
-				
-		port map(
-				res => res, 	
-				clk => clk,	
-				
-				i_impulse => impulse,
-				o_speed => speed
-				);
 
 	temperature_pd_module : pd 
 	generic map (
@@ -321,94 +296,93 @@ begin
 				regulator_state := regulator_idle;
 			else
 				if i_control_box_setup.enable = '1' then
-					if cnt = glob_clk_denom then
-						cnt := 0;
-						regulator_state := regulator_speed_check; 
-
-					else 
-						cnt := cnt + 1;
-					end if;
-						
-	
-					if regulator_state = regulator_speed_check  then
-						mul_a <= (others => '0');
-						mul_b <= (others => '0');
-						mul_a(23 downto 8) <= max_speed;
-						mul_b(15 downto 8) <= i_req_speed;
-							
-						regulator_state := regulator_init;	
-
-					elsif regulator_state = regulator_init then
-						
-						in_temperature_reg <= (req_temperature - poly_temperature);
-						report integer'image(to_integer(unsigned(req_temperature(15 downto 8))));
-						report integer'image(to_integer(unsigned(poly_temperature(15 downto 8))));
-						req_speed_motor <= mul_out(23 downto 8 );
-						in_reg <= signed(mul_out(23 downto 8 )) - signed(speed);
-						
-						if enable_pid = '1' then
-							regulator_state := regulator_valid;
-							enable_pid <= '0';
-						else
-							enable_pid <= '1';
-						end if;
-						
-					elsif regulator_state = regulator_valid then
-							
-						modified_reg := out_reg;
-						modified_temp_reg := out_temperature_reg + signed(offset_tmp_wave);
-						
-						if modified_temp_reg < 0 then  
-							modified_temp_reg := (others => '0');
-						elsif modified_temp_reg > signed(wave_user_limit) then
-							modified_temp_reg := signed(wave_user_limit);
-						end if;
-												
-						if modified_reg < 0 then  
-							modified_reg := (others => '0');
-						elsif modified_reg > signed(battery_voltage) then
-							modified_reg := signed(battery_voltage);
-						end if;
-						
-						mul_a(31 downto 16) <= period_trigger;
-						mul_b(23 downto 8) <= unsigned(modified_temp_reg);
-						
-						
-						--if modified_temp_reg < modified_reg then
---							mul_a(31 downto 16) <= period_trigger;
---							mul_b(23 downto 8) <= unsigned(modified_temp_reg);
---							
---						else
---							mul_a(31 downto 16) <= period_trigger;
---							mul_b(23 downto 8) <= unsigned(modified_reg);
---							
---						end if;
-						
-						divisor <= (others => '0');
-						divisor(7 downto 0) <= wave_limit(15 downto 8);
-						enable_div <= '1';
-						regulator_state := regulator_processing_output;
-					elsif regulator_state = regulator_processing_output then
-						if enable_div = '1' then
-					
-							 enable_div <= '0';
-						elsif valid = '1' then	 
-							regulator_state := regulator_initiate_trigger;
-						end if;
-							
-					elsif regulator_state = regulator_initiate_trigger then
-						pulse_trigger <= quot;
-						
-						regulator_state := regulator_idle;
-					end if;
-			
 				
-					if impulse = '1' then
-						impulse <= '0';
-					elsif i_hal_data /= last_hal_data then
-						last_hal_data := i_hal_data;
-						impulse <= '1';
-					end if; 
+					if i_control_box_setup.manual = '1' then 
+						pulse_trigger <= pulse_trigger;
+						req_speed_motor <= req_speed_motor;
+	
+					else
+						if cnt = glob_clk_denom then
+							cnt := 0;
+							regulator_state := regulator_speed_check; 
+	
+						else 
+							cnt := cnt + 1;
+						end if;
+							
+		
+						if regulator_state = regulator_speed_check  then
+							mul_a <= (others => '0');
+							mul_b <= (others => '0');
+							mul_a(23 downto 8) <= max_speed;
+							mul_b(15 downto 8) <= i_req_speed;
+								
+							regulator_state := regulator_init;	
+	
+						elsif regulator_state = regulator_init then
+							
+							in_temperature_reg <= (req_temperature - poly_temperature);
+
+							req_speed_motor <= mul_out(23 downto 8 );
+							in_reg <= signed(mul_out(23 downto 8 )) - signed(speed);
+							
+							if enable_pid = '1' then
+								regulator_state := regulator_valid;
+								enable_pid <= '0';
+							else
+								enable_pid <= '1';
+							end if;
+							
+						elsif regulator_state = regulator_valid then
+								
+							modified_reg := out_reg;
+							modified_temp_reg := out_temperature_reg + signed(offset_tmp_wave);
+							
+							if modified_temp_reg < 0 then  
+								modified_temp_reg := (others => '0');
+							elsif modified_temp_reg > signed(wave_user_limit) then
+								modified_temp_reg := signed(wave_user_limit);
+							end if;
+													
+							if modified_reg < 0 then  
+								modified_reg := (others => '0');
+							elsif modified_reg > signed(battery_voltage) then
+								modified_reg := signed(battery_voltage);
+							end if;
+							
+							mul_a(31 downto 16) <= period_trigger;
+							mul_b(23 downto 8) <= unsigned(modified_temp_reg);
+							
+							
+							--if modified_temp_reg < modified_reg then
+	--							mul_a(31 downto 16) <= period_trigger;
+	--							mul_b(23 downto 8) <= unsigned(modified_temp_reg);
+	--							
+	--						else
+	--							mul_a(31 downto 16) <= period_trigger;
+	--							mul_b(23 downto 8) <= unsigned(modified_reg);
+	--							
+	--						end if;
+							
+							divisor <= (others => '0');
+							divisor(7 downto 0) <= wave_limit(15 downto 8);
+							enable_div <= '1';
+							regulator_state := regulator_processing_output;
+						elsif regulator_state = regulator_processing_output then
+							if enable_div = '1' then
+						
+								 enable_div <= '0';
+							elsif valid = '1' then	 
+								regulator_state := regulator_initiate_trigger;
+							end if;
+								
+						elsif regulator_state = regulator_initiate_trigger then
+							pulse_trigger <= quot;
+							
+							regulator_state := regulator_idle;
+						end if;
+					end if;
+				
 				end if;
 					
 			end if;
@@ -421,7 +395,7 @@ process(i_temp_transistors,i_req_temperature,motor_transistors,i_hal_data,i_cont
 begin
 	
 	poly_temperature(15 downto 6) <= signed(i_temp_transistors);
-  motor_control_setup.hal <= i_control_box_setup.hal;
+	motor_control_setup.hal <= i_control_box_setup.hal;
 	motor_control_setup.enable <= i_control_box_setup.enable;
 	motor_control_setup.hal_data <= i_hal_data;
 	
