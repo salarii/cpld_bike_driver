@@ -30,13 +30,13 @@ architecture behaviour of pid is
 		
 		--- 
 		
-		constant Kp : signed(IntPart + FracPart - 1  downto 0) := x"0080";
-		constant Ki : signed(IntPart + FracPart - 1  downto 0) := (others=>'0');--"0001011001000001";
-		constant Kd : signed(IntPart + FracPart - 1  downto 0) := (others=>'0');--"0001010111100000";
+		constant Kp : signed(IntPart + FracPart - 1  downto 0) := x"ffe1";
+		constant Ki : signed(IntPart + FracPart - 1  downto 0) := x"001f";
+		constant Kd : signed(IntPart + FracPart - 1  downto 0) := x"000f";
 		
-		constant pt0 : signed(IntPart + FracPart - 1  downto 0) := Kp + Ki + Kd;
-		constant pt1 : signed(IntPart + FracPart - 1  downto 0) := Ki - Kp - shift_left(signed(Kd), 1);
-		constant pt2 : signed(IntPart + FracPart - 1  downto 0) := Kd;
+		constant pt0 : signed(IntPart + FracPart - 1  downto 0) := Kp + Ki + Kd; --x"000f"
+		constant pt1 : signed(IntPart + FracPart - 1  downto 0) := Ki - Kp - shift_left(signed(Kd), 1);--x"001f"
+		constant pt2 : signed(IntPart + FracPart - 1  downto 0) := Kd; --
 		
 		component two_com_mul
 				generic (CONSTANT IntPart : integer;

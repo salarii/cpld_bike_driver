@@ -146,7 +146,7 @@ architecture behaviour of control_box is
 
 		constant offset_voltage : unsigned(upper_limit downto 0) := x"0300";--3V 
 
-		constant max_speed : unsigned(upper_limit downto 0) := x"2800";--40km/h
+		constant max_speed : unsigned(upper_limit downto 0) := x"3200";--500 hal clicks 2 round per sec
 		constant battery_voltage : unsigned(upper_limit downto 0) := x"2400";--36V
 
 		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0400";-- 3 , 30% wave user  cap
@@ -346,23 +346,23 @@ begin
 													
 							if modified_reg < 0 then  
 								modified_reg := (others => '0');
-							elsif modified_reg > signed(battery_voltage) then
-								modified_reg := signed(battery_voltage);
+							elsif modified_reg > signed(wave_user_limit) then
+								modified_reg := signed(wave_user_limit);
 							end if;
 							
 							mul_a(31 downto 16) <= period_trigger;
 							mul_b(23 downto 8) <= unsigned(modified_temp_reg);
 							
 							
-							--if modified_temp_reg < modified_reg then
-	--							mul_a(31 downto 16) <= period_trigger;
-	--							mul_b(23 downto 8) <= unsigned(modified_temp_reg);
-	--							
-	--						else
-	--							mul_a(31 downto 16) <= period_trigger;
-	--							mul_b(23 downto 8) <= unsigned(modified_reg);
-	--							
-	--						end if;
+							if modified_temp_reg < modified_reg then
+								mul_a(31 downto 16) <= period_trigger;
+								mul_b(23 downto 8) <= unsigned(modified_temp_reg);
+								
+							else
+								mul_a(31 downto 16) <= period_trigger;
+								mul_b(23 downto 8) <= unsigned(modified_reg);
+								
+							end if;
 							
 							divisor <= (others => '0');
 							divisor(7 downto 0) <= wave_limit(15 downto 8);

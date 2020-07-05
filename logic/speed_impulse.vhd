@@ -57,7 +57,7 @@ architecture behaviour of speed_impulse is
 		constant fraction : integer := 0;
 		signal enable_filter : std_logic := '0';		
 			
-		constant alfa : unsigned(7 downto 0):= x"80";
+		constant alfa : unsigned(7 downto 0):= x"35";
 		signal filtered : unsigned(15 downto 0) := (others => '0');
 
 		signal rotation_speed : unsigned(15 downto 0):= (others => '0');
