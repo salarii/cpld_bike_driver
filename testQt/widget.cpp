@@ -134,10 +134,14 @@ Widget::Widget(QWidget *parent)
 
     hal = new QCheckBox;
     QLabel * halLabel = new QLabel("Use hal: ");
+    manual = new QCheckBox;
+    QLabel * manualLabel = new QLabel("Use manual: ");
     QHBoxLayout * botLayout = new QHBoxLayout;
 
     botLayout->addWidget(halLabel);
     botLayout->addWidget(hal);
+    botLayout->addWidget(manualLabel);
+    botLayout->addWidget(manual);
     botLayout->addWidget(runMotorButton);
 
     blcdLayout->addLayout(botLayout);
@@ -262,7 +266,16 @@ Widget::motorSliderChanged()
             {
                 sendBuff[4] = 0;
             }
-            emit sendToHardware(sendBuff, 5);
+            if (manual->isChecked())
+            {
+                sendBuff[5] = 1;
+            }
+            else
+            {
+                sendBuff[5] = 0;
+            }
+
+            emit sendToHardware(sendBuff, 6);
         }
 }
 
@@ -397,7 +410,7 @@ void Widget::serviceMeasurement(Measurement const * _measurement)
     float time = ((float)_measurement->time)/1000.0;
     if ( series->points().size() == 0 )
     {
-        tempTime = time;
+        //tempTime = time;
     }
     if ( series->points().size() > 0 &&  series->points().back().x() > time )
     {
@@ -409,6 +422,8 @@ void Widget::serviceMeasurement(Measurement const * _measurement)
     auto message = labelText + QString().setNum(_measurement->voltage, 'g', 4) + QString(" V ");
     message += QString(" Temperature:") + QString().setNum(_measurement->temperature) + QString(" Celsius");
     message += QString(" Rotation cnt:") + QString().setNum(rotation_cnt);
+    message += QString(" Rpm speed:") + QString().setNum(speed);
+
     label->setText(message);
     QChart* chartToDelete=NULL;
     lastTime = time;
@@ -429,23 +444,35 @@ void Widget::serviceMeasurement(Measurement const * _measurement)
 
 void Widget::serviceMotorData(MotorData const * _motorData)
 {
-    float time = ((float)_motorData->time);
+
+    float time = ((float)_motorData->time)/1000.0;
+    speed = _motorData->speed*60/250;
+
+    if ( motorSeries->points().size() == 0 )
+    {
+        tempTime = time;
+    }
     if ( motorSeries->points().size() > 0 &&  motorSeries->points().back().x() > time )
     {
         motorSeries->clear();
     }
-    motorSeries->append(time,_motorData->speed);
-    //auto message = QString("Motor Speed:  ") + QString().setNum(_motorData->speed, 'g', 4) + QString(" Rpm ");
     rotation_cnt = _motorData->rot_cnt;
-    //label->setText(message);
-    QChart* chartToDelete=NULL;
-    if(motorChartView->chart())
-    {
-        chartToDelete=motorChartView->chart();
-    }
-    motorChartView->setChart(createMotorChart());
+    motorSeries->append(time,speed);
 
-    delete chartToDelete;
+    lastTime = time;
+
+    if ((( lastTime - motorTriggerTime < measurementMotorSpan ) && motorRun )|| !motorRun )
+    {
+        QChart* chartToDelete=NULL;
+        if(motorChartView->chart())
+        {
+            chartToDelete=motorChartView->chart();
+        }
+        motorChartView->setChart(createMotorChart());
+
+        delete chartToDelete;
+    }
+
 }
 
 

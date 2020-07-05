@@ -57,6 +57,7 @@ private:
     QLabel * labelForce;
     QPushButton * runMotorButton;
     QCheckBox * hal;
+    QCheckBox * manual;
     QComboBox *  adcChannelList;
 
     QComboBox *  parameterList;
@@ -66,10 +67,11 @@ private:
     float idx;
 
     const int measurementSpan =800;
+    const int measurementMotorSpan =1000;
     int lastTime;
     int tempTime;
     int motorTriggerTime;
     int rotation_cnt;
-
+    int speed;
 };
 #endif // WIDGET_H

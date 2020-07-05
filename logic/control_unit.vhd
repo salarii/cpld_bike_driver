@@ -136,7 +136,7 @@ architecture behaviour of control_unit is
 		signal adc_temp : unsigned(9 downto 0);
 
 		signal req_temperature : unsigned(7 downto 0);
-		signal req_speed : unsigned(7 downto 0) := x"7f";
+		signal req_speed : unsigned(7 downto 0);
 		signal control_box_setup : type_control_box_setup;
 		signal motor_transistors : type_motor_transistors;
 		signal speed_impulse_sig : std_logic := '0';	
@@ -291,6 +291,7 @@ begin
 				last_motor_action := 0;
 				last_adc_data_send := 0;
 				hal_imp_cnt := (others=>'0');
+				control_box_setup.enable <= '0';
 			else
 				if prev_hal /= i_hal_data then
 					hal_imp_cnt := hal_imp_cnt + 1;
@@ -375,8 +376,6 @@ begin
 					if run_motor_state = execute_run_motor then
 						last_motor_action := glob_clk_counter;
 						
-
-						
 						control_box_setup.enable <= '1';
 						control_box_setup.temperature <= '1';
 						
@@ -429,6 +428,7 @@ begin
 							
 							if run_motor_state = run_motor_get_speed then
    								control_box_setup.req_speed_motor <= unsigned(i_from_uart);
+								req_speed <= unsigned(i_from_uart);
 								run_motor_state := run_motor_get_pulse_width;	
 							elsif run_motor_state = run_motor_get_pulse_width then
 								control_box_setup.period_trigger(7 downto 0) <= x"fe";

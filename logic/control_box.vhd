@@ -93,21 +93,6 @@ architecture behaviour of control_box is
 		end component motor_driver;
 
 
-		component speed_impulse is
-			generic ( 
-				CONSTANT main_clock : integer;
-				CONSTANT work_period : integer
-				);
-				
-			port(
-					res : in std_logic;		
-					clk : in std_logic;	
-					
-					i_impulse : in std_logic;
-					
-					o_speed : out unsigned(15 downto 0)
-				);
-		end component speed_impulse;
 
 		component pid is
 			generic (CONSTANT IntPart : integer := 8;
@@ -144,15 +129,15 @@ architecture behaviour of control_box is
 		
 		
 
-		constant offset_voltage : unsigned(upper_limit downto 0) := x"0300";--3V 
+		constant offset_speed_wave : unsigned(upper_limit downto 0) := x"0000";-- 
 
-		constant max_speed : unsigned(upper_limit downto 0) := x"3200";--500 hal clicks 2 round per sec
+		constant max_speed : unsigned(upper_limit downto 0) := x"0200";--512 /256 hal clicks 2 round per sec
 		constant battery_voltage : unsigned(upper_limit downto 0) := x"2400";--36V
 
-		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0400";-- 3 , 30% wave user  cap
+		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0800";-- 3 , 80% wave user  cap
 		constant wave_limit : unsigned(upper_limit downto 0) := x"0a00";--10 , 100% wave equvalent
 		constant max_temperature : unsigned(upper_limit downto 0) := x"0200";-- Celsius
-		constant offset_tmp_wave : unsigned(upper_limit downto 0) := x"0000";--0V 
+		constant offset_tmp_wave : unsigned(upper_limit downto 0) := x"0000";--
 		
 		constant period_trigger : unsigned(upper_limit downto 0) := x"01fe";--
 		
@@ -160,7 +145,6 @@ architecture behaviour of control_box is
 		signal motor_control_setup : type_motor_control_setup;
 		signal motor_transistors : type_motor_transistors;
 		
-		signal speed : unsigned(15 downto 0);
 
 		signal in_temperature_reg: signed(upper_limit  downto 0);
 		signal out_temperature_reg: signed(upper_limit  downto 0);
@@ -298,8 +282,8 @@ begin
 				if i_control_box_setup.enable = '1' then
 				
 					if i_control_box_setup.manual = '1' then 
-						pulse_trigger <= pulse_trigger;
-						req_speed_motor <= req_speed_motor;
+						pulse_trigger <= i_control_box_setup.pulse_trigger;
+						req_speed_motor(7 downto 0) <= i_control_box_setup.req_speed_motor;
 	
 					else
 						if cnt = glob_clk_denom then
@@ -324,7 +308,7 @@ begin
 							in_temperature_reg <= (req_temperature - poly_temperature);
 
 							req_speed_motor <= mul_out(23 downto 8 );
-							in_reg <= signed(mul_out(23 downto 8 )) - signed(speed);
+							in_reg <= signed(mul_out(23 downto 8 )) - signed(i_speed);
 							
 							if enable_pid = '1' then
 								regulator_state := regulator_valid;
@@ -335,7 +319,7 @@ begin
 							
 						elsif regulator_state = regulator_valid then
 								
-							modified_reg := out_reg;
+							modified_reg := out_reg + signed(offset_speed_wave);
 							modified_temp_reg := out_temperature_reg + signed(offset_tmp_wave);
 							
 							if modified_temp_reg < 0 then  
@@ -349,9 +333,6 @@ begin
 							elsif modified_reg > signed(wave_user_limit) then
 								modified_reg := signed(wave_user_limit);
 							end if;
-							
-							mul_a(31 downto 16) <= period_trigger;
-							mul_b(23 downto 8) <= unsigned(modified_temp_reg);
 							
 							
 							if modified_temp_reg < modified_reg then

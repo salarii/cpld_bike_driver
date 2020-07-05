@@ -65,7 +65,7 @@ architecture t_behaviour of speed_tb is
 		signal motor_transistors : type_motor_transistors;
 		signal impulse : std_logic;
 		constant clk_period : time := 1 us;
-		constant hal_period : time := 500 us;
+		constant hal_period : time := 50 us;
 		
 		signal data : std_logic_vector(15 downto 0);
 		signal address : std_logic_vector(6 downto 0);
