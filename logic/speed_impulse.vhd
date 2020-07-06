@@ -139,7 +139,6 @@ begin
 					
 					if state = idle then
 							state := multiply;
-							report integer'image(cnt_rotations);
 							lap_cycles <= to_unsigned(cnt_rotations,lap_cycles'length);
 					end if;
 				

@@ -18,26 +18,30 @@ architecture t_behaviour of speed_estimator_tb is
 		
 
 		component speed_estimator is
-				
+			generic ( 
+				CONSTANT main_clock : integer;
+				CONSTANT work_period : integer
+				);
 			port(
 					res : in std_logic;		
 					clk : in std_logic;	
+					i_manu_speed : in unsigned(11 downto 0);
 					
 					i_throttle_meas : in unsigned(9 downto 0);
 					i_impulse : in std_logic;
 					
-					o_speed : out unsigned(15 downto 0)
+					o_speed : out unsigned(7 downto 0)
 				);
-				
 		end component speed_estimator;
 
 		signal res :  std_logic;		
 		signal clk :  std_logic;	
+		signal manu_speed : unsigned(11 downto 0);
 					
 		signal throttle_meas :  unsigned(9 downto 0);
 		signal impulse :  std_logic;
 					
-		signal speed :  unsigned(15 downto 0);
+		signal speed :  unsigned(7 downto 0);
 		
 		constant clk_period : time := 1 us;
 	begin	
@@ -47,6 +51,7 @@ architecture t_behaviour of speed_estimator_tb is
 				res => res,
 				clk => clk,
 				
+				i_manu_speed => manu_speed,
 				i_throttle_meas => throttle_meas,
 				i_impulse => impulse,
 					
@@ -55,11 +60,12 @@ architecture t_behaviour of speed_estimator_tb is
 		process	
 		begin
 			res <= '1';
-			throttle_meas <= "1010111100";
-
-			
-			wait;
-				
+			throttle_meas <= "0000000111";
+			manu_speed <= (others => '0');
+			impulse <= '1';
+			wait for 2 ms;
+			impulse <= '0';				
+			wait for 2 ms;
 		end process;
 		--
 clk_process :

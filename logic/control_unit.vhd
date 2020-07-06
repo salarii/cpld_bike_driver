@@ -43,6 +43,24 @@ end control_unit;
 
 architecture behaviour of control_unit is
 
+		component speed_estimator is
+			generic ( 
+					CONSTANT main_clock : integer;
+					CONSTANT work_period : integer
+					);
+			port(
+					res : in std_logic;		
+					clk : in std_logic;	
+		
+					i_manu_speed : in unsigned(11 downto 0);			
+					i_throttle_meas : in unsigned(9 downto 0);
+					i_impulse : in std_logic;
+					
+					o_speed : out unsigned(7 downto 0)
+				);
+				
+		end component speed_estimator;
+
 
 		component flash_controller is
 			generic ( 
@@ -141,6 +159,8 @@ architecture behaviour of control_unit is
 		signal motor_transistors : type_motor_transistors;
 		signal speed_impulse_sig : std_logic := '0';	
 		
+		signal manu_speed : unsigned(11 downto 0);
+		
 begin	
 	
 	module_control_box: control_box
@@ -158,20 +178,37 @@ begin
 		);
 
 
-	speed_impulse_module : speed_impulse 
-	generic map ( 
-		 main_clock =>1000000,
-		 work_period =>2
-		)
-				
-		port map(
-				res => res, 	
-				clk => clk,	
-				
-				i_impulse => speed_impulse_sig,
-				
-				o_speed => speed
+		speed_estimator_module : speed_estimator 
+			generic ( 
+					 main_clock =>1000000,
+					 work_period =>2
+					)
+			port(
+					res => res, 	
+					clk => clk,	
+		
+					i_manu_speed(11 downto  8) =>(others =>'0'),
+					i_manu_speed(7 downto  0) =>manu_speed,			
+					i_throttle_meas : in unsigned(9 downto 0),
+					i_impulse : in std_logic;
+					
+					o_speed : out unsigned(7 downto 0)
 				);
+
+		speed_impulse_module : speed_impulse 
+		generic map ( 
+			 main_clock =>1000000,
+			 work_period =>2
+			)
+					
+			port map(
+					res => res, 	
+					clk => clk,	
+					
+					i_impulse => speed_impulse_sig,
+					
+					o_speed => speed
+					);
 
 		flash_module : flash_controller
 			generic map ( 
