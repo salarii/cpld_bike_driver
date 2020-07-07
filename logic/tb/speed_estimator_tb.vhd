@@ -65,9 +65,9 @@ architecture t_behaviour of speed_estimator_tb is
 			throttle_meas <= "0000000111";
 			manu_speed <= (others => '0');
 			impulse <= '1';
-			wait for 2 ms;
+			wait for 100 ms;
 			impulse <= '0';				
-			wait for 2 ms;
+			wait for 100 ms;
 		end process;
 		--
 clk_process :

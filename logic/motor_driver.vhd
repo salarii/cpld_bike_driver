@@ -84,8 +84,6 @@ architecture behaviour of motor_driver is
 		signal enable_div : std_logic;
 		
 		
-		signal debug_tick : unsigned(9  downto 0);
-		signal debug_cnt : unsigned(9  downto 0);
 		signal motor_transistors : type_motor_transistors := ('0','0','0','0','0','0');
 begin	
 
@@ -149,8 +147,6 @@ end generate;
 		variable transistors_path : type_on_transistors_path;
 	begin
 			
-		debug_tick <=  to_unsigned(tick_cnt, debug_tick'length);
-		debug_cnt <= to_unsigned(cnt, debug_tick'length);
 			
 			
 		if rising_edge(clk)  then

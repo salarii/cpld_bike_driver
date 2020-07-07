@@ -37,9 +37,6 @@ architecture behaviour of uart is
 	signal  busy_internal_rx : std_logic := '0';
 	
 	
-	signal bit_cnt_debug  : unsigned(3 downto 0);	
-	signal cycle_cnt_debug  : unsigned(3 downto 0);
-	signal shift_reg_debug  : unsigned(7 downto 0);
 begin	
 
 
@@ -69,9 +66,6 @@ begin
 		
 		if rising_edge(clk)  then
 			
-			bit_cnt_debug  <= to_unsigned(bit_cnt_rx, bit_cnt_debug'length); 
-			cycle_cnt_debug  <= to_unsigned(cnt_rx, cycle_cnt_debug'length);
-			shift_reg_debug <= shift_reg_rx;
 			if res = '0' then
 				busy_internal_tx <= '0';
 				busy_internal_rx <= '0';

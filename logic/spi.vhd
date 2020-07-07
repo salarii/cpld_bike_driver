@@ -31,9 +31,6 @@ architecture behaviour of spi is
 	signal  busy_internal : std_logic := '0';
 	
 	
-	signal bit_cnt_debug  : unsigned(3 downto 0);	
-	signal cycle_cnt_debug  : unsigned(4 downto 0);
-	signal shift_reg_debug  : unsigned(7 downto 0);
 	signal ss : std_logic := '1';
 	signal sck : std_logic := '1';
 	signal mosi : std_logic := '1';
@@ -61,9 +58,6 @@ begin
 		
 	if rising_edge(clk)  then
 			
-		bit_cnt_debug  <= to_unsigned(bit_cnt, bit_cnt_debug'length); 
-		cycle_cnt_debug  <= to_unsigned(cnt, cycle_cnt_debug'length);
-		shift_reg_debug <= shift_reg_read;
 		if res = '0' then
 			
 				busy_internal <= '0';

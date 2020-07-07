@@ -11,7 +11,8 @@ use ieee.numeric_std.all;
 entity speed_impulse is
 	generic ( 
 		CONSTANT main_clock : integer;
-		CONSTANT work_period : integer
+		CONSTANT work_period : integer;
+		CONSTANT shift_impulses : integer := 0
 		);
 		
 	port(
@@ -27,7 +28,6 @@ end speed_impulse;
 architecture behaviour of speed_impulse is
 
 	component low_pass is
-			
 		port(
 			res : in std_logic;		
 			clk : in std_logic;		
@@ -118,7 +118,7 @@ begin
 					
 				end if;
 				
-        if state = multiply  then
+        			if state = multiply  then
 				
 					state := filter;
 					enable_filter <= '1';
@@ -139,7 +139,7 @@ begin
 					
 					if state = idle then
 							state := multiply;
-							lap_cycles <= to_unsigned(cnt_rotations,lap_cycles'length);
+							lap_cycles <= shift_left(to_unsigned(cnt_rotations,lap_cycles'length),shift_impulses);
 					end if;
 				
 					cnt_rotations := 0;

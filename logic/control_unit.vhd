@@ -106,7 +106,8 @@ architecture behaviour of control_unit is
 		component speed_impulse is
 			generic ( 
 				CONSTANT main_clock : integer;
-				CONSTANT work_period : integer
+				CONSTANT work_period : integer;
+				CONSTANT shift_impulses : integer := 0
 				);
 				
 			port(
@@ -287,7 +288,6 @@ begin
 		variable cnt : integer := 0;			
 		variable val_cnt : integer  range 15 downto 0 := 0;
 		variable state : state_type := Setup;
-		variable i2c_state : type_i2c_operations := i2c_index;
 		variable enable_pc_write : std_logic;
 		
 		variable flash_erase_state : type_flash_erase_state;
@@ -322,7 +322,7 @@ begin
 				enable_pc_write := '0';
 				enable_uart <= '0';
 				--leds(4 downto 2) <= (others=>'1');
-				i2c_state := i2c_index; 
+				
 
 				user_command := no_command;	
 				uart_dev_status := (False,False,False);

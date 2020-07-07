@@ -31,7 +31,8 @@ architecture behaviour of speed_estimator is
 	component speed_impulse is
 		generic ( 
 			CONSTANT main_clock : integer;
-			CONSTANT work_period : integer
+			CONSTANT work_period : integer;
+			CONSTANT shift_impulses : integer := 0
 			);
 			
 		port(
@@ -93,7 +94,8 @@ begin
 	module_impulse : speed_impulse 
 	generic map(
 			 main_clock => main_clock,
-			 work_period => work_period
+			 work_period => work_period,
+			 shift_impulses => 8
 	)
 	port map(
 				res => res,		
