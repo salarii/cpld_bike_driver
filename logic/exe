@@ -9,4 +9,4 @@ ghdl -a --workdir=build ./tb/uart_run_motor_tb.vhd ./tb/speed_tb.vhd ./tb/div_tb
 ghdl -a --workdir=build ./tb/control_box_tb.vhd ./tb/speed_estimator_tb.vhd
 ghdl -e --workdir=build speed_estimator_tb
 ghdl -r speed_estimator_tb --vcd=func.vcd  --stop-time=100ms --ieee-asserts=disable-at-0
-gtkwave func.vcd
+#gtkwave func.vcd

@@ -23,7 +23,8 @@ entity adc is
 		i_spi : in type_to_spi;
 		o_measurement : out unsigned( 9 downto 0 );
 		o_spi : out type_from_spi;
-		o_temp  : out unsigned( 9 downto 0 )
+		o_temp : out unsigned( 9 downto 0 );
+		o_throttle : out unsigned( 9 downto 0 )
 		);
 end adc;
 
@@ -69,6 +70,8 @@ architecture behaviour of adc is
 		signal enable_uart  : std_logic;
 		
 		signal channels_data : unsigned(39 downto 0):= (others => '0');
+		
+		signal throttle  : unsigned( 9 downto 0 );
 		
 		signal poly_enable : std_logic;	
 		signal poly_calculated : std_logic;	
@@ -179,6 +182,7 @@ begin
 				  			when 1 =>  channels_data( 19 downto 10 ) <= data;
 				  			when 2 =>  channels_data( 29 downto 20 ) <= data;
 				  			when 3 =>  channels_data( 39 downto 30 ) <= data;
+				  					   throttle <= data;
 				  			when others => channels_data <= (others => '0');
 						end case;
 
@@ -223,8 +227,9 @@ begin
 
 	end process;
 
-	process(poly_temperature)
+	process(poly_temperature,throttle)
 	begin
+		o_throttle <= throttle;	
 		o_temp <= unsigned(poly_temperature);
 	end process;
 	

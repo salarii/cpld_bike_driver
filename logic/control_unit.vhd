@@ -21,6 +21,7 @@ entity control_unit is
 		i_flash_spi : in type_to_spi;
 		i_hal_data : in std_logic_vector(2 downto 0);
 			
+		i_pedal_imp : in std_logic;		
 					
 		i_busy_uart : in std_logic;
 		i_from_uart : in std_logic_vector(7 downto 0);
@@ -35,7 +36,6 @@ entity control_unit is
 		
 		o_to_uart : out std_logic_vector(7 downto 0);
 		o_en_uart : out std_logic;
-		o_wave : out std_logic;
 		o_motor_transistors : out type_motor_transistors;
 		leds : out std_logic_vector(3 downto 0)
 		);
@@ -134,7 +134,8 @@ architecture behaviour of control_unit is
 				i_spi : in type_to_spi;
 				o_measurement : out unsigned( 9 downto 0 );
 				o_spi : out type_from_spi;
-				o_temp  : out unsigned( 9 downto 0 )
+				o_temp  : out unsigned( 9 downto 0 );
+				o_throttle  : out unsigned( 9 downto 0 )
 				);
 		end component adc;
 	
@@ -148,6 +149,7 @@ architecture behaviour of control_unit is
 		signal transaction_flash : transaction_type;
 		signal put_bus_high_flash : std_logic;
 		
+		signal throttle : unsigned(9 downto 0);
 		signal speed : unsigned(15 downto 0);
 		signal adc_channel : unsigned(2 downto 0);
 		signal adc_measurement : unsigned(15 downto 0) := (others => '0');
@@ -159,7 +161,7 @@ architecture behaviour of control_unit is
 		signal motor_transistors : type_motor_transistors;
 		signal speed_impulse_sig : std_logic := '0';	
 		
-		signal manu_speed : unsigned(11 downto 0);
+		signal manu_speed : unsigned(7 downto 0);
 		
 begin	
 	
@@ -179,20 +181,20 @@ begin
 
 
 		speed_estimator_module : speed_estimator 
-			generic ( 
+			generic map( 
 					 main_clock =>1000000,
 					 work_period =>2
 					)
-			port(
+			port map(
 					res => res, 	
 					clk => clk,	
 		
 					i_manu_speed(11 downto  8) =>(others =>'0'),
 					i_manu_speed(7 downto  0) =>manu_speed,			
-					i_throttle_meas : in unsigned(9 downto 0),
-					i_impulse : in std_logic;
+					i_throttle_meas => throttle,
+					i_impulse => i_pedal_imp,
 					
-					o_speed : out unsigned(7 downto 0)
+					o_speed => req_speed
 				);
 
 		speed_impulse_module : speed_impulse 
@@ -247,7 +249,8 @@ begin
 					i_spi => i_adc_spi,
 					o_measurement => adc_measurement(9 downto 0),
 					o_spi => o_adc_spi,
-					o_temp => adc_temp
+					o_temp => adc_temp,
+					o_throttle => throttle
 				);
 		
 	process(clk)
@@ -465,7 +468,7 @@ begin
 							
 							if run_motor_state = run_motor_get_speed then
    								control_box_setup.req_speed_motor <= unsigned(i_from_uart);
-								req_speed <= unsigned(i_from_uart);
+								manu_speed <= unsigned(i_from_uart);
 								run_motor_state := run_motor_get_pulse_width;	
 							elsif run_motor_state = run_motor_get_pulse_width then
 								control_box_setup.period_trigger(7 downto 0) <= x"fe";
@@ -636,11 +639,11 @@ begin
 	end process;
 	
 
-	process(  enable_uart,motor_transistors)
+	process(  enable_uart,motor_transistors,i_pedal_imp)
 	begin
 		o_en_uart <= enable_uart;
 		o_motor_transistors <= motor_transistors;
-		leds(0) <= '1';
+		leds(0) <= i_pedal_imp;
 	end process;
 
 	

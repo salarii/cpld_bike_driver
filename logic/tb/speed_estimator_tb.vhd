@@ -15,8 +15,6 @@ end speed_estimator_tb;
 
 architecture t_behaviour of speed_estimator_tb is
 
-		
-
 		component speed_estimator is
 			generic ( 
 				CONSTANT main_clock : integer;
@@ -47,6 +45,10 @@ architecture t_behaviour of speed_estimator_tb is
 	begin	
 		
 		speed_func: speed_estimator
+		generic map( 
+				main_clock =>1000000,
+				work_period =>2
+					)
 		port map (
 				res => res,
 				clk => clk,
