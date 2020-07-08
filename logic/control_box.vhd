@@ -102,6 +102,7 @@ architecture behaviour of control_box is
 				res : in std_logic;
 				clk : in std_logic;
 				i_enable : in std_logic;
+				i_n_clear : in std_logic;
 				i_val	: in  signed(IntPart + FracPart -1  downto 0);
 				o_reg : out signed(IntPart + FracPart -1  downto 0)
 				);
@@ -157,9 +158,6 @@ architecture behaviour of control_box is
 		signal mul_b : unsigned(31  downto 0);
 		signal mul_out : unsigned(31  downto 0);
 		
-		--signal mul_a_2 : unsigned(31  downto 0);
-		--signal mul_b_2 : unsigned(31  downto 0);
-		--signal mul_out_2 : unsigned(31  downto 0);
 		
 		signal divisor : unsigned(upper_limit  downto 0);
 		
@@ -205,6 +203,7 @@ begin
 			res =>res,
 			clk =>clk,
 			i_enable =>enable_pid,
+			i_n_clear => i_control_box_setup.enable,
 			i_val => in_reg,
 			o_reg => out_reg
 			);

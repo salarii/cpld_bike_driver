@@ -22,7 +22,9 @@ entity control_unit is
 		i_hal_data : in std_logic_vector(2 downto 0);
 			
 		i_pedal_imp : in std_logic;		
-					
+		i_brk_1 : in std_logic;
+		i_brk_2 : in std_logic;
+
 		i_busy_uart : in std_logic;
 		i_from_uart : in std_logic_vector(7 downto 0);
 		i_received_uart : in std_logic;
@@ -156,14 +158,24 @@ architecture behaviour of control_unit is
 		signal adc_measurement : unsigned(15 downto 0) := (others => '0');
 		signal adc_temp : unsigned(9 downto 0);
 
-		signal req_temperature : unsigned(7 downto 0);
+		signal req_temperature : unsigned(7 downto 0) := x"40";
 		signal req_speed : unsigned(7 downto 0);
-		signal control_box_setup : type_control_box_setup;
+		signal control_box_setup : type_control_box_setup :=
+			(  hal => '1',
+				enable => '1',	
+				temperature => '1',
+				manual => '0',
+				period_trigger => (others => '0'),	
+				pulse_trigger => (others => '0'),		
+				req_speed_motor => (others => '0'));
+	
+	
 		signal motor_transistors : type_motor_transistors;
 		signal speed_impulse_sig : std_logic := '0';	
 		
 		signal manu_speed : unsigned(7 downto 0);
-		
+		signal host_enable : std_logic := '1';
+				
 begin	
 	
 	module_control_box: control_box
@@ -261,7 +273,7 @@ begin
 		
 		type type_i2c_operations is ( i2c_index, i2c_data_H, i2c_data_L );
 		
-		type type_user_commands is (no_command, adc_channel_change, flash_write, flash_read, flash_erase, run_motor );
+		type type_user_commands is (no_command, disable_comm, adc_channel_change, flash_write, flash_read, flash_erase, run_motor );
 		
 		type type_init_trigger_phase is ( unit_step_freq_h,unit_step_freq_l, unit_step_pulse_h,unit_step_pulse_l);
 		
@@ -293,7 +305,7 @@ begin
 		variable flash_erase_state : type_flash_erase_state;
 		variable flash_read_state : type_flash_read_state;
 		variable flash_write_state : type_flash_write_state; 
-		variable user_command : type_user_commands := no_command;
+		variable user_command : type_user_commands := disable_comm;--no_command;
 		variable trigger_phase : type_init_trigger_phase;
 		variable run_motor_state : type_run_motor_state;
 		variable uart_dev_status : type_uart_dev_status  := (False,False,False);
@@ -321,17 +333,19 @@ begin
 				val_cnt := 0;
 				enable_pc_write := '0';
 				enable_uart <= '0';
+				host_enable <= '1';
 				--leds(4 downto 2) <= (others=>'1');
 				
 
-				user_command := no_command;	
+				user_command := disable_comm;	
 				uart_dev_status := (False,False,False);
 				glob_clk_counter := 0;
 				glob_small_clk_counter := 0;
 				last_motor_action := 0;
 				last_adc_data_send := 0;
 				hal_imp_cnt := (others=>'0');
-				control_box_setup.enable <= '0';
+				control_box_setup.hal <= '1';
+				req_temperature <= x"40";
 			else
 				if prev_hal /= i_hal_data then
 					hal_imp_cnt := hal_imp_cnt + 1;
@@ -416,7 +430,7 @@ begin
 					if run_motor_state = execute_run_motor then
 						last_motor_action := glob_clk_counter;
 						
-						control_box_setup.enable <= '1';
+						host_enable <= '1';
 						control_box_setup.temperature <= '1';
 						
 						user_command := no_command; 
@@ -426,7 +440,7 @@ begin
 	
 
 	
-				if 	i_received_uart = '1' then
+				if 	i_received_uart = '1' and user_command /= disable_comm then
 					
 					if user_command = no_command then 
 							
@@ -453,7 +467,7 @@ begin
 						
 						elsif i_from_uart = std_logic_vector(stop_command)  then 
 							
-							control_box_setup.enable <= '0';
+							host_enable <= '0';
 							last_motor_action := glob_clk_counter;
 						end if;
 					else	
@@ -639,12 +653,12 @@ begin
 	end process;
 	
 
-	process(  enable_uart,motor_transistors,i_pedal_imp)
+	process(  enable_uart,motor_transistors,i_pedal_imp,host_enable, i_brk_1, i_brk_2)
 	begin
 		o_en_uart <= enable_uart;
 		o_motor_transistors <= motor_transistors;
 		leds(0) <= i_pedal_imp;
+		control_box_setup.enable <=   i_brk_1 and i_brk_2 and host_enable;
 	end process;
-
 	
 end behaviour;

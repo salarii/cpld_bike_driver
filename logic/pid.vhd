@@ -12,6 +12,7 @@ entity pid is
 		res : in std_logic;
 		clk : in std_logic;
 		i_enable : in std_logic;
+		i_n_clear : in std_logic;
 		i_val	: in  signed(IntPart + FracPart -1  downto 0);
 		o_reg : out signed(IntPart + FracPart -1  downto 0)
 		);
@@ -97,11 +98,18 @@ begin
 			regt1 <= (others=>'0');
 
 		elsif  rising_edge(clk) then
-			if i_enable = '1' then
 			
-				regt1 <= regt1 + mul1_out + mul2_out + mul3_out;
-				et1 <= signed(i_val);
-				et2 <= signed(et1);
+			if i_n_clear = '0' then
+					et1 <= (others=>'0');
+					et2 <= (others=>'0');
+					regt1 <= (others=>'0');
+			else
+				if i_enable = '1' then
+
+					regt1 <= regt1 + mul1_out + mul2_out + mul3_out;
+					et1 <= signed(i_val);
+					et2 <= signed(et1);
+				end if;
 			end if;
 		end if;
 		
