@@ -26,9 +26,9 @@ begin
 
 
 process(clk)
-		constant period : unsigned(13 downto 0) := "11111111000000";
-		variable period_cnt : unsigned(13 downto 0) := period;
-		variable pulse_cnt : unsigned(13 downto 0) := (others => '0');
+		constant period : unsigned(15 downto 0) := x"ff00";
+		variable period_cnt : unsigned(15 downto 0) := period;
+		variable pulse_cnt : unsigned(15 downto 0) := (others => '0');
 begin
 		
 
