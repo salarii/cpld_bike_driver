@@ -129,12 +129,12 @@ architecture behaviour of control_box is
 		
 		
 
-		constant offset_speed_wave : unsigned(upper_limit downto 0) := x"0000";-- 
+		constant offset_speed_wave : unsigned(upper_limit downto 0) := x"0280";-- 
 
 		constant max_speed : unsigned(upper_limit downto 0) := x"0200";--512 /256 hal clicks 2 round per sec
 		constant battery_voltage : unsigned(upper_limit downto 0) := x"2400";--36V
 
-		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0400";-- 25% wave user  cap
+		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0C00";-- 50% wave user  cap
 		constant wave_limit : unsigned(upper_limit downto 0) := x"0ff0";--255 , 100% wave equvalent
 		constant max_temperature : unsigned(upper_limit downto 0) := x"0200";-- Celsius
 		constant offset_tmp_wave : unsigned(upper_limit downto 0) := x"0000";--

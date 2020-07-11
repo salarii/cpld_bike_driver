@@ -26,9 +26,9 @@ begin
 
 
 process(clk)
-		constant period : unsigned(15 downto 0) := x"ff00";
-		variable period_cnt : unsigned(15 downto 0) := period;
-		variable pulse_cnt : unsigned(15 downto 0) := (others => '0');
+		constant period : unsigned(5 downto 0) := "111111";
+		variable period_cnt : unsigned(5 downto 0) := period;
+		variable pulse_cnt : unsigned(5 downto 0) := (others => '0');
 begin
 		
 
@@ -48,7 +48,7 @@ begin
 					if 	period_cnt = 0 then
 						period_cnt := period;
 						if i_pulse > 0 then
-							pulse_cnt(13 downto 6) := i_pulse;
+							pulse_cnt(5 downto 0) := i_pulse(7 downto 2);
 							trigger_internal <= '1';
 						else
 							pulse_cnt := (others => '0');

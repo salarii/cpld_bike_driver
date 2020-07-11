@@ -62,6 +62,7 @@ begin
 				res <= '1';
 				control_box_setup.enable <= '1';
 				control_box_setup.hal <= '1';
+				speed <=(others => '0');
 				temp_transistors <= "0001111111";
 				req_temperature <= x"50";
 				wait;

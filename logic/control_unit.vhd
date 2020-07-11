@@ -162,7 +162,7 @@ architecture behaviour of control_unit is
 		signal req_speed : unsigned(7 downto 0);
 		signal control_box_setup : type_control_box_setup :=
 			(  hal => '1',
-				enable => '1',	
+				enable => '0',	
 				temperature => '1',
 				manual => '0',	
 				pulse_trigger => (others => '0'),		
@@ -173,7 +173,7 @@ architecture behaviour of control_unit is
 		signal speed_impulse_sig : std_logic := '0';	
 		
 		signal manu_speed : unsigned(7 downto 0);
-		signal host_enable : std_logic := '1';
+		signal host_enable : std_logic := '0';
 				
 begin	
 	
@@ -304,7 +304,8 @@ begin
 		variable flash_erase_state : type_flash_erase_state;
 		variable flash_read_state : type_flash_read_state;
 		variable flash_write_state : type_flash_write_state; 
-		variable user_command : type_user_commands := disable_comm;--no_command;
+		variable tmp_sol : type_user_commands := no_command;
+		variable user_command : type_user_commands := tmp_sol;--disable_comm;
 		variable trigger_phase : type_init_trigger_phase;
 		variable run_motor_state : type_run_motor_state;
 		variable uart_dev_status : type_uart_dev_status  := (False,False,False);
@@ -336,7 +337,7 @@ begin
 				--leds(4 downto 2) <= (others=>'1');
 				
 
-				user_command := disable_comm;	
+				user_command := tmp_sol;	
 				uart_dev_status := (False,False,False);
 				glob_clk_counter := 0;
 				glob_small_clk_counter := 0;
@@ -485,7 +486,7 @@ begin
 								run_motor_state := run_motor_get_pulse_width;	
 							elsif run_motor_state = run_motor_get_pulse_width then
 
-								control_box_setup.pulse_trigger <= (others => '0');
+
 								control_box_setup.pulse_trigger(7 downto 0) <= unsigned(i_from_uart);
 								run_motor_state := run_motor_max_temp;
 							elsif run_motor_state = run_motor_max_temp then
