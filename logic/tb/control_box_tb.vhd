@@ -32,14 +32,14 @@ architecture t_behaviour of control_box_tb is
 
 	 	signal clk : std_logic;
 	 	signal res : std_logic;
-		constant hal_period : time := 20 ms;
+		constant hal_period : time := 1 ms;
 
 		signal temp_transistors : unsigned(9 downto 0);
 		signal req_temperature : unsigned(7 downto 0);
 		signal req_speed : unsigned(7 downto 0) := x"7f";
 		signal control_box_setup : type_control_box_setup;
 		signal motor_transistors : type_motor_transistors;
-		signal hal_data : std_logic_vector(2 downto 0);
+		signal hal_data : std_logic_vector(2 downto 0):="100";
 		signal speed : unsigned(15 downto 0);
 begin
 		
@@ -61,34 +61,41 @@ begin
 		begin
 				res <= '1';
 				control_box_setup.enable <= '1';
-
+				control_box_setup.hal <= '1';
 				temp_transistors <= "0001111111";
 				req_temperature <= x"50";
 				wait;
 	
 
-				--case hal_data is
-						--when "101" =>  
-						--	hal_data<="100";
-						--when "100"  =>  
-						--	hal_data<="110";
-						--when "110"  =>  
-						--	hal_data<="010";
-						--when "010"  =>  
---							hal_data<="011";
---						when "011"  =>  
---							hal_data<="001";
---						when "001"  =>  
---							hal_data<="101";
---						when others => 
---							hal_data<="100";
---						end case;
 
-			
-				---wait for hal_period;
 				
 		end process;
-		--
+
+
+		hal_process:
+		process
+		begin
+				case hal_data is
+						when "101" =>  
+							hal_data<="100";
+						when "100"  =>  
+							hal_data<="110";
+						when "110"  =>  
+							hal_data<="010";
+						when "010"  =>  
+							hal_data<="011";
+						when "011"  =>  
+							hal_data<="001";
+						when "001"  =>  
+							hal_data<="101";
+						when others => 
+							hal_data<="100";
+						end case;
+
+			
+				wait for hal_period;
+		end  process;
+
 		clk_process:
 		process
 		begin

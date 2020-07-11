@@ -14,8 +14,7 @@ entity trigger is
 			res : in std_logic;		
 			clk : in std_logic;	
 			i_enable : in std_logic;
-			i_period : in unsigned(15 downto 0);
-			i_pulse : in unsigned(15 downto 0);
+			i_pulse : in unsigned(7 downto 0);
 			
 			o_trigger : out std_logic
 		);
@@ -27,9 +26,9 @@ begin
 
 
 process(clk)
-
-		variable period_cnt : integer  range 65535 downto 0 := 0;
-		variable pulse_cnt : integer  range 65535 downto 0 := 0;
+		constant period : unsigned(13 downto 0) := "11111111000000";
+		variable period_cnt : unsigned(13 downto 0) := period;
+		variable pulse_cnt : unsigned(13 downto 0) := (others => '0');
 begin
 		
 
@@ -39,7 +38,7 @@ begin
 			--debug <= activated;
 			if res = '0' then
 				trigger_internal <= '0';
-				period_cnt:= 0;		
+				period_cnt:= (others => '0');		
 			else
 
 						
@@ -47,12 +46,12 @@ begin
 
 
 					if 	period_cnt = 0 then
-						period_cnt := to_integer(i_period)-1;
+						period_cnt := period;
 						if i_pulse > 0 then
-							pulse_cnt := to_integer(i_pulse)-1;
+							pulse_cnt(13 downto 6) := i_pulse;
 							trigger_internal <= '1';
 						else
-							pulse_cnt := 0;
+							pulse_cnt := (others => '0');
 						end if;
 						
 					else
@@ -65,7 +64,7 @@ begin
 						period_cnt := period_cnt - 1;
 					end if;
 				else
-					period_cnt:= 0;
+					period_cnt:= (others => '0');
 					trigger_internal <= '0';	
 				end if;	
 				

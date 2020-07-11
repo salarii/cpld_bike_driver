@@ -164,8 +164,7 @@ architecture behaviour of control_unit is
 			(  hal => '1',
 				enable => '1',	
 				temperature => '1',
-				manual => '0',
-				period_trigger => (others => '0'),	
+				manual => '0',	
 				pulse_trigger => (others => '0'),		
 				req_speed_motor => (others => '0'));
 	
@@ -485,11 +484,9 @@ begin
 								manu_speed <= unsigned(i_from_uart);
 								run_motor_state := run_motor_get_pulse_width;	
 							elsif run_motor_state = run_motor_get_pulse_width then
-								control_box_setup.period_trigger(7 downto 0) <= x"fe";
-								control_box_setup.period_trigger(15 downto 8) <= x"01";
-								
+
 								control_box_setup.pulse_trigger <= (others => '0');
-								control_box_setup.pulse_trigger(8 downto 1) <= unsigned(i_from_uart);
+								control_box_setup.pulse_trigger(7 downto 0) <= unsigned(i_from_uart);
 								run_motor_state := run_motor_max_temp;
 							elsif run_motor_state = run_motor_max_temp then
 								req_temperature <= unsigned(i_from_uart);

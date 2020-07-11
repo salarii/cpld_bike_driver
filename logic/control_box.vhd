@@ -59,8 +59,7 @@ architecture behaviour of control_box is
 				res : in std_logic;		
 				clk : in std_logic;	
 				i_enable : in std_logic;
-				i_period : in unsigned(15 downto 0);
-				i_pulse : in unsigned(15 downto 0);
+				i_pulse : in unsigned(7 downto 0);
 				
 				o_trigger : out std_logic
 				);
@@ -120,7 +119,7 @@ architecture behaviour of control_box is
 		signal req_temperature : signed(15  downto 0) := (others => '0');
 
 		signal out_trigger : std_logic;
-		signal pulse_trigger : unsigned(upper_limit downto 0) := (others => '0');	
+		signal pulse_trigger : unsigned(7 downto 0) := (others => '0');	
 
 
 		signal enable_pid : std_logic;
@@ -135,12 +134,10 @@ architecture behaviour of control_box is
 		constant max_speed : unsigned(upper_limit downto 0) := x"0200";--512 /256 hal clicks 2 round per sec
 		constant battery_voltage : unsigned(upper_limit downto 0) := x"2400";--36V
 
-		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0800";-- 3 , 80% wave user  cap
-		constant wave_limit : unsigned(upper_limit downto 0) := x"0a00";--10 , 100% wave equvalent
+		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0400";-- 25% wave user  cap
+		constant wave_limit : unsigned(upper_limit downto 0) := x"0ff0";--255 , 100% wave equvalent
 		constant max_temperature : unsigned(upper_limit downto 0) := x"0200";-- Celsius
 		constant offset_tmp_wave : unsigned(upper_limit downto 0) := x"0000";--
-		
-		constant period_trigger : unsigned(upper_limit downto 0) := x"01fe";--
 		
 		signal req_speed_motor : unsigned(upper_limit downto 0):=(others=>'0');
 		signal motor_control_setup : type_motor_control_setup;
@@ -213,7 +210,6 @@ begin
 				res => res, 		
 				clk => clk,	
 				i_enable => i_control_box_setup.enable,
-				i_period => period_trigger,
 				i_pulse => pulse_trigger,
 				
 				o_trigger => out_trigger
@@ -230,22 +226,11 @@ begin
 				o_motor_transistors => motor_transistors
 				);
 
-	module_div: div
-		generic map(
-		 size => IntPart + FracPart)
-		port map (
-		res => res,
-		clk => clk,
-		i_enable => enable_div,
-		i_divisor => divisor,
-		i_divident	=> mul_out(31 downto 16),
-		o_valid => valid,
-		o_quotient => quot);
 
 	process(clk)
 		variable uart_sized : boolean := False; 
 	
-		type type_regulator_state is ( regulator_idle,regulator_speed_check,regulator_init,regulator_valid, regulator_processing_output, regulator_initiate_trigger );
+		type type_regulator_state is ( regulator_idle,regulator_speed_check,regulator_init,regulator_valid );
 			
 		constant config_register_h : unsigned(7 downto 0) := "01000100";
 		constant config_register_l : unsigned(7 downto 0) := "01100011";
@@ -335,30 +320,11 @@ begin
 							
 							
 							if modified_temp_reg < modified_reg then
-								mul_a(31 downto 16) <= period_trigger;
-								mul_b(23 downto 8) <= unsigned(modified_temp_reg);
-								
+								pulse_trigger <= unsigned(modified_temp_reg(11 downto 4));
 							else
-								mul_a(31 downto 16) <= period_trigger;
-								mul_b(23 downto 8) <= unsigned(modified_reg);
-								
+								pulse_trigger <= unsigned(modified_reg(11 downto 4));
 							end if;
-							
-							divisor <= (others => '0');
-							divisor(7 downto 0) <= wave_limit(15 downto 8);
-							enable_div <= '1';
-							regulator_state := regulator_processing_output;
-						elsif regulator_state = regulator_processing_output then
-							if enable_div = '1' then
-						
-								 enable_div <= '0';
-							elsif valid = '1' then	 
-								regulator_state := regulator_initiate_trigger;
-							end if;
-								
-						elsif regulator_state = regulator_initiate_trigger then
-							pulse_trigger <= quot;
-							
+					
 							regulator_state := regulator_idle;
 						end if;
 					end if;

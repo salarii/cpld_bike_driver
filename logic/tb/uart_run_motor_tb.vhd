@@ -167,7 +167,7 @@ architecture t_behaviour of uart_run_motor_tb is
 				--res <= '0';	
 				wait for 10 us;				
 				res <= '1';
-        hal_data<= "100";
+        		hal_data<= "100";
 
 				-- run motor
 				-- 0x05  0 1010 0000 0
