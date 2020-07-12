@@ -845,13 +845,13 @@ Text Label 2550 3900 2    50   ~ 0
 hal_B
 Text Label 2550 4000 2    50   ~ 0
 hal_C
-Text Label 2550 4100 2    50   ~ 0
+Text Label 2550 4900 2    50   ~ 0
 adc_clk
-Text Label 2550 4200 2    50   ~ 0
+Text Label 2550 5000 2    50   ~ 0
 adc_dout
-Text Label 2550 4300 2    50   ~ 0
+Text Label 2550 5100 2    50   ~ 0
 adc_din
-Text Label 2550 4400 2    50   ~ 0
+Text Label 2550 5200 2    50   ~ 0
 ~adc_cs
 Wire Wire Line
 	6550 2950 6800 2950
@@ -1941,14 +1941,11 @@ NoConn ~ 6550 6150
 NoConn ~ 6550 6250
 NoConn ~ 6550 6350
 NoConn ~ 6550 6450
-NoConn ~ 2600 6000
 NoConn ~ 2600 5700
 NoConn ~ 2600 5600
 NoConn ~ 2600 5500
 NoConn ~ 2600 5400
 NoConn ~ 2600 5300
-NoConn ~ 2600 5200
-NoConn ~ 2600 4900
 NoConn ~ 2600 4800
 NoConn ~ 2600 4500
 NoConn ~ 2600 3700
@@ -1979,9 +1976,6 @@ Wire Wire Line
 	1250 6950 1250 6600
 Text Label 2450 2600 0    50   ~ 0
 SCK
-NoConn ~ 2600 6100
-NoConn ~ 2600 5900
-NoConn ~ 2600 5800
 $Comp
 L power:GND #PWR0105
 U 1 1 5ECCFC14
@@ -2103,13 +2097,13 @@ Text HLabel 2250 7450 2    50   Input ~ 0
 adc_B
 Text HLabel 2450 4600 0    50   Output ~ 0
 A_p
-Text HLabel 2450 6600 0    50   Output ~ 0
+Text HLabel 2450 4100 0    50   Output ~ 0
 C_p
-Text HLabel 2450 6700 0    50   Output ~ 0
+Text HLabel 2450 4200 0    50   Output ~ 0
 C_n
-Text HLabel 2450 5000 0    50   Output ~ 0
+Text HLabel 2450 4300 0    50   Output ~ 0
 B_p
-Text HLabel 2450 5100 0    50   Output ~ 0
+Text HLabel 2450 4400 0    50   Output ~ 0
 B_n
 Text HLabel 2450 4700 0    50   Output ~ 0
 A_n
@@ -2518,9 +2512,9 @@ Wire Wire Line
 Wire Wire Line
 	3350 1250 3450 1250
 Wire Wire Line
-	2600 6700 2450 6700
+	2600 4200 2450 4200
 Wire Wire Line
-	2600 6600 2450 6600
+	2600 4100 2450 4100
 Wire Wire Line
 	2600 6500 2400 6500
 Wire Wire Line
@@ -2530,21 +2524,21 @@ Wire Wire Line
 Wire Wire Line
 	2600 6200 2400 6200
 Wire Wire Line
-	2600 5100 2450 5100
+	2600 4400 2450 4400
 Wire Wire Line
-	2600 5000 2450 5000
+	2600 4300 2450 4300
 Wire Wire Line
 	2600 4700 2450 4700
 Wire Wire Line
 	2600 4600 2450 4600
 Wire Wire Line
-	2350 4400 2600 4400
+	2350 5200 2600 5200
 Wire Wire Line
-	2350 4300 2600 4300
+	2350 5100 2600 5100
 Wire Wire Line
-	2350 4200 2600 4200
+	2350 5000 2600 5000
 Wire Wire Line
-	2350 4100 2600 4100
+	2350 4900 2600 4900
 Wire Wire Line
 	2600 4000 2350 4000
 Wire Wire Line
@@ -2597,4 +2591,10 @@ $EndComp
 NoConn ~ 6550 4750
 NoConn ~ 6550 4650
 NoConn ~ 6550 4550
+NoConn ~ 2600 6600
+NoConn ~ 2600 6700
+NoConn ~ 2600 5800
+NoConn ~ 2600 5900
+NoConn ~ 2600 6000
+NoConn ~ 2600 6100
 $EndSCHEMATC
