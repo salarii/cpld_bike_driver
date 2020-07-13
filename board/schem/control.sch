@@ -1443,7 +1443,7 @@ Wire Wire Line
 Wire Wire Line
 	2350 1700 2600 1700
 Text Label 6600 6550 0    50   ~ 0
-SO_1
+MO_1
 Text Label 6600 6650 0    50   ~ 0
 SCK_1
 $Comp
@@ -1817,11 +1817,11 @@ $EndComp
 Text Label 10950 1700 0    50   ~ 0
 SCK_1
 Text Label 9100 1500 0    50   ~ 0
-SI_1
+MI_1
 Text Label 9250 1300 0    50   ~ 0
 nCE_1
 Text Label 10450 1900 0    50   ~ 0
-SO_1
+MO_1
 Connection ~ 10850 1700
 Wire Wire Line
 	10850 1700 10950 1700
@@ -2572,7 +2572,7 @@ Wire Wire Line
 Wire Wire Line
 	2350 2000 2600 2000
 Text Label 2400 1700 0    50   ~ 0
-SI_1
+MI_1
 Text Label 2400 1800 0    50   ~ 0
 nCE_1
 Wire Wire Line
