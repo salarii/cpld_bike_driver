@@ -45,6 +45,8 @@ end control_unit;
 
 architecture behaviour of control_unit is
 
+
+
 		component speed_estimator is
 			generic ( 
 					CONSTANT main_clock : integer;

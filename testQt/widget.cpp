@@ -184,7 +184,7 @@ Widget::serialProblem()
     msgBox.exec();
 }
 
-int  shift = 30;
+int  shift = 40;
 
 void
 Widget::displayFlash(FlashData const * _value)
@@ -195,7 +195,7 @@ Widget::displayFlash(FlashData const * _value)
     (((unsigned int)_value->data[1])<<8) +
     (((unsigned int)_value->data[0])<<16);
     QString  valText = QString().number(value, 16);
-    parLabels[idx]->setText( flashParamsMess[idx] + valText);
+    parLabels[0]->setText( valText);//flashParamsMess[idx] + valText);
 }
 
 void
@@ -204,7 +204,7 @@ Widget::requestDataFromFlash()
     unsigned  char index = parameterList->currentIndex();
     index+=shift;
     sendBuff[0] = (unsigned  char)CommandCodes::ReadFlashOpCode;
-    sendBuff[1] = index*3;
+    sendBuff[1] = index;
     emit sendToHardware(sendBuff, 2);
 
 }
@@ -232,13 +232,11 @@ Widget::sendDataToFlash()
     unsigned  char index = parameterList->currentIndex();
     index+=shift;
      sendBuff[0] = (unsigned  char)CommandCodes::WriteFlashOpCode;
-     sendBuff[1] = index*3;
-     sendBuff[2] = val  >> 16;
-     sendBuff[3] = (val  >> 8) & 0xff;
-     sendBuff[4] = val & 0xff;
-    unsigned  char  triada = sendBuff[2];
-    triada = sendBuff[3];
-    triada = sendBuff[4];
+     sendBuff[1] = index;
+     sendBuff[2] = 0x12;//val  >> 16;
+     sendBuff[3] = 0x34;//(val  >> 8) & 0xff;
+     sendBuff[4] = 0x56;//val & 0xff;
+
      emit sendToHardware(sendBuff, 5);
 
 }

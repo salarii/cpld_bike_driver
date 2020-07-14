@@ -15,31 +15,32 @@ architecture t_behaviour of uart_flash_tb is
 		
 		component control_unit is
 			port(
-				clk : in  std_logic;
-				res : in  std_logic;
-				
-				i_impulse : in std_logic;
-				
-				i_flash_spi : in type_to_spi;
-				
-					
-							
-				i_busy_uart : in std_logic;
-				i_from_uart : in std_logic_vector(7 downto 0);
-				i_received_uart : in std_logic;
-				
-				i_adc_spi : in type_to_spi;
-					
-					
-				o_flash_spi : out type_from_spi;
-					
-				o_adc_spi : out type_from_spi;
-				
-				o_to_uart : out std_logic_vector(7 downto 0);
-				o_en_uart : out std_logic;
-				o_wave : out std_logic;
-				o_motor_transistors : out type_motor_transistors;
-				leds : out std_logic_vector(3 downto 0)
+      clk : in  std_logic;
+      res : in  std_logic;
+      
+      
+      i_flash_spi : in type_to_spi;
+      i_hal_data : in std_logic_vector(2 downto 0);
+        
+      i_pedal_imp : in std_logic;		
+      i_brk_1 : in std_logic;
+      i_brk_2 : in std_logic;
+
+      i_busy_uart : in std_logic;
+      i_from_uart : in std_logic_vector(7 downto 0);
+      i_received_uart : in std_logic;
+      
+      i_adc_spi : in type_to_spi;
+        
+        
+      o_flash_spi : out type_from_spi;
+        
+      o_adc_spi : out type_from_spi;
+      
+      o_to_uart : out std_logic_vector(7 downto 0);
+      o_en_uart : out std_logic;
+      o_motor_transistors : out type_motor_transistors;
+      leds : out std_logic_vector(3 downto 0)
 			);
 		end component control_unit;
 	
@@ -81,11 +82,16 @@ architecture t_behaviour of uart_flash_tb is
 
 		signal ready	: std_logic;
 		
+	  signal pedal_imp :  std_logic;		
+    signal brk_1 :  std_logic;
+    signal brk_2 :  std_logic;
 		
 		constant clk_period : time := 100 ns;
 		
 		signal data : std_logic_vector(15 downto 0);
 		signal address : std_logic_vector(6 downto 0);
+		
+		signal hal_data : std_logic_vector(2 downto 0);
 		
 		signal enable : std_logic;		
 		signal busy	: std_logic;
@@ -122,13 +128,17 @@ architecture t_behaviour of uart_flash_tb is
 				i_flash_spi => to_spi,
 				o_flash_spi => from_spi,
 				
+				i_hal_data => hal_data,
+				
+        i_pedal_imp =>pedal_imp,	
+        i_brk_1 =>brk_1,
+        i_brk_2 =>brk_2,
+				
 				i_adc_spi => to_adc_spi,
 				o_adc_spi => from_adc_spi,
 
-				i_impulse => '0',
 
 				leds => leds,
-				o_wave => wave,
 		
 				i_received_uart => received_uart,
 				i_from_uart => from_uart,

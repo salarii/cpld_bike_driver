@@ -1275,7 +1275,7 @@ F 1 "IRF4905" H 4255 1855 50  0000 L CNN
 F 2 "Package_TO_SOT_THT:TO-220-3_Vertical" H 4000 2050 50  0001 C CNN
 F 3 "" H 4000 2050 50  0001 C CNN
 	1    4150 1900
-	1    0    0    -1  
+	1    0    0    1   
 $EndComp
 $Comp
 L fpgaRelatedLib:IRF4905 T6
@@ -1286,7 +1286,7 @@ F 1 "IRF4905" H 9055 1755 50  0000 L CNN
 F 2 "Package_TO_SOT_THT:TO-220-3_Vertical" H 8800 1950 50  0001 C CNN
 F 3 "" H 8800 1950 50  0001 C CNN
 	1    8950 1800
-	1    0    0    -1  
+	1    0    0    1   
 $EndComp
 $Comp
 L fpgaRelatedLib:IRF4905 T4
@@ -1297,10 +1297,8 @@ F 1 "IRF4905" H 4255 5255 50  0000 L CNN
 F 2 "Package_TO_SOT_THT:TO-220-3_Vertical" H 4000 5450 50  0001 C CNN
 F 3 "" H 4000 5450 50  0001 C CNN
 	1    4150 5300
-	1    0    0    -1  
+	1    0    0    1   
 $EndComp
-Connection ~ 4150 2100
-Connection ~ 4150 5500
 Connection ~ 8950 2000
 $Comp
 L fpgaRelatedLib:CDZ44-CDI T1
@@ -1341,4 +1339,6 @@ Wire Wire Line
 	2050 6000 2350 6000
 Wire Wire Line
 	6850 2500 7150 2500
+Connection ~ 4150 2100
+Connection ~ 4150 5500
 $EndSCHEMATC

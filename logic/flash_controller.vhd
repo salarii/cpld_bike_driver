@@ -289,7 +289,7 @@ begin
 									if cnt = 0 then
 										i_data_spi <= i_address;
 										read_flash := read_data;
-										cnt := 2;
+										cnt := 3;
 										
 										
 									else
@@ -302,16 +302,18 @@ begin
 							elsif read_flash = read_data then
 												
 								if received_spi = '1' then
-									io_data(8*(3-cnt)-1 downto 8*(2-cnt))<= o_data_spi;
-									if cnt = 0 then
-										read_flash := read_conclude;
-									else
-										if cnt = 1 then
-											en_spi <= '0';
-										end if;
-									
-										cnt := cnt - 1;
+								if cnt /= 3 then
+									io_data(8*(3-cnt)-1 downto 8*(2-cnt))<= o_data_spi;									
+								end if;
+								if cnt = 0 then
+									read_flash := read_conclude;
+								else
+									if cnt = 1 then
+										en_spi <= '0';
 									end if;
+									
+									cnt := cnt - 1;
+								end if;
 
 								end if;
 								
