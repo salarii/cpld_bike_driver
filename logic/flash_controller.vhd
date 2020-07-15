@@ -90,21 +90,33 @@ process(clk)
 		constant read_command : unsigned(7 downto 0) := x"03";
 		constant write_command : unsigned(7 downto 0) := x"02";
 		constant sector_erase_command : unsigned(7 downto 0) := x"20";
+		constant status_command : unsigned(7 downto 0) := x"05";
+		
 				
 		variable  separate : integer range 30 downto 0 := 0;
 		
-		type type_flash_operation is (no_flash_operation, flash_write, flash_read, flash_erase);
+		type type_flash_operation is (no_flash_operation, flash_write, flash_read, flash_erase, status_read);
 		type type_write_flash is (write_idle , write_enable, write_code, write_address, write_data, write_conclude);
 		type type_read_flash is (read_idle , read_code, read_address, read_data, read_conclude);		
 		type type_erase_flash is (erase_idle , erase_enable, erase_code, erase_address, erase_conclude);		
-		
+		type type_read_status is (status_idle , status_code, status_word, status_conclude);		
 				
+		type type_write_control is (wr_control_idle , wr_control_erase, wr_control_status_erase,wr_control_write, wr_control_status_write);		
+		type type_read_erase_control is (rd_er_idle , rd_er_done);		
+						
+				
+		variable read_status : type_read_status := status_idle;
+	
 		variable flash_operation : type_flash_operation := no_flash_operation;
 		variable write_flash : type_write_flash := write_idle;
 		variable read_flash : type_read_flash := read_idle;
 		variable erase_flash : type_erase_flash := erase_idle;
+		variable write_control : type_write_control := wr_control_idle;
+		variable read_erase_control : type_read_erase_control := rd_er_idle;
 		
 		variable cnt : integer  range 3 downto 0 := 0;
+		
+		variable busy_bit : std_logic;
 begin
 		
 
@@ -117,6 +129,11 @@ begin
 				flash_operation := no_flash_operation;
 		 		write_flash := write_idle;
 				read_flash := read_idle;
+				read_status := status_idle;
+				write_control := wr_control_idle;
+				read_erase_control := rd_er_idle;
+		
+		
 				io_data <= (others => 'Z');
 				en_spi <= '0';
 		else		
@@ -140,8 +157,32 @@ begin
 							if  i_transaction = Read then
 								flash_operation := flash_read;
 							elsif i_transaction = Write then
+							
 								io_data <= (others => 'Z');
-								flash_operation := flash_write;
+								
+								wr_control_idle , wr_control_erase, wr_control_status_erase,wr_control_write, wr_control_status_write
+								
+								if write_control = wr_control_idle then
+									flash_operation := flash_erase;
+									write_control := wr_control_erase;
+								elsif write_control = wr_control_erase then
+									flash_operation := status_read;
+								elsif write_control = wr_control_status_erase then
+									if ibusy_bit = '1' then
+										flash_operation := status_read;
+									else
+										flash_operation := flash_write;
+										write_control := wr_control_write;
+									end if;
+								elsif write_control = wr_control_write then
+									write_control := wr_control_status_write;
+								elsif write_control = wr_control_status_write then
+									if ibusy_bit = '0' then
+										flash_operation := flash_write;
+									end if;
+								end if;
+								
+							
 							elsif i_transaction = Erase then
 								io_data <= (others => 'Z');
 								flash_operation := flash_erase;								
@@ -199,9 +240,44 @@ begin
 									erase_flash := erase_idle;
 									
 									i_data_spi <= (others => '0');
-									busy_internal <= '0';
+
 								end if;
 							end if;
+						elsif flash_operation =  status_read then						
+
+						
+							if  read_status = status_idle then
+								if busy_spi = '0' then
+									
+									en_spi <= '1';
+									
+								elsif busy_spi = '1' then
+									read_status := status_code;
+								end if;	
+							elsif read_status = status_code then
+								
+								i_data_spi <= std_logic_vector(status_command);
+						
+								if busy_spi = '0' then
+									
+									en_spi <= '0';
+									read_flash := status_word;
+								end if;
+							elsif read_status = status_word then
+										
+								if received_spi = '1' then
+									
+									busy_bit<= o_data_spi(0);
+									read_status := read_conclude;
+									
+								end if;
+								
+							elsif read_status = read_conclude then
+								flash_operation := no_flash_operation;
+								read_status := status_idle;
+								
+							end if;
+						
 						
 						elsif flash_operation =  flash_write then
 							if  write_flash = write_idle then
@@ -262,8 +338,6 @@ begin
 								if busy_spi = '0' then
 									flash_operation := no_flash_operation;
 									write_flash := write_idle;
-	
-									busy_internal <= '0';
 								end if;
 							end if;
 						
@@ -280,18 +354,17 @@ begin
 							elsif read_flash = read_code then
 								
 								i_data_spi <= std_logic_vector(read_command);
-								cnt := 2;
+								cnt := 3;
 								
 								read_flash := read_address;
 								
 							elsif read_flash = read_address then
 								if busy_spi = '0' then
 									if cnt = 0 then
-										i_data_spi <= i_address;
 										read_flash := read_data;
-										cnt := 3;
-										
-										
+										cnt := 2;
+									elsif cnt = 1 then	
+										i_data_spi <= i_address;
 									else
 										cnt := cnt - 1;
 										i_data_spi <= x"00";
@@ -302,18 +375,18 @@ begin
 							elsif read_flash = read_data then
 												
 								if received_spi = '1' then
-								if cnt /= 3 then
+
 									io_data(8*(3-cnt)-1 downto 8*(2-cnt))<= o_data_spi;									
-								end if;
-								if cnt = 0 then
-									read_flash := read_conclude;
-								else
-									if cnt = 1 then
-										en_spi <= '0';
+
+									if cnt = 0 then
+										read_flash := read_conclude;
+									else
+										if cnt = 1 then
+											en_spi <= '0';
+										end if;
+										
+										cnt := cnt - 1;
 									end if;
-									
-									cnt := cnt - 1;
-								end if;
 
 								end if;
 								
@@ -321,7 +394,6 @@ begin
 								flash_operation := no_flash_operation;
 								read_flash := read_idle;
 								
-								busy_internal <= '0';
 								received_internal <= '1';
 							end if;
 						end if;						
