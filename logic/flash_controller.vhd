@@ -160,15 +160,13 @@ begin
 							
 								io_data <= (others => 'Z');
 								
-								wr_control_idle , wr_control_erase, wr_control_status_erase,wr_control_write, wr_control_status_write
-								
 								if write_control = wr_control_idle then
 									flash_operation := flash_erase;
 									write_control := wr_control_erase;
 								elsif write_control = wr_control_erase then
 									flash_operation := status_read;
 								elsif write_control = wr_control_status_erase then
-									if ibusy_bit = '1' then
+									if busy_bit = '1' then
 										flash_operation := status_read;
 									else
 										flash_operation := flash_write;
@@ -177,7 +175,7 @@ begin
 								elsif write_control = wr_control_write then
 									write_control := wr_control_status_write;
 								elsif write_control = wr_control_status_write then
-									if ibusy_bit = '0' then
+									if busy_bit = '0' then
 										flash_operation := flash_write;
 									end if;
 								end if;
@@ -261,18 +259,18 @@ begin
 								if busy_spi = '0' then
 									
 									en_spi <= '0';
-									read_flash := status_word;
+									read_status := status_word;
 								end if;
 							elsif read_status = status_word then
 										
 								if received_spi = '1' then
 									
-									busy_bit<= o_data_spi(0);
-									read_status := read_conclude;
+									busy_bit := o_data_spi(0);
+									read_status := status_conclude;
 									
 								end if;
 								
-							elsif read_status = read_conclude then
+							elsif read_status = status_conclude then
 								flash_operation := no_flash_operation;
 								read_status := status_idle;
 								

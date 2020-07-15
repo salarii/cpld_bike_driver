@@ -147,7 +147,7 @@ architecture behaviour of control_unit is
 		signal enable_uart  : std_logic;
 
 		signal data_flash : std_logic_vector(23 downto 0);
-		signal address_flash : std_logic_vector(7 downto 0);
+		signal page_address_flash : std_logic_vector(7 downto 0);
 		signal busy_flash : std_logic;
 		signal en_flash : std_logic;
 		signal received_flash : std_logic;	
@@ -177,6 +177,7 @@ architecture behaviour of control_unit is
 		signal manu_speed : unsigned(7 downto 0);
 		signal host_enable : std_logic := '0';
 				
+		signal settings_control_box : type_settings_control_box;
 begin	
 	
 	module_control_box: control_box
@@ -236,7 +237,7 @@ begin
 					clk => clk,
 					 
 					io_data => data_flash,
-					i_address => address_flash,
+					i_address => page_address_flash,
 					i_transaction => transaction_flash,
 					i_enable => en_flash,
 					i_spi => i_flash_spi,
@@ -278,7 +279,7 @@ begin
 		
 		type type_init_trigger_phase is ( unit_step_freq_h,unit_step_freq_l, unit_step_pulse_h,unit_step_pulse_l);
 		
-		type type_flash_write_state is ( get_flash_write_addr, get_flash_write_byte2, get_flash_write_byte1, get_flash_write_byte0, execute_flash_write );
+		type type_flash_write_state is ( get_setting_write_id,get_flash_write_byte2, get_flash_write_byte1, get_flash_write_byte0, execute_flash_write );
 		type type_flash_read_state is ( get_flash_read_addr, execute_flash_read,progress_flash_read, read_flash_done, send_flash_data );
 		type type_flash_erase_state is ( get_flash_erase_addr, get_flash_erase_byte2, get_flash_erase_byte1, get_flash_erase_byte0, execute_flash_erase );
 		type type_run_motor_state is ( run_motor_get_speed, run_motor_get_pulse_width, run_motor_max_temp,run_motor_hal,run_motor_manual,execute_run_motor );
@@ -326,6 +327,9 @@ begin
 		variable prev_hal : std_logic_vector(2 downto 0):= (others=> '0');
 		variable hal_imp_cnt : unsigned(23 downto 0):= (others=> '0');
 		
+		variable setting_val : unsigned(23 downto 0);
+		variable setting_id : unsigned(7 downto 0);
+		variable update_setting_flag : std_logic;	
 	begin
 
 		if rising_edge(clk)  then
@@ -349,6 +353,23 @@ begin
 				control_box_setup.hal <= '1';
 				req_temperature <= x"40";
 			else
+			
+			if  update_setting_flag = '1'  then
+				case setting_id is
+					when x"00" =>  settings_control_box.settings_pid.Kp <= signed(setting_val(15 downto 0));
+					when x"01" =>  settings_control_box.settings_pid.Ki <= signed(setting_val(15 downto 0));
+					when x"02" =>  settings_control_box.settings_pid.Kd <= signed(setting_val(15 downto 0));
+					when x"03" =>  settings_control_box.settings_pd.Kp <= signed(setting_val(15 downto 0));
+					when x"04" =>  settings_control_box.settings_pid.Kd <= signed(setting_val(15 downto 0)); 
+					when x"05" =>  settings_control_box.max_speed <= unsigned(setting_val(15 downto 0));
+					when x"06" =>  settings_control_box.max_temperature <= unsigned(setting_val(15 downto 0));
+					when x"07" =>  settings_control_box.offset_speed <= unsigned(setting_val(15 downto 0));
+					when x"08" =>  settings_control_box.offset_term <= unsigned(setting_val(15 downto 0));
+					when others => update_setting_flag :=  '0';
+				end case;
+				update_setting_flag := '0'; 
+			end if;
+			
 				if prev_hal /= i_hal_data then
 					hal_imp_cnt := hal_imp_cnt + 1;
 					prev_hal := i_hal_data;
@@ -381,6 +402,9 @@ begin
 					if flash_write_state = execute_flash_write then
 						en_flash <= '1';
 						transaction_flash <= Write;
+						
+						setting_val := unsigned(data_flash);
+						update_setting_flag :=  '1';
 						if busy_flash = '1' then
 							en_flash <= '0';
 							user_command := no_command;
@@ -452,7 +476,7 @@ begin
 						elsif i_from_uart = std_logic_vector(flash_write_command) then
 								put_bus_high_flash <= '1';
 								user_command := flash_write; 
-								flash_write_state := get_flash_write_addr;
+								flash_write_state := get_setting_write_id;
 						elsif i_from_uart = std_logic_vector(flash_read_command) then
 								put_bus_high_flash <= '0';
 								user_command := flash_read;
@@ -512,8 +536,8 @@ begin
 							end if;								
 						elsif user_command = flash_erase then
 							
-							if flash_erase_state = get_flash_erase_addr then
-								address_flash <= i_from_uart;									
+							if flash_erase_state = get_flash_erase_addr then								
+								page_address_flash <= std_logic_vector(shift_left(unsigned(i_from_uart), 4));
 								flash_erase_state := get_flash_erase_byte2;
 							elsif flash_erase_state = get_flash_erase_byte2 then
 								data_flash(23 downto 16) <= i_from_uart;
@@ -527,8 +551,9 @@ begin
 							end if;		
 						elsif user_command = flash_write then
 							
-							if flash_write_state = get_flash_write_addr then
-								address_flash <= i_from_uart;									
+							if flash_write_state = get_setting_write_id then
+								page_address_flash <= std_logic_vector(shift_left(unsigned(i_from_uart), 4));
+								setting_id := unsigned(i_from_uart);
 								flash_write_state := get_flash_write_byte2;
 							elsif flash_write_state = get_flash_write_byte2 then
 								data_flash(23 downto 16) <= i_from_uart;
@@ -544,7 +569,8 @@ begin
 						elsif user_command = flash_read then
 							if flash_read_state = get_flash_read_addr then
 								
-								address_flash <= i_from_uart;
+								page_address_flash <= std_logic_vector(shift_left(unsigned(i_from_uart), 4));
+								
 								flash_read_state := execute_flash_read;
 							end if;
 						end if;
@@ -565,7 +591,7 @@ begin
 							case val_cnt is
 								  when 0 =>   o_to_uart <= x"05"; -- size
 								  when 1 =>   o_to_uart <= std_logic_vector(flash_data_code);
-								  when 2 =>   o_to_uart <= std_logic_vector(address_flash);
+								  when 2 =>   o_to_uart <= std_logic_vector(page_address_flash);
 								  when 3 =>   o_to_uart <= std_logic_vector(data_flash(23 downto 16));
 								  when 4 =>   o_to_uart <= std_logic_vector(data_flash(15 downto 8));
 								  when 5 =>   o_to_uart <= std_logic_vector(data_flash(7 downto 0));
