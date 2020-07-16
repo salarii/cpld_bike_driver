@@ -49,10 +49,12 @@ public:
 
 signals:
     void sendToHardware(unsigned char * _data, unsigned  _size);
-
-
+    void reqVerifyFlash(int _idx);
+    void reqFlashLoad(int _idx);
 public slots:
-    void sendDataToFlash();
+	void initFlashLoad();
+	void verifyFlash(int _idx);
+	void sendDataToFlash();
     void requestDataFromFlash();
     void displayFlash(FlashData const * _value);
     void serviceMeasurement(Measurement const * _value);
@@ -100,5 +102,6 @@ private:
     SettingViewType settingView;
     std::vector<unsigned int> loadedSpeedReg;
     std::vector<unsigned int> loadedTemperatureReg;
+    unsigned int fixedVal;
 };
 #endif // WIDGET_H

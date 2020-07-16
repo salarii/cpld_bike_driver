@@ -22,6 +22,10 @@ QString const labelText = "Current Voltage: ";
 Widget::Widget(QWidget *parent)
     : QWidget(parent),motorRun(false)
 {
+	loadedSpeedReg.resize(SettingsPageCnt);
+	loadedTemperatureReg.resize(SettingsPageCnt);
+	
+	
     rotation_cnt =0;
     sendBuff = new unsigned char(10);
 
@@ -82,8 +86,10 @@ Widget::Widget(QWidget *parent)
     QPushButton * saveFlash= new QPushButton("save to flash");
 
     QObject::connect(saveFlash, &QPushButton::clicked,
+                     this, &Widget::initFlashLoad);
+    
+    QObject::connect(this, &Widget::reqFlashLoad,
                      this, &Widget::sendDataToFlash);
-
    /* QPushButton * loadFlash= new QPushButton("load from flash");
     QObject::connect(loadFlash, &QPushButton::clicked,
                      this, &Widget::requestDataFromFlash);
@@ -173,6 +179,10 @@ Widget::Widget(QWidget *parent)
 
     QObject::connect(adcChannelList,QOverload<int>::of(&QComboBox::activated),
                      this,&Widget::setMeasurementChannel);
+
+    QObject::connect(this,&Widget::reqVerifyFlash,
+                     this,&Widget::verifyFlash);    
+    
 }
 
 void
@@ -220,7 +230,28 @@ Widget::serialProblem()
 void
 Widget::displayFlash(FlashData const * _value)
 {
-
+	_value.idx
+	
+	if  (settingView ==)
+	{
+		
+	}
+	else if ( settingView ==  )
+	{
+		
+		
+	}
+	
+	for( auto const& [key, val] : symbolTable )
+	{
+	    std::cout << key         // string (key)
+	              << ':'  
+	              << val        // string's value
+	              << std::endl ;
+	}
+	
+	loadedSpeedReg[]
+	loadedTemperatureReg.
      unsigned int value = (unsigned int)_value->data[2] +
     (((unsigned int)_value->data[1])<<8) +
     (((unsigned int)_value->data[0])<<16);
@@ -294,7 +325,7 @@ Widget::sendDataToFlash(int _idx)
     float val = value.toFloat(&bStatus);
     if ( bStatus == true )
     {
-        auto fixedVal = floatToFixed(val);
+        fixedVal = floatToFixed(val);
 
         sendBuff[0] = (unsigned  char)CommandCodes::WriteFlashOpCode;
         sendBuff[1] = parameterIdx;
@@ -302,13 +333,9 @@ Widget::sendDataToFlash(int _idx)
         sendBuff[4] = fixedVal & 0xff;
 
         emit sendToHardware(sendBuff, 4);
+        emit reqVerifyFlash(idx);
     }
 
-        while(1)
-        {
-            QThread::msleep(100);
-        }
-        // check  new  value  equal  previous
 }
 
 void
@@ -345,6 +372,41 @@ Widget::motorSliderChanged()
 
             emit sendToHardware(sendBuff, 6);
         }
+}
+
+void 
+Widget::initFlashLoad()
+{
+	emit reqFlashLoad(0);
+}
+
+void 
+Widget::verifyFlash(int _idx)
+{
+	
+    SettingViewType settingView;
+    
+    unsigned int  val = 0;
+    
+    if (settingView == SettingViewType::speedRegulator)
+    {
+    	val = loadedSpeedReg[_idx];
+    }
+    else if  (settingView == SettingViewType::termalRegulator)
+    {
+    	val = loadedTemperatureReg[_idx];
+    }
+    
+    if (fixedVal == val)
+    {
+    	emit reqFlashLoad(_idx + 1);
+        		
+    }
+    else
+    {
+    	QThread::msleep(100);
+    	emit reqVerifyFlash(idx);
+    }
 }
 
 void

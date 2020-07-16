@@ -88,11 +88,10 @@ void Communication::run()
             else if(readbuffer[0] == (unsigned char)DataCodes::flash )
             {
                 flashData.data.clear();
-                flashData.address = readbuffer[1];
+                flashData.idx = readbuffer[1];
 
                 flashData.data.push_back(readbuffer[2]);
                 flashData.data.push_back(readbuffer[3]);
-                flashData.data.push_back(readbuffer[4]);
 
                 emit  passFlashData(&flashData);
             }
