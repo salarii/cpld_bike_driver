@@ -3,6 +3,8 @@
 #include "widget.h"
 #include "communication.h"
 #include "data_types.h"
+#include <QDoubleValidator>
+#include <QThread>
 
 unsigned int const MainClockFreq = 1000000;
 
@@ -11,10 +13,8 @@ using namespace QtCharts;
 
 
 const QStringList flashParamsMess ={
-    "Plynomial parameter 0: ",
-    "Plynomial parameter 1: ",
-    "Plynomial parameter 2: ",
-    "Plynomial parameter 3: "
+    "Speed regulator: ",
+    "Termal regulator: "
 };
 
 QString const labelText = "Current Voltage: ";
@@ -62,7 +62,7 @@ Widget::Widget(QWidget *parent)
     celsius->setValue(40);
     auto unit = new QLabel(" °C ");
 
-;
+
     interfaceLayout->addWidget(title);
     interfaceLayout->addWidget(celsius);
     interfaceLayout->addWidget(unit);
@@ -73,35 +73,39 @@ Widget::Widget(QWidget *parent)
     QVBoxLayout *flashLayout = new QVBoxLayout;
     flashWidget->setLayout(flashLayout);
     auto titleFlash = new QLabel("Manage flash: ");
-    flashLayout->addWidget(titleFlash);
 
-    valInput = new QLineEdit();
-    valInput->setInputMask("HHHHHH;");
+
 
     parameterList = new QComboBox();
-    QStringList params = { "poly_par 0", "poly_par 1", "poly_par 2" , "poly_par 3"};
+    QStringList params = { "speed regulator", "temperature regulator"};
     parameterList->addItems(params);
     QPushButton * saveFlash= new QPushButton("save to flash");
 
     QObject::connect(saveFlash, &QPushButton::clicked,
                      this, &Widget::sendDataToFlash);
 
-    parLabels[0] = new QLabel(flashParamsMess[0]);
-    parLabels[1] = new QLabel(flashParamsMess[1]);
-    parLabels[2] = new QLabel(flashParamsMess[2]);
-    parLabels[3] = new QLabel(flashParamsMess[3]);
-    QPushButton * loadFlash= new QPushButton("load from flash");
+   /* QPushButton * loadFlash= new QPushButton("load from flash");
     QObject::connect(loadFlash, &QPushButton::clicked,
                      this, &Widget::requestDataFromFlash);
-
+*/
+    flashLayout->addWidget(titleFlash);
     flashLayout->addWidget(parameterList);
-    flashLayout->addWidget(valInput);
+
+
+    for (int i = 0 ;i < SettingsPageCnt ; i++)
+    {
+        QHBoxLayout *rowLayout = new QHBoxLayout;
+        flashLayout->addLayout(rowLayout);
+
+        parLabels[i] = new QLabel("");
+        rowLayout->addWidget(parLabels[i]);
+        parLineEdit[i] = new QLineEdit;
+        parLineEdit[i]->setValidator(new QDoubleValidator);
+        rowLayout->addWidget(parLineEdit[i]);
+    }
     flashLayout->addWidget(saveFlash);
-    flashLayout->addWidget(parLabels[0]);
-    flashLayout->addWidget(parLabels[1]);
-    flashLayout->addWidget(parLabels[2]);
-    flashLayout->addWidget(parLabels[3]);
-    flashLayout->addWidget(loadFlash);
+    switchSettingsView(SettingViewType::speedRegulator);
+
 
     QWidget * blcdWidget = new QWidget;
     QVBoxLayout *blcdLayout = new QVBoxLayout;
@@ -172,6 +176,34 @@ Widget::Widget(QWidget *parent)
 }
 
 void
+Widget::switchSettingsView(SettingViewType _settingView)
+{
+    if ( _settingView != settingView )
+    {
+        settingView = _settingView;
+        if (_settingView == SettingViewType::speedRegulator)
+        {
+            parLabels[0]->setText("Kp");
+            parLabels[1]->setText("Ki");
+            parLabels[2]->setText("Kd");
+            parLabels[3]->setText("Reg offset");
+            parLabels[4]->setText("Maximum speed \nkm/h(0.36 m radius)");
+
+
+        }
+        else if ( _settingView == SettingViewType::termalRegulator )
+        {
+            parLabels[0]->setText("Kp");
+            parLabels[1]->setText("Kd");
+            parLabels[2]->setText("Reg offset");
+            parLabels[3]->setText("Maximum temperature (celsius)");
+            parLabels[4]->setText("");
+        }
+    }
+
+}
+
+void
 Widget::serialProblem()
 {
     QMessageBox msgBox;
@@ -184,13 +216,11 @@ Widget::serialProblem()
     msgBox.exec();
 }
 
-int  shift = 40;
 
 void
 Widget::displayFlash(FlashData const * _value)
 {
-     auto idx = _value->address /3;
-    idx-=shift;
+
      unsigned int value = (unsigned int)_value->data[2] +
     (((unsigned int)_value->data[1])<<8) +
     (((unsigned int)_value->data[0])<<16);
@@ -202,7 +232,7 @@ void
 Widget::requestDataFromFlash()
 {
     unsigned  char index = parameterList->currentIndex();
-    index+=shift;
+
     sendBuff[0] = (unsigned  char)CommandCodes::ReadFlashOpCode;
     sendBuff[1] = index;
     emit sendToHardware(sendBuff, 2);
@@ -220,25 +250,65 @@ Widget::setMeasurementChannel(int _index)
 
 }
 
+#define FIXED_POINT_FRACTIONAL_BITS 8
+
+unsigned  short floatToFixed(float input)
+{
+    return (unsigned  short)(round(input * (1 << FIXED_POINT_FRACTIONAL_BITS)));
+}
+
+float fixedToFloat(unsigned  short input)
+{
+    return ((float)input / (float)(1 << FIXED_POINT_FRACTIONAL_BITS));
+}
+
 
 void
-Widget::sendDataToFlash()
+Widget::sendDataToFlash(int _idx)
 {
-    QString valueText = valInput->text();
-
     bool bStatus = false;
-    unsigned int val = valueText.toUInt(&bStatus,16);
+   //
+    int parameterCnt =0;
+    unsigned char parameterIdx =0;
+    if (settingView == SettingViewType::speedRegulator)
+    {
+        if (idx >= 5)
+        {
+            return;
+        }
+        parameterIdx = (unsigned char)rowToSpeedSettingCode.find(_idx)->second;
+        parameterCnt = 5;
 
-    unsigned  char index = parameterList->currentIndex();
-    index+=shift;
-     sendBuff[0] = (unsigned  char)CommandCodes::WriteFlashOpCode;
-     sendBuff[1] = index;
-     sendBuff[2] = 0x12;//val  >> 16;
-     sendBuff[3] = 0x34;//(val  >> 8) & 0xff;
-     sendBuff[4] = 0x56;//val & 0xff;
+    }
+    else if  (settingView == SettingViewType::termalRegulator)
+    {
+        if (idx >= 4)
+        {
+            return;
+        }
+        parameterCnt = 4;
+        parameterIdx = (unsigned char)rowToTemperatureSettingCode.find(_idx)->second;
+    }
 
-     emit sendToHardware(sendBuff, 5);
+    QString value = parLineEdit[_idx]->text();
+    float val = value.toFloat(&bStatus);
+    if ( bStatus == true )
+    {
+        auto fixedVal = floatToFixed(val);
 
+        sendBuff[0] = (unsigned  char)CommandCodes::WriteFlashOpCode;
+        sendBuff[1] = parameterIdx;
+        sendBuff[3] = (fixedVal  >> 8) & 0xff;
+        sendBuff[4] = fixedVal & 0xff;
+
+        emit sendToHardware(sendBuff, 4);
+    }
+
+        while(1)
+        {
+            QThread::msleep(100);
+        }
+        // check  new  value  equal  previous
 }
 
 void
