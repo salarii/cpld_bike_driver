@@ -271,7 +271,7 @@ begin
 	process(clk)
 		variable uart_sized : boolean := False; 
 	
-		type state_type is (Setup, Index_Read,Standby, Cycle, Empty);
+		type state_type is (state_read_settings, state_operate);
 		
 		type type_i2c_operations is ( i2c_index, i2c_data_H, i2c_data_L );
 		
@@ -301,11 +301,11 @@ begin
 		constant short_break : integer := 50;
 		variable cnt : integer := 0;			
 		variable val_cnt : integer  range 15 downto 0 := 0;
-		variable state : state_type := Setup;
+		variable state : state_type := state_read_settings;
 		variable enable_pc_write : std_logic;
 		
 		variable flash_erase_state : type_flash_erase_state;
-		variable flash_read_state : type_flash_read_state;
+		variable flash_read_state : type_flash_read_state := execute_flash_read;
 		variable flash_write_state : type_flash_write_state; 
 		variable tmp_sol : type_user_commands := no_command;
 		variable user_command : type_user_commands := tmp_sol;--disable_comm;
@@ -328,13 +328,14 @@ begin
 		variable hal_imp_cnt : unsigned(23 downto 0):= (others=> '0');
 		
 		variable setting_val : unsigned(23 downto 0);
-		variable setting_id : unsigned(7 downto 0);
+		variable setting_id : unsigned(7 downto 0) := x"00";
 		variable update_setting_flag : std_logic;	
 	begin
 
 		if rising_edge(clk)  then
 			if res = '0' then
-				state := Setup;
+				state := state_read_settings;
+				setting_id:= x"00";
 				cnt :=0;
 				val_cnt := 0;
 				enable_pc_write := '0';
@@ -352,328 +353,372 @@ begin
 				hal_imp_cnt := (others=>'0');
 				control_box_setup.hal <= '1';
 				req_temperature <= x"40";
+				flash_read_state := execute_flash_read; 
 			else
-			
-			if  update_setting_flag = '1'  then
-				case setting_id is
-					when x"00" =>  settings_control_box.settings_pid.Kp <= signed(setting_val(15 downto 0));
-					when x"01" =>  settings_control_box.settings_pid.Ki <= signed(setting_val(15 downto 0));
-					when x"02" =>  settings_control_box.settings_pid.Kd <= signed(setting_val(15 downto 0));
-					when x"03" =>  settings_control_box.settings_pd.Kp <= signed(setting_val(15 downto 0));
-					when x"04" =>  settings_control_box.settings_pid.Kd <= signed(setting_val(15 downto 0)); 
-					when x"05" =>  settings_control_box.max_speed <= unsigned(setting_val(15 downto 0));
-					when x"06" =>  settings_control_box.max_temperature <= unsigned(setting_val(15 downto 0));
-					when x"07" =>  settings_control_box.offset_speed <= unsigned(setting_val(15 downto 0));
-					when x"08" =>  settings_control_box.offset_term <= unsigned(setting_val(15 downto 0));
-					when others => update_setting_flag :=  '0';
-				end case;
-				update_setting_flag := '0'; 
-			end if;
-			
-				if prev_hal /= i_hal_data then
-					hal_imp_cnt := hal_imp_cnt + 1;
-					prev_hal := i_hal_data;
-					speed_impulse_sig <= '1';
-				else
-					speed_impulse_sig <= '0';
-				end if;
-			
-				if glob_small_clk_counter = glob_clk_denom  then
-					glob_small_clk_counter := 0;
-					glob_clk_counter := glob_clk_counter + 1; 
-				else  
-					glob_small_clk_counter := glob_small_clk_counter + 1; 				
-				end if;
-
-					
-				if glob_clk_counter - last_motor_action > send_motor_data_wait then
-					
-					uart_dev_status.motor := True;
-					last_motor_action := glob_clk_counter;
-				elsif glob_clk_counter - last_adc_data_send > send_adc_data_wait then
-					uart_dev_status.adc_data := True;
-					last_adc_data_send := glob_clk_counter;
-				end if;
-							
 				
-				
-				if user_command = flash_write then
+				if  update_setting_flag = '1'  then
+					if setting_val(15 downto 0) /= x"ff" then
 					
-					if flash_write_state = execute_flash_write then
-						en_flash <= '1';
-						transaction_flash <= Write;
-						
-						setting_val := unsigned(data_flash);
-						update_setting_flag :=  '1';
-						if busy_flash = '1' then
-							en_flash <= '0';
-							user_command := no_command;
-							 
-							
-						end if;
+						case setting_id is
+							when x"00" =>  settings_control_box.settings_pid.Kp <= signed(setting_val(15 downto 0));
+							when x"01" =>  settings_control_box.settings_pid.Ki <= signed(setting_val(15 downto 0));
+							when x"02" =>  settings_control_box.settings_pid.Kd <= signed(setting_val(15 downto 0));
+							when x"03" =>  settings_control_box.settings_pd.Kp <= signed(setting_val(15 downto 0));
+							when x"04" =>  settings_control_box.settings_pid.Kd <= signed(setting_val(15 downto 0)); 
+							when x"05" =>  settings_control_box.max_speed <= unsigned(setting_val(15 downto 0));
+							when x"06" =>  settings_control_box.max_temperature <= unsigned(setting_val(15 downto 0));
+							when x"07" =>  settings_control_box.offset_speed <= unsigned(setting_val(15 downto 0));
+							when x"08" =>  settings_control_box.offset_term <= unsigned(setting_val(15 downto 0));
+							when others => update_setting_flag :=  '0';
+						end case;
 					end if;
-				elsif user_command = flash_erase then	
-					if flash_erase_state = execute_flash_erase  then
-						if busy_flash = '0' then
-							en_flash <= '1';
-							transaction_flash <= Erase;
-							
-						elsif busy_flash = '1' then
-						
-							en_flash <= '0';
-							user_command := no_command;
+					update_setting_flag := '0'; 
+				end if;
+				
+				 
+				if state = state_read_settings then
+				
 					
-						end if;		
-					end if;	
-				elsif user_command = flash_read then								
-
 					if flash_read_state = execute_flash_read  then
 						if busy_flash = '0' then
 							en_flash <= '1';
 							transaction_flash <= Read;
 							data_flash <= (others => 'Z');
-							
+							page_address_flash <= std_logic_vector(shift_left(unsigned(setting_id), 4));
 						elsif busy_flash = '1' then
-						
-							en_flash <= '0';
-							flash_read_state := progress_flash_read;
-					
-						end if;		
-					elsif flash_read_state = progress_flash_read then
-						if received_flash = '1' then
-						
-							flash_read_state := send_flash_data;
-							val_cnt := 0;
 							
-						end if;
-					elsif flash_read_state = send_flash_data then
-					
-							uart_dev_status.flash := True;
-										
-					end if;
-					
-				elsif user_command = run_motor then	
-					if run_motor_state = execute_run_motor then
-						last_motor_action := glob_clk_counter;
+								en_flash <= '0';
+								flash_read_state := progress_flash_read;
 						
-						host_enable <= '1';
-						control_box_setup.temperature <= '1';
-						
-						user_command := no_command; 
-					end if;
-					
-				end if;
-	
-
-	
-				if 	i_received_uart = '1' and user_command /= disable_comm then
-					
-					if user_command = no_command then 
-							
-						if i_from_uart = std_logic_vector(measure_command) then
-								
-								user_command := adc_channel_change;
-						elsif i_from_uart = std_logic_vector(flash_write_command) then
-								put_bus_high_flash <= '1';
-								user_command := flash_write; 
-								flash_write_state := get_setting_write_id;
-						elsif i_from_uart = std_logic_vector(flash_read_command) then
-								put_bus_high_flash <= '0';
-								user_command := flash_read;
-								flash_read_state := get_flash_read_addr;
-						
-						elsif i_from_uart = std_logic_vector(run_motor_command) then
-								user_command := run_motor;
-								
-								run_motor_state := run_motor_get_speed;
-						elsif i_from_uart = std_logic_vector(flash_erase_command) then
-								put_bus_high_flash <= '1';
-								user_command := flash_erase;
-								flash_erase_state := get_flash_erase_addr;
-						
-						elsif i_from_uart = std_logic_vector(stop_command)  then 
-							
-							host_enable <= '0';
-							last_motor_action := glob_clk_counter;
-						end if;
-					else	
-							
-
-						if user_command = adc_channel_change then
-					
-							adc_channel <= unsigned(i_from_uart(2 downto 0));
-							user_command := no_command;
-						elsif user_command = run_motor then
-						
-							
-							if run_motor_state = run_motor_get_speed then
-   								control_box_setup.req_speed_motor <= unsigned(i_from_uart);
-								manu_speed <= unsigned(i_from_uart);
-								run_motor_state := run_motor_get_pulse_width;	
-							elsif run_motor_state = run_motor_get_pulse_width then
-
-
-								control_box_setup.pulse_trigger(7 downto 0) <= unsigned(i_from_uart);
-								run_motor_state := run_motor_max_temp;
-							elsif run_motor_state = run_motor_max_temp then
-								req_temperature <= unsigned(i_from_uart);
-								run_motor_state := run_motor_hal;
-							elsif run_motor_state = run_motor_hal then
-								if i_from_uart = x"00" then
-									control_box_setup.hal <= '0';
-								else
-									control_box_setup.hal <= '1';
-								end if;
-								run_motor_state := run_motor_manual;
-							elsif run_motor_state = run_motor_manual then
-								if i_from_uart = x"00" then
-									control_box_setup.manual <= '0';
-								else
-									control_box_setup.manual <= '1';
-								end if;
-								
-								run_motor_state := execute_run_motor;	
-							end if;								
-						elsif user_command = flash_erase then
-							
-							if flash_erase_state = get_flash_erase_addr then								
-								page_address_flash <= std_logic_vector(shift_left(unsigned(i_from_uart), 4));
-								flash_erase_state := get_flash_erase_byte2;
-							elsif flash_erase_state = get_flash_erase_byte2 then
-								data_flash(23 downto 16) <= i_from_uart;
-								flash_erase_state := get_flash_erase_byte1;
-							elsif flash_erase_state = get_flash_erase_byte1 then
-								data_flash(15 downto 8) <= i_from_uart;
-								flash_erase_state := get_flash_erase_byte0;
-							elsif flash_erase_state = get_flash_erase_byte0 then
-								data_flash(7 downto 0) <= i_from_uart;
-								flash_erase_state := execute_flash_erase;
 							end if;		
-						elsif user_command = flash_write then
+						elsif flash_read_state = progress_flash_read then
+							if received_flash = '1' then
 							
-							if flash_write_state = get_setting_write_id then
-								page_address_flash <= std_logic_vector(shift_left(unsigned(i_from_uart), 4));
-								setting_id := unsigned(i_from_uart);
-								flash_write_state := get_flash_write_byte2;
-							elsif flash_write_state = get_flash_write_byte2 then
-								data_flash(23 downto 16) <= i_from_uart;
-								flash_write_state := get_flash_write_byte1;
-							elsif flash_write_state = get_flash_write_byte1 then
-								data_flash(15 downto 8) <= i_from_uart;
-								flash_write_state := get_flash_write_byte0;
-							elsif flash_write_state = get_flash_write_byte0 then
-								data_flash(7 downto 0) <= i_from_uart;
-								flash_write_state := execute_flash_write;
+								flash_read_state := send_flash_data;
+								setting_val(15 downto 0) := unsigned(data_flash(15 downto 0));
+								update_setting_flag := '1';
 							end if;
-						
-						elsif user_command = flash_read then
-							if flash_read_state = get_flash_read_addr then
-								
-								page_address_flash <= std_logic_vector(shift_left(unsigned(i_from_uart), 4));
-								
-								flash_read_state := execute_flash_read;
-							end if;
+						elsif flash_read_state = send_flash_data then
+							if setting_id <= x"08" then
+								setting_id := setting_id + 1;
+							else
+								state := state_operate; 
+							end if;				
 						end if;
-					end if;
-	
-	
-				end if;
-
-
-
-
-				if uart_any_taken(uart_dev_status) = True then
-							
-							
-
-					if uart_dev_status.flash = True  then
-						if i_busy_uart = '0' then 
-							case val_cnt is
-								  when 0 =>   o_to_uart <= x"05"; -- size
-								  when 1 =>   o_to_uart <= std_logic_vector(flash_data_code);
-								  when 2 =>   o_to_uart <= std_logic_vector(page_address_flash);
-								  when 3 =>   o_to_uart <= std_logic_vector(data_flash(23 downto 16));
-								  when 4 =>   o_to_uart <= std_logic_vector(data_flash(15 downto 8));
-								  when 5 =>   o_to_uart <= std_logic_vector(data_flash(7 downto 0));
-								  when others => o_to_uart <=  (others=>'Z');
-							end case;
-							enable_uart <= '1';
-						elsif val_cnt = 6 and i_busy_uart = '1' then
-								
-								uart_dev_status.flash := False;
-								user_command := no_command; 
-								val_cnt := 0;	
-								
-						end if;	
-					
-					
-					elsif uart_dev_status.motor = True  then
-					 
-						if i_busy_uart = '0' then 					
-							time_tmp := to_unsigned(glob_clk_counter, time_tmp'length );
-
-							case val_cnt is
-							  when 0 =>   o_to_uart <= x"09"; -- size
-							  when 1 =>   o_to_uart <= std_logic_vector(motor_data_code);
-							  when 2 =>   o_to_uart <= std_logic_vector(speed(15 downto 8));
-							  when 3 =>   o_to_uart <= std_logic_vector(speed(7 downto 0));
-							  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(23 downto 16));
-							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
-							  when 6 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
-							  when 7 =>   o_to_uart <= std_logic_vector(hal_imp_cnt(23 downto 16));
-							  when 8 =>   o_to_uart <= std_logic_vector(hal_imp_cnt(15 downto 8));
-							  when 9 =>   o_to_uart <= std_logic_vector(hal_imp_cnt(7 downto 0));
-							  
-							  when others => o_to_uart <=  (others=>'Z');
-							end case;
-							enable_uart <= '1';
-						elsif val_cnt = 10 and i_busy_uart = '1' then
-
-								uart_dev_status.motor := False;
-								
-								val_cnt := 0;	
-								
-						end if;
-					
-					
-					elsif uart_dev_status.adc_data = True  then 
-					
-						if i_busy_uart = '0' then 
-							time_tmp := to_unsigned(glob_clk_counter, time_tmp'length );
-						
- 
-						
-							case val_cnt is
-							  when 0 =>   o_to_uart <= x"07";
-							  when 1 =>   o_to_uart <= std_logic_vector(adc_data_code);
-							  when 2 =>   o_to_uart <= std_logic_vector(adc_measurement(15 downto 8));
-							  when 3 =>   o_to_uart <= std_logic_vector(adc_measurement(7 downto 0));
-							  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(23 downto 16));
-							  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
-							  when 6 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
-							  when 7 =>   o_to_uart <= std_logic_vector(adc_temp(9 downto 2));
-							  when others => o_to_uart <=  (others=>'Z');
-							end case;
-							enable_uart <= '1';
-						elsif val_cnt = 8 and i_busy_uart = '1' then
-							
-							uart_dev_status.adc_data := False; 
-							val_cnt := 0;
-							state := Standby;							
-						end if;
-					end if;
-					if i_busy_uart = '1' then
-						if enable_uart = '1'  then
-							val_cnt := val_cnt + 1;
-							 enable_uart <= '0';
-						end if;
-					end if;
-				end if;
-					
-				cnt := cnt - 1;	
 				
+					
+				elsif state = state_operate then
+					if prev_hal /= i_hal_data then
+						hal_imp_cnt := hal_imp_cnt + 1;
+						prev_hal := i_hal_data;
+						speed_impulse_sig <= '1';
+					else
+						speed_impulse_sig <= '0';
+					end if;
+				
+					if glob_small_clk_counter = glob_clk_denom  then
+						glob_small_clk_counter := 0;
+						glob_clk_counter := glob_clk_counter + 1; 
+					else  
+						glob_small_clk_counter := glob_small_clk_counter + 1; 				
+					end if;
+	
+						
+					if glob_clk_counter - last_motor_action > send_motor_data_wait then
+						
+						uart_dev_status.motor := True;
+						last_motor_action := glob_clk_counter;
+					elsif glob_clk_counter - last_adc_data_send > send_adc_data_wait then
+						uart_dev_status.adc_data := True;
+						last_adc_data_send := glob_clk_counter;
+					end if;
+								
+					
+					
+					if user_command = flash_write then
+						
+						if flash_write_state = execute_flash_write then
+							en_flash <= '1';
+							transaction_flash <= Write;
+							
+							setting_val := unsigned(data_flash);
+							update_setting_flag :=  '1';
+							if busy_flash = '1' then
+								en_flash <= '0';
+								user_command := no_command;
+								 
+								
+							end if;
+						end if;
+					elsif user_command = flash_erase then	
+						if flash_erase_state = execute_flash_erase  then
+							if busy_flash = '0' then
+								en_flash <= '1';
+								transaction_flash <= Erase;
+								
+							elsif busy_flash = '1' then
+							
+								en_flash <= '0';
+								user_command := no_command;
+						
+							end if;		
+						end if;	
+					elsif user_command = flash_read then								
+	
+						if flash_read_state = execute_flash_read  then
+							if busy_flash = '0' then
+								en_flash <= '1';
+								transaction_flash <= Read;
+								data_flash <= (others => 'Z');
+								
+							elsif busy_flash = '1' then
+							
+								en_flash <= '0';
+								flash_read_state := progress_flash_read;
+						
+							end if;		
+						elsif flash_read_state = progress_flash_read then
+							if received_flash = '1' then
+							
+								flash_read_state := send_flash_data;
+								val_cnt := 0;
+								
+							end if;
+						elsif flash_read_state = send_flash_data then
+						
+								uart_dev_status.flash := True;
+											
+						end if;
+						
+					elsif user_command = run_motor then	
+						if run_motor_state = execute_run_motor then
+							last_motor_action := glob_clk_counter;
+							
+							host_enable <= '1';
+							control_box_setup.temperature <= '1';
+							
+							user_command := no_command; 
+						end if;
+						
+					end if;
+		
+	
+		
+					if 	i_received_uart = '1' and user_command /= disable_comm then
+						
+						if user_command = no_command then 
+								
+							if i_from_uart = std_logic_vector(measure_command) then
+									
+									user_command := adc_channel_change;
+							elsif i_from_uart = std_logic_vector(flash_write_command) then
+									put_bus_high_flash <= '1';
+									user_command := flash_write; 
+									flash_write_state := get_setting_write_id;
+							elsif i_from_uart = std_logic_vector(flash_read_command) then
+									put_bus_high_flash <= '0';
+									user_command := flash_read;
+									flash_read_state := get_flash_read_addr;
+							
+							elsif i_from_uart = std_logic_vector(run_motor_command) then
+									user_command := run_motor;
+									
+									run_motor_state := run_motor_get_speed;
+							elsif i_from_uart = std_logic_vector(flash_erase_command) then
+									put_bus_high_flash <= '1';
+									user_command := flash_erase;
+									flash_erase_state := get_flash_erase_addr;
+							
+							elsif i_from_uart = std_logic_vector(stop_command)  then 
+								
+								host_enable <= '0';
+								last_motor_action := glob_clk_counter;
+							end if;
+						else	
+								
+	
+							if user_command = adc_channel_change then
+						
+								adc_channel <= unsigned(i_from_uart(2 downto 0));
+								user_command := no_command;
+							elsif user_command = run_motor then
+							
+								
+								if run_motor_state = run_motor_get_speed then
+	   								control_box_setup.req_speed_motor <= unsigned(i_from_uart);
+									manu_speed <= unsigned(i_from_uart);
+									run_motor_state := run_motor_get_pulse_width;	
+								elsif run_motor_state = run_motor_get_pulse_width then
+	
+	
+									control_box_setup.pulse_trigger(7 downto 0) <= unsigned(i_from_uart);
+									run_motor_state := run_motor_max_temp;
+								elsif run_motor_state = run_motor_max_temp then
+									req_temperature <= unsigned(i_from_uart);
+									run_motor_state := run_motor_hal;
+								elsif run_motor_state = run_motor_hal then
+									if i_from_uart = x"00" then
+										control_box_setup.hal <= '0';
+									else
+										control_box_setup.hal <= '1';
+									end if;
+									run_motor_state := run_motor_manual;
+								elsif run_motor_state = run_motor_manual then
+									if i_from_uart = x"00" then
+										control_box_setup.manual <= '0';
+									else
+										control_box_setup.manual <= '1';
+									end if;
+									
+									run_motor_state := execute_run_motor;	
+								end if;								
+							elsif user_command = flash_erase then
+								
+								if flash_erase_state = get_flash_erase_addr then								
+									page_address_flash <= std_logic_vector(shift_left(unsigned(i_from_uart), 4));
+									flash_erase_state := get_flash_erase_byte2;
+								elsif flash_erase_state = get_flash_erase_byte2 then
+									data_flash(23 downto 16) <= i_from_uart;
+									flash_erase_state := get_flash_erase_byte1;
+								elsif flash_erase_state = get_flash_erase_byte1 then
+									data_flash(15 downto 8) <= i_from_uart;
+									flash_erase_state := get_flash_erase_byte0;
+								elsif flash_erase_state = get_flash_erase_byte0 then
+									data_flash(7 downto 0) <= i_from_uart;
+									flash_erase_state := execute_flash_erase;
+								end if;		
+							elsif user_command = flash_write then
+								
+								if flash_write_state = get_setting_write_id then
+									page_address_flash <= std_logic_vector(shift_left(unsigned(i_from_uart), 4));
+									setting_id := unsigned(i_from_uart);
+									flash_write_state := get_flash_write_byte2;
+								elsif flash_write_state = get_flash_write_byte2 then
+									data_flash(23 downto 16) <= i_from_uart;
+									flash_write_state := get_flash_write_byte1;
+								elsif flash_write_state = get_flash_write_byte1 then
+									data_flash(15 downto 8) <= i_from_uart;
+									flash_write_state := get_flash_write_byte0;
+								elsif flash_write_state = get_flash_write_byte0 then
+									data_flash(7 downto 0) <= i_from_uart;
+									flash_write_state := execute_flash_write;
+								end if;
+							
+							elsif user_command = flash_read then
+							
+									setting_id := unsigned(i_from_uart);
+									
+									case setting_id is
+										when x"00" =>  setting_val(15 downto 0) := unsigned(settings_control_box.settings_pid.Kp);
+										when x"01" =>  setting_val(15 downto 0) := unsigned(settings_control_box.settings_pid.Ki);
+										when x"02" =>  setting_val(15 downto 0) := unsigned(settings_control_box.settings_pid.Kd);
+										when x"03" =>  setting_val(15 downto 0) := unsigned(settings_control_box.settings_pd.Kp);
+										when x"04" =>  setting_val(15 downto 0) := unsigned(settings_control_box.settings_pid.Kd); 
+										when x"05" =>  setting_val(15 downto 0) := unsigned(settings_control_box.max_speed);
+										when x"06" =>  setting_val(15 downto 0) := unsigned(settings_control_box.max_temperature);
+										when x"07" =>  setting_val(15 downto 0) := unsigned(settings_control_box.offset_speed);
+										when x"08" =>  setting_val(15 downto 0) := unsigned(settings_control_box.offset_term);
+										when others => update_setting_flag :=  '0';
+									end case;
+									val_cnt := 0;
+								
+									uart_dev_status.flash := True;
+							
+							end if;
+						end if;
+		
+		
+					end if;
+	
+					if uart_any_taken(uart_dev_status) = True then
+						
+						if uart_dev_status.flash = True  then
+							if i_busy_uart = '0' then 
+								case val_cnt is
+									  when 0 =>   o_to_uart <= x"05"; -- size
+									  when 1 =>   o_to_uart <= std_logic_vector(flash_data_code);
+									  when 2 =>   o_to_uart <= std_logic_vector(setting_id);
+									  when 3 =>   o_to_uart <= std_logic_vector(setting_val(23 downto 16));
+									  when 4 =>   o_to_uart <= std_logic_vector(setting_val(15 downto 8));
+									  when 5 =>   o_to_uart <= std_logic_vector(setting_val(7 downto 0));
+									  when others => o_to_uart <=  (others=>'Z');
+								end case;
+								enable_uart <= '1';
+							elsif val_cnt = 6 and i_busy_uart = '1' then
+									
+									uart_dev_status.flash := False;
+									user_command := no_command; 
+									val_cnt := 0;	
+									
+							end if;	
+						
+						
+						elsif uart_dev_status.motor = True  then
+						 
+							if i_busy_uart = '0' then 					
+								time_tmp := to_unsigned(glob_clk_counter, time_tmp'length );
+	
+								case val_cnt is
+								  when 0 =>   o_to_uart <= x"09"; -- size
+								  when 1 =>   o_to_uart <= std_logic_vector(motor_data_code);
+								  when 2 =>   o_to_uart <= std_logic_vector(speed(15 downto 8));
+								  when 3 =>   o_to_uart <= std_logic_vector(speed(7 downto 0));
+								  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(23 downto 16));
+								  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
+								  when 6 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
+								  when 7 =>   o_to_uart <= std_logic_vector(hal_imp_cnt(23 downto 16));
+								  when 8 =>   o_to_uart <= std_logic_vector(hal_imp_cnt(15 downto 8));
+								  when 9 =>   o_to_uart <= std_logic_vector(hal_imp_cnt(7 downto 0));
+								  
+								  when others => o_to_uart <=  (others=>'Z');
+								end case;
+								enable_uart <= '1';
+							elsif val_cnt = 10 and i_busy_uart = '1' then
+	
+									uart_dev_status.motor := False;
+									
+									val_cnt := 0;	
+									
+							end if;
+						
+						
+						elsif uart_dev_status.adc_data = True  then 
+						
+							if i_busy_uart = '0' then 
+								time_tmp := to_unsigned(glob_clk_counter, time_tmp'length );
+							
+	 
+							
+								case val_cnt is
+								  when 0 =>   o_to_uart <= x"07";
+								  when 1 =>   o_to_uart <= std_logic_vector(adc_data_code);
+								  when 2 =>   o_to_uart <= std_logic_vector(adc_measurement(15 downto 8));
+								  when 3 =>   o_to_uart <= std_logic_vector(adc_measurement(7 downto 0));
+								  when 4 =>   o_to_uart <= std_logic_vector(time_tmp(23 downto 16));
+								  when 5 =>   o_to_uart <= std_logic_vector(time_tmp(15 downto 8));
+								  when 6 =>   o_to_uart <= std_logic_vector(time_tmp(7 downto 0));
+								  when 7 =>   o_to_uart <= std_logic_vector(adc_temp(9 downto 2));
+								  when others => o_to_uart <=  (others=>'Z');
+								end case;
+								enable_uart <= '1';
+							elsif val_cnt = 8 and i_busy_uart = '1' then
+								
+								uart_dev_status.adc_data := False; 
+								val_cnt := 0;							
+							end if;
+						end if;
+						if i_busy_uart = '1' then
+							if enable_uart = '1'  then
+								val_cnt := val_cnt + 1;
+								 enable_uart <= '0';
+							end if;
+						end if;
+					end if;
+						
+					cnt := cnt - 1;	
+					
+				end if;
 			end if;
-
 		end if;
 
 	end process;
