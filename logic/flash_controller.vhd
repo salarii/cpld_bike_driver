@@ -216,14 +216,15 @@ begin
 								
 								if erase_control = erase_control_idle then
 										flash_operation := flash_erase;	
-										read_erase_control := erase_control_progress;
+										erase_control := erase_control_progress;
 								elsif erase_control = erase_control_progress then
 									if erase_flash = erase_conclude then
 										flash_operation := status_read;
 										erase_control := erase_control_status;
 									end if;
 								elsif erase_control = erase_control_status then
-										
+										if read_status = status_conclude then
+								
 											read_status := status_idle;
 											if busy_bit = '1' then
 												flash_operation := status_read;
@@ -233,7 +234,7 @@ begin
 												flash_operation := no_flash_operation;
 												erase_flash := erase_idle;
 											end if;
-										
+										end if;
 								end if;
 						end if;
 						
@@ -398,7 +399,7 @@ begin
 										read_flash := read_data;
 										cnt := 2;
 									elsif cnt = 2 then
-                    cnt := 0;
+                    cnt := cnt - 1;
 										i_data_spi <= i_address;
 									else
 										cnt := cnt - 1;
