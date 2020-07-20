@@ -400,6 +400,7 @@ begin
 							end if;
 						elsif flash_read_state = send_flash_data then
 							if setting_id <= x"08" then
+                flash_read_state := execute_flash_read;
 								setting_id := setting_id + 1;
 							else
 								state := state_operate; 

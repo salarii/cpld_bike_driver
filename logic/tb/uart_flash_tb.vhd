@@ -175,7 +175,7 @@ architecture t_behaviour of uart_flash_tb is
 				wait for 10 us;				
 				res <= '1';
 
-
+        wait for 900 us;
 				
 				-- 0x03  0 1100 0000 0
 				
