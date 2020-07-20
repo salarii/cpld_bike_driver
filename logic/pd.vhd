@@ -3,6 +3,7 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.interface_data.all;
 
 entity pd is
 	generic (CONSTANT IntPart : integer := 8;
@@ -13,6 +14,8 @@ entity pd is
 		clk : in std_logic;
 		i_enable : in std_logic;
 		i_val	: in  signed(IntPart + FracPart -1  downto 0);
+		i_settings_pd : type_settings_pd;
+		
 		o_reg : out signed(IntPart + FracPart -1  downto 0)
 		);
 end pd;
@@ -26,13 +29,8 @@ architecture behaviour of pd is
 		signal mul1_out : signed (IntPart + FracPart - 1  downto 0);
 		signal mul2_out : signed (IntPart + FracPart - 1  downto 0);
 		
-		--- 
-		
-		constant Kp : signed(IntPart + FracPart - 1  downto 0) := x"009d";
-		constant Kd : signed(IntPart + FracPart - 1  downto 0) := x"0027";
-		
-		constant pt0 : signed(IntPart + FracPart - 1  downto 0) := Kp +Kd;
-		constant pt1 : signed(IntPart + FracPart - 1  downto 0) := -Kd;
+		signal pt0 : signed(IntPart + FracPart - 1  downto 0);
+		signal pt1 : signed(IntPart + FracPart - 1  downto 0);
 		
 		component two_com_mul
 				generic (CONSTANT IntPart : integer;
@@ -92,11 +90,14 @@ begin
 		
 	end process;
 
-	process(regt1)
+
+	process(regt1,i_settings_pd)
 	begin
 		o_reg <= regt1;
-
-	end process;
+		
+		pt0 <= i_settings_pd.Kp +i_settings_pd.Kd;
+		pt1 <= -i_settings_pd.Kd;
+end process;
 
 end behaviour;
 

@@ -3,6 +3,7 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.interface_data.all;
 
 entity pid is
 	generic (CONSTANT IntPart : integer := 8;
@@ -14,6 +15,8 @@ entity pid is
 		i_enable : in std_logic;
 		i_n_clear : in std_logic;
 		i_val	: in  signed(IntPart + FracPart -1  downto 0);
+		i_settings_pid : type_settings_pid;
+		
 		o_reg : out signed(IntPart + FracPart -1  downto 0)
 		);
 end pid;
@@ -31,13 +34,10 @@ architecture behaviour of pid is
 		
 		--- 
 		
-		constant Kp : signed(IntPart + FracPart - 1  downto 0) := x"ffe1";
-		constant Ki : signed(IntPart + FracPart - 1  downto 0) := x"001f";
-		constant Kd : signed(IntPart + FracPart - 1  downto 0) := x"000f";
-		
-		constant pt0 : signed(IntPart + FracPart - 1  downto 0) := Kp + Ki + Kd; --x"000f"
-		constant pt1 : signed(IntPart + FracPart - 1  downto 0) := Ki - Kp - shift_left(signed(Kd), 1);--x"001f"
-		constant pt2 : signed(IntPart + FracPart - 1  downto 0) := Kd; --
+
+		signal pt0 : signed(IntPart + FracPart - 1  downto 0);
+		signal pt1 : signed(IntPart + FracPart - 1  downto 0);
+		signal pt2 : signed(IntPart + FracPart - 1  downto 0);
 		
 		component two_com_mul
 				generic (CONSTANT IntPart : integer;
@@ -115,10 +115,13 @@ begin
 		
 	end process;
 
-	process(regt1)
+	process(regt1,i_settings_pid)
 	begin
 		o_reg <= regt1;
-
+		 
+		pt0 <= i_settings_pid.Kp + i_settings_pid.Ki + i_settings_pid.Kd;
+		pt1 <= i_settings_pid.Ki - i_settings_pid.Kp - shift_left(signed(i_settings_pid.Kd), 1);
+		pt2 <= i_settings_pid.Kd;
 	end process;
 
 end behaviour;

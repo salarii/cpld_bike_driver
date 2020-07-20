@@ -21,7 +21,7 @@ entity control_box is
 		i_req_temperature : in unsigned(7 downto 0);
 		i_control_box_setup : in type_control_box_setup;
 		i_hal_data : in std_logic_vector(2 downto 0);
-
+		i_settings_control_box : type_settings_control_box;
 		o_motor_transistors : out type_motor_transistors
 		);
 end control_box;
@@ -74,6 +74,8 @@ architecture behaviour of control_box is
 				clk : in std_logic;
 				i_enable : in std_logic;
 				i_val	: in  signed(IntPart + FracPart -1  downto 0);
+				i_settings_pd : type_settings_pd;
+				
 				o_reg : out signed(IntPart + FracPart -1  downto 0)
 				);
 		end component pd;
@@ -103,6 +105,8 @@ architecture behaviour of control_box is
 				i_enable : in std_logic;
 				i_n_clear : in std_logic;
 				i_val	: in  signed(IntPart + FracPart -1  downto 0);
+				i_settings_pid : type_settings_pid;
+				
 				o_reg : out signed(IntPart + FracPart -1  downto 0)
 				);
 		end component pid;
@@ -128,17 +132,8 @@ architecture behaviour of control_box is
 		signal valid : std_logic;
 		
 		
-
-		constant offset_speed_wave : unsigned(upper_limit downto 0) := x"0280";-- 
-
-		constant max_speed : unsigned(upper_limit downto 0) := x"0200";--512 /256 hal clicks 2 round per sec
-		constant battery_voltage : unsigned(upper_limit downto 0) := x"2400";--36V
-
 		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0C00";-- 50% wave user  cap
-		constant wave_limit : unsigned(upper_limit downto 0) := x"0ff0";--255 , 100% wave equvalent
-		constant max_temperature : unsigned(upper_limit downto 0) := x"0200";-- Celsius
-		constant offset_tmp_wave : unsigned(upper_limit downto 0) := x"0000";--
-		
+
 		signal req_speed_motor : unsigned(upper_limit downto 0):=(others=>'0');
 		signal motor_control_setup : type_motor_control_setup;
 		signal motor_transistors : type_motor_transistors;
@@ -188,6 +183,7 @@ begin
 			clk =>clk,
 			i_enable =>enable_pid,
 			i_val => in_temperature_reg,
+			i_settings_pd => i_settings_control_box.settings_pd,
 			o_reg => out_temperature_reg
 			);
 
@@ -202,6 +198,7 @@ begin
 			i_enable =>enable_pid,
 			i_n_clear => i_control_box_setup.enable,
 			i_val => in_reg,
+			i_settings_pid => i_settings_control_box.settings_pid,
 			o_reg => out_reg
 			);
 
@@ -257,7 +254,7 @@ begin
 		variable modified_temp_reg : signed(upper_limit  downto 0);
 	begin
 
-
+	--i_settings_control_box.max_temperature ;
 		if rising_edge(clk)  then
 			if res = '0' then
 				pulse_trigger <= (others => '0');
@@ -282,7 +279,7 @@ begin
 						if regulator_state = regulator_speed_check  then
 							mul_a <= (others => '0');
 							mul_b <= (others => '0');
-							mul_a(23 downto 8) <= max_speed;
+							mul_a(23 downto 8) <= i_settings_control_box.max_speed;
 							mul_b(15 downto 8) <= i_req_speed;
 								
 							regulator_state := regulator_init;	
@@ -303,8 +300,8 @@ begin
 							
 						elsif regulator_state = regulator_valid then
 								
-							modified_reg := out_reg + signed(offset_speed_wave);
-							modified_temp_reg := out_temperature_reg + signed(offset_tmp_wave);
+							modified_reg := out_reg + signed(i_settings_control_box.offset_speed);
+							modified_temp_reg := out_temperature_reg + signed(i_settings_control_box.offset_term);
 							
 							if modified_temp_reg < 0 then  
 								modified_temp_reg := (others => '0');
@@ -347,6 +344,8 @@ begin
 	
 	o_motor_transistors <= motor_transistors;
 	req_temperature(15 downto 8) <= signed(i_req_temperature);
+	
+
 end process;
 	
 end behaviour;

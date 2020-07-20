@@ -102,6 +102,7 @@ architecture behaviour of control_unit is
 					i_req_temperature : in unsigned(7 downto 0);
 					i_control_box_setup : in type_control_box_setup;
 					i_hal_data : in std_logic_vector(2 downto 0);
+					i_settings_control_box : type_settings_control_box;
 					o_motor_transistors : out type_motor_transistors
 					);
 		end component control_box;
@@ -176,8 +177,33 @@ architecture behaviour of control_unit is
 		
 		signal manu_speed : unsigned(7 downto 0);
 		signal host_enable : std_logic := '0';
+
+		constant Kp_pid : signed(15 downto 0) := x"ffe1";
+		constant Ki_pid : signed(15 downto 0) := x"001f";
+		constant Kd_pid : signed(15 downto 0) := x"000f";
+		
+		constant Kp_pd : signed(15 downto 0) := x"009d";
+		constant Kd_pd : signed(15 downto 0) := x"0027";
+		
+		constant offset_speed_wave : unsigned(15 downto 0) := x"0000";-- 
+
+		constant max_speed : unsigned(15 downto 0) := x"0200";--512 /256 hal clicks 2 round per sec
+
+		constant wave_limit : unsigned(15 downto 0) := x"0ff0";--255 , 100% wave equvalent
+		constant max_temperature : unsigned(15 downto 0) := x"0200";-- Celsius
+		constant offset_tmp_wave : unsigned(15 downto 0) := x"0000";--
+		
+		
+		signal settings_control_box : type_settings_control_box :=
+			(  
+				settings_pid => (Kp =>Kp_pid, Ki =>Ki_pid, Kd =>Kd_pid),
+				settings_pd => (Kp =>Kp_pd, Kd =>Kd_pd),
+				max_speed =>max_speed,
+				max_temperature =>max_temperature,
 				
-		signal settings_control_box : type_settings_control_box;
+				offset_speed =>offset_speed_wave,
+				offset_term =>offset_tmp_wave
+				);
 begin	
 	
 	module_control_box: control_box
@@ -191,6 +217,7 @@ begin
 				i_req_temperature => req_temperature,
 				i_control_box_setup => control_box_setup,
 				i_hal_data => i_hal_data,
+				i_settings_control_box => settings_control_box,
 				o_motor_transistors => motor_transistors 
 		);
 
@@ -330,6 +357,9 @@ begin
 		variable setting_val : unsigned(23 downto 0);
 		variable setting_id : unsigned(7 downto 0) := x"00";
 		variable update_setting_flag : std_logic;	
+		
+		variable profile_1_pid : type_settings_pid;
+		variable profile_2_pid : type_settings_pid;
 	begin
 
 		if rising_edge(clk)  then
@@ -390,8 +420,8 @@ begin
 								en_flash <= '0';
 								flash_read_state := progress_flash_read;
 						
-							end if;		
-						elsif flash_read_state = progress_flash_read then
+						end if;		
+					elsif flash_read_state = progress_flash_read then
 							if received_flash = '1' then
 							
 								flash_read_state := send_flash_data;
