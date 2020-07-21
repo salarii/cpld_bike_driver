@@ -20,7 +20,7 @@ struct MotorData
 struct FlashData
 {
   QVector<unsigned char> data;
-  unsigned char address;
+  unsigned char idx;
 };
 
 

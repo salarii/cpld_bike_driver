@@ -54,8 +54,8 @@ signals:
 public slots:
 	void initFlashLoad();
 	void verifyFlash(int _idx);
-	void sendDataToFlash();
-    void requestDataFromFlash();
+    void sendDataToFlash(int _idx);
+    void requestDataFromFlash(int _idx);
     void displayFlash(FlashData const * _value);
     void serviceMeasurement(Measurement const * _value);
     void serviceMotorData(MotorData const * _motorData);

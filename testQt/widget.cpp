@@ -185,6 +185,18 @@ Widget::Widget(QWidget *parent)
     
 }
 
+/*
+auto symSet = rowToSpeedSettingCode;
+if (settingView == SettingViewType::termalRegulator)
+{
+    symSet = rowToTemperatureSettingCode;
+}
+
+for( auto const& [key, val] : symSet )
+{
+
+}
+*/
 void
 Widget::switchSettingsView(SettingViewType _settingView)
 {
@@ -227,45 +239,57 @@ Widget::serialProblem()
 }
 
 
+#define FIXED_POINT_FRACTIONAL_BITS 8
+
+unsigned  short floatToFixed(float input)
+{
+    return (unsigned  short)(round(input * (1 << FIXED_POINT_FRACTIONAL_BITS)));
+}
+
+float fixedToFloat(unsigned  short input)
+{
+    return ((float)input / (float)(1 << FIXED_POINT_FRACTIONAL_BITS));
+}
+
 void
 Widget::displayFlash(FlashData const * _value)
 {
-	_value.idx
-	
-	if  (settingView ==)
-	{
-		
-	}
-	else if ( settingView ==  )
-	{
-		
-		
-	}
-	
-	for( auto const& [key, val] : symbolTable )
-	{
-	    std::cout << key         // string (key)
-	              << ':'  
-	              << val        // string's value
-	              << std::endl ;
-	}
-	
-	loadedSpeedReg[]
-	loadedTemperatureReg.
+
      unsigned int value = (unsigned int)_value->data[2] +
     (((unsigned int)_value->data[1])<<8) +
     (((unsigned int)_value->data[0])<<16);
     QString  valText = QString().number(value, 16);
     parLabels[0]->setText( valText);//flashParamsMess[idx] + valText);
+
+    if (settingView == SettingViewType::speedRegulator)
+    {
+        if (_value->idx >= 5)
+        {
+            return;
+        }
+      }
+    else if  (settingView == SettingViewType::termalRegulator)
+    {
+        if (_value->idx >= 4)
+        {
+            return;
+        }
+    }
+    //  translate  back
+    //  convert  to  foat
+    int  idx = 0;
+    float val = 0.0;
+    QString  valStr = QString().setNum(val,'g', 4);
+
+    parLineEdit[idx]->setText(valStr);
+    requestDataFromFlash(_value->idx + 1);
 }
 
 void
-Widget::requestDataFromFlash()
+Widget::requestDataFromFlash(int _idx)
 {
-    unsigned  char index = parameterList->currentIndex();
-
     sendBuff[0] = (unsigned  char)CommandCodes::ReadFlashOpCode;
-    sendBuff[1] = index;
+    sendBuff[1] = _idx;
     emit sendToHardware(sendBuff, 2);
 
 }
@@ -281,17 +305,6 @@ Widget::setMeasurementChannel(int _index)
 
 }
 
-#define FIXED_POINT_FRACTIONAL_BITS 8
-
-unsigned  short floatToFixed(float input)
-{
-    return (unsigned  short)(round(input * (1 << FIXED_POINT_FRACTIONAL_BITS)));
-}
-
-float fixedToFloat(unsigned  short input)
-{
-    return ((float)input / (float)(1 << FIXED_POINT_FRACTIONAL_BITS));
-}
 
 
 void

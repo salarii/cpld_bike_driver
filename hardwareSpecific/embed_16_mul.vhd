@@ -25,11 +25,11 @@ architecture behaviour of embed_16_mul is
 		(
 			dataa		: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
 			datab		: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
-			result		: OUT STD_LOGIC_VECTOR (23 DOWNTO 0)
+			result		: OUT STD_LOGIC_VECTOR (31 DOWNTO 0)
 		);
 	END component mul_16_bit;
 	
-	signal result_internal : signed(23 downto 0);
+	signal result_internal : signed(31 downto 0);
 
 begin	
 
