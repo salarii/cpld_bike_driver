@@ -92,7 +92,7 @@ void Communication::run()
 
                 flashData.data.push_back(readbuffer[2]);
                 flashData.data.push_back(readbuffer[3]);
-
+                flashData.data.push_back(readbuffer[4]);
                 emit  passFlashData(&flashData);
             }
             else if(readbuffer[0] == (unsigned char)DataCodes::motor )

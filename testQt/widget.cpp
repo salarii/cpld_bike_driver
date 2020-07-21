@@ -19,6 +19,54 @@ const QStringList flashParamsMess ={
 
 QString const labelText = "Current Voltage: ";
 
+#define FIXED_POINT_FRACTIONAL_BITS 8
+
+unsigned  short floatToFixed(float input)
+{
+    return (unsigned  short)(round(input * (1 << FIXED_POINT_FRACTIONAL_BITS)));
+}
+
+float fixedToFloat(unsigned  short input)
+{
+    return ((float)input / (float)(1 << FIXED_POINT_FRACTIONAL_BITS));
+}
+
+float negativeFloatToFixed( float _number,int _integer, int _fractional )
+{
+    float smallest = -pow(2,-_fractional);
+    _number -= smallest;
+    unsigned short  val = 0xffff;
+    unsigned short one = 0x01;
+
+    for (int i = 0; i <(_integer + _fractional - 1); i-- )
+    {
+        auto current =  smallest*pow(2,i-1);
+        if (current >= _number )
+        {
+            _number -= current;
+            val = val & (~(one << (_integer + _fractional-i + 1) ));
+
+        }
+    }
+    return val;
+}
+
+float negativeFixedToFloat( unsigned short _number,int _integer, int _fractional )
+{
+    float smallest = -pow(2,-_fractional);
+    float val = smallest;
+    unsigned short one = 0x01;
+    for (int  i = 0; i < (_integer + _fractional -1);i++)
+    {
+        if ( _number & ( one << (_integer + _fractional - c + 1)) )
+        {
+           val += smallest*pow(2,i);
+        }
+    }
+
+    return val;
+}
+
 Widget::Widget(QWidget *parent)
     : QWidget(parent),motorRun(false)
 {
@@ -85,15 +133,17 @@ Widget::Widget(QWidget *parent)
     parameterList->addItems(params);
     QPushButton * saveFlash= new QPushButton("save to flash");
 
+
+
     QObject::connect(saveFlash, &QPushButton::clicked,
                      this, &Widget::initFlashLoad);
     
     QObject::connect(this, &Widget::reqFlashLoad,
                      this, &Widget::sendDataToFlash);
-   /* QPushButton * loadFlash= new QPushButton("load from flash");
-    QObject::connect(loadFlash, &QPushButton::clicked,
-                     this, &Widget::requestDataFromFlash);
-*/
+   /* QPushButton * loadFlash= new QPushButton("load from flash");*/
+    QObject::connect(parameterList, QOverload<int>::of(&QComboBox::activated),
+                     this, &Widget::flashDataView);
+
     flashLayout->addWidget(titleFlash);
     flashLayout->addWidget(parameterList);
 
@@ -181,8 +231,10 @@ Widget::Widget(QWidget *parent)
                      this,&Widget::setMeasurementChannel);
 
     QObject::connect(this,&Widget::reqVerifyFlash,
-                     this,&Widget::verifyFlash);    
-    
+                     this,&Widget::verifyFlash);
+
+
+
 }
 
 /*
@@ -197,6 +249,20 @@ for( auto const& [key, val] : symSet )
 
 }
 */
+void
+Widget::flashDataView(int _idx)
+{
+    if (_idx == 0)
+    {
+        switchSettingsView(SettingViewType::speedRegulator);
+    }
+    else if(_idx == 1)
+    {
+        switchSettingsView(SettingViewType::termalRegulator);
+    }
+
+}
+
 void
 Widget::switchSettingsView(SettingViewType _settingView)
 {
@@ -251,7 +317,9 @@ for c = 1:(n+m -1)
     end
 end
 
+
 */
+
 void
 Widget::serialProblem()
 {
@@ -266,23 +334,22 @@ Widget::serialProblem()
 }
 
 
-#define FIXED_POINT_FRACTIONAL_BITS 8
 
-unsigned  short floatToFixed(float input)
-{
-    return (unsigned  short)(round(input * (1 << FIXED_POINT_FRACTIONAL_BITS)));
-}
-
-float fixedToFloat(unsigned  short input)
-{
-    return ((float)input / (float)(1 << FIXED_POINT_FRACTIONAL_BITS));
-}
 
 void
 Widget::displayFlash(FlashData const * _value)
 {
+auto negativeCheck = _value->data[1];
+if ( negativeCheck & 0x80 > 0 )
+{
+}
+else
+{
 
-     unsigned int value = (unsigned int)_value->data[2] +
+}
+
+
+        unsigned int value = (unsigned int)_value->data[2] +
     (((unsigned int)_value->data[1])<<8) +
     (((unsigned int)_value->data[0])<<16);
     QString  valText = QString().number(value, 16);
@@ -316,7 +383,7 @@ void
 Widget::requestDataFromFlash(int _idx)
 {
     sendBuff[0] = (unsigned  char)CommandCodes::ReadFlashOpCode;
-    sendBuff[1] = _idx;
+    sendBuff[1] = getParameterCode(_idx);
     emit sendToHardware(sendBuff, 2);
 
 }
@@ -333,33 +400,48 @@ Widget::setMeasurementChannel(int _index)
 }
 
 
+unsigned char Widget::getParameterCode(int _idx)
+{
+    if (settingView == SettingViewType::speedRegulator)
+    {
+        return (unsigned char)rowToSpeedSettingCode.find(_idx)->second;
+
+    }
+    else if  (settingView == SettingViewType::termalRegulator)
+    {
+
+        return (unsigned char)rowToTemperatureSettingCode.find(_idx)->second;
+    }
+    return 0;
+}
+
+int Widget::getParameterCnt()
+{
+    if (settingView == SettingViewType::speedRegulator)
+    {
+        return 5;
+
+    }
+    else if  (settingView == SettingViewType::termalRegulator)
+    {
+        return 4;
+    }
+    return 0;
+}
+
 
 void
 Widget::sendDataToFlash(int _idx)
 {
     bool bStatus = false;
    //
-    int parameterCnt =0;
-    unsigned char parameterIdx =0;
-    if (settingView == SettingViewType::speedRegulator)
+    int parameterCnt =getParameterCnt();
+    if (idx >= parameterCnt)
     {
-        if (idx >= 5)
-        {
-            return;
-        }
-        parameterIdx = (unsigned char)rowToSpeedSettingCode.find(_idx)->second;
-        parameterCnt = 5;
+        return;
+    }
 
-    }
-    else if  (settingView == SettingViewType::termalRegulator)
-    {
-        if (idx >= 4)
-        {
-            return;
-        }
-        parameterCnt = 4;
-        parameterIdx = (unsigned char)rowToTemperatureSettingCode.find(_idx)->second;
-    }
+    unsigned char parameterIdx =getParameterCode(idx);
 
     QString value = parLineEdit[_idx]->text();
     float val = value.toFloat(&bStatus);

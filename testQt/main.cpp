@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     QObject::connect(&comm, &Communication::passMotorData,
                      &w, &Widget::serviceMotorData);
 
-
+    w.requestDataFromFlash(0);
     comm.start();
     return a.exec();
 }

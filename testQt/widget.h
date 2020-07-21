@@ -52,6 +52,7 @@ signals:
     void reqVerifyFlash(int _idx);
     void reqFlashLoad(int _idx);
 public slots:
+    void flashDataView(int _idx);
 	void initFlashLoad();
 	void verifyFlash(int _idx);
     void sendDataToFlash(int _idx);
@@ -68,6 +69,9 @@ private:
     QChart *  createChart();
     QChart * createMotorChart();
     void switchSettingsView(SettingViewType _settingView);
+
+    unsigned char getParameterCode(int _idx);
+    int getParameterCnt();
 private:
     bool motorRun;
     QLineSeries* series;
