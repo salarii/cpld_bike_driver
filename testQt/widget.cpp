@@ -225,6 +225,33 @@ Widget::switchSettingsView(SettingViewType _settingView)
 
 }
 
+/*
+
+
+dest =    -0.1221;
+smallest = -2^-(m);
+dest = dest - smallest;
+number = ones( 1,n+ m);
+
+for c =(n+m - 1):-1:1
+    current =  smallest*(2^(c-1));
+    if current >= dest
+        dest = dest - current;
+        number(n+m - c + 1) = 0;
+    end
+    
+end
+
+s2 =number
+val = smallest;
+for c = 1:(n+m -1)
+    
+    if number(n+m - c + 1) == 0
+        val = val + smallest*2^(c-1);
+    end
+end
+
+*/
 void
 Widget::serialProblem()
 {
