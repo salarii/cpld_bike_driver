@@ -49,34 +49,45 @@ architecture behaviour of pid is
 			outMul : out signed(IntPart + FracPart - 1  downto 0)
 			);
 		end component;
+		
+		
+		component embed_16_mul is
+
+			port(
+					A		: IN signed (15 DOWNTO 0);
+					B		: IN signed (15 DOWNTO 0);
+					outMul		: OUT signed (15 DOWNTO 0)
+				);
+				
+		end component embed_16_mul;
 				
 begin	
 
-		module_mul1: two_com_mul
-		generic map(
-			 IntPart => IntPart,
-			 FracPart => FracPart
-		 )
+		module_mul1: embed_16_mul
+--		generic map(
+--			 IntPart => IntPart,
+--			 FracPart => FracPart
+--		 )
 		port map (
 			A => pt0,
 			B => signed(i_val),
 			outMul => mul1_out);
 
-		module_mul2: two_com_mul
-		generic map(
-			 IntPart => IntPart,
-			 FracPart => FracPart
-		 )
+		module_mul2: embed_16_mul
+--		generic map(
+--			 IntPart => IntPart,
+--			 FracPart => FracPart
+--		 )
 		port map (
 			A => pt1,
 			B => et1,
 			outMul => mul2_out);
 
-		module_mul3: two_com_mul
-		generic map(
-			 IntPart => IntPart,
-			 FracPart => FracPart
-		 )
+		module_mul3: embed_16_mul
+--		generic map(
+--			 IntPart => IntPart,
+--			 FracPart => FracPart
+--		 )
 		port map (
 			A => pt2,
 			B => et2,
