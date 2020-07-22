@@ -1,6 +1,8 @@
 #include <QMessageBox>
+#include <QFile>
+#include <QDir>
 #include <math.h>
-
+#include <QTextStream>
 #include "communication.h"
 #include "serialport.h"
 #include "data_types.h"
@@ -19,6 +21,16 @@ void Communication::run()
 {
     float  dest = 0.0;
     HANDLE h;
+
+    QString path("C:/Users/artur/Documents/cpld_bike_driver/testQt/");
+    QDir dir;
+    if (!dir.exists(path))
+        dir.mkpath(path);
+
+    QFile file(path+"out.txt");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return;
+       QTextStream out(&file);
     try {
         h = openSerialPort("COM3",B9600,one,even);
 
@@ -44,8 +56,12 @@ void Communication::run()
                 continue;
 
             int bytesToRead = readbuffer[0];
+
+            out << "packet size: " << bytesToRead << "\n";
+
             if ( bytesToRead >= 10 || bytesToRead < 1 )
             {
+                file.close();
                 readFromSerialPort(h,readbuffer,3);
                 printf("problem");
 
@@ -69,20 +85,16 @@ void Communication::run()
                 }
 
             }
-            int shift8 = 8, shift16 = 16;
-            int readBytes = 0;
-            while(1)
+            for (int i = 0 ;i <bytesToRead ;i++)
             {
-                if (index == readBytes )
+                out << "index: " << i << "  val: "<< readbuffer[i]<< "\n";
+            }
+
+            int shift8 = 8, shift16 = 16;
+
+            if (readbuffer[0] == (unsigned char)DataCodes::termistor )
                 {
-                    break;
-                }
-                if (readbuffer[readBytes] == (unsigned char)DataCodes::termistor )
-                {
-                    if (index <7)
-                    {
-                        break;
-                    }
+
                     float voltage = (readbuffer[1] << shift8)+
                                 readbuffer[2];
                     //voltage *=(2.048/32768.0);
@@ -93,16 +105,13 @@ void Communication::run()
                     measurement.voltage = voltage;
                     measurement.time = time;
                     emit  passMeasurement(&measurement);
-                    readBytes += 7;
+
 
 
                 }
-                else if(readbuffer[readBytes] == (unsigned char)DataCodes::flash )
+                else if(readbuffer[0] == (unsigned char)DataCodes::flash )
                 {
-                    if (index <5)
-                    {
-                        break;
-                    }
+
                     flashData.data.clear();
                     flashData.idx = readbuffer[1];
 
@@ -110,15 +119,12 @@ void Communication::run()
                     flashData.data.push_back(readbuffer[3]);
                     flashData.data.push_back(readbuffer[4]);
                     emit  passFlashData(&flashData);
-                    readBytes += 5;
+
                 }
-                else if(readbuffer[readBytes] == (unsigned char)DataCodes::motor )
+                else if(readbuffer[0] == (unsigned char)DataCodes::motor )
                 {
                     float speed = 0;
-                    if (index <9)
-                    {
-                        break;
-                    }
+
                     speed = (float)(readbuffer[1]<< shift8)
                             +(float)readbuffer[2];
                     motorData.speed = speed;
@@ -131,14 +137,9 @@ void Communication::run()
                             (readbuffer[7] << shift8)+
                             readbuffer[8];
                     emit  passMotorData(&motorData);
-                    readBytes += 9;
-                }
-                else
-                {
-                    readBytes = 0;
 
                 }
-            }
+
         }
         closeSerialPort(h);
     }catch (int e) {

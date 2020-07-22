@@ -512,7 +512,6 @@ begin
 							if received_flash = '1' then
 							
 								flash_read_state := send_flash_data;
-								val_cnt := 0;
 								
 							end if;
 						elsif flash_read_state = send_flash_data then
@@ -651,7 +650,6 @@ begin
 										when x"08" =>  setting_val(15 downto 0) := unsigned(settings_control_box.offset_term);
 										when others => update_setting_flag :=  '0';
 									end case;
-									val_cnt := 0;
 								
 									uart_dev_status.flash := True;
 							
