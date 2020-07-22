@@ -387,7 +387,7 @@ begin
 			else
 				
 				if  update_setting_flag = '1'  then
-					if setting_val(15 downto 0) /= x"ff" then
+					if setting_val(15 downto 0) /= x"ffff" then
 					
 						case setting_id is
 							when x"00" =>  settings_control_box.settings_pid.Kp <= signed(setting_val(15 downto 0));

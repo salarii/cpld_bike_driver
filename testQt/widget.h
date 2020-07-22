@@ -12,6 +12,7 @@
 #include <QComboBox>
 #include <QCheckBox>
 
+
 const unsigned SettingsPageCnt = 5;
 
 struct Measurement;
@@ -21,8 +22,8 @@ const unsigned char  polyBase = 0x0;
 enum class SettingViewType{ speedRegulator = 0, termalRegulator = 1 };
 enum class SettingCodes{ speedKp = 0,speedKi= 1, speedKd = 2,
                          temperatureKp = 3, temperatureKd = 4,
-                         maxSpeed =5, speedOffset = 6,
-                         maxTemperature = 7, temperatureOffset = 8};
+                         maxSpeed =5, maxTemperature = 6,
+                         speedOffset = 7, temperatureOffset = 8};
 
 const std::map<int, SettingCodes> rowToSpeedSettingCode = {
         {0,SettingCodes::speedKp},
@@ -65,6 +66,7 @@ public slots:
     void startMotor(bool _checked);
     void setMeasurementChannel(int _index);
     void motorSliderChanged();
+    void resetParameter();
 private:
     QChart *  createChart();
     QChart * createMotorChart();
@@ -72,6 +74,7 @@ private:
 
     unsigned char getParameterCode(int _idx);
     int getParameterCnt();
+    unsigned int getColumnCode(int _idx);
 private:
     bool motorRun;
     QLineSeries* series;
@@ -81,6 +84,7 @@ private:
     QLabel * label;
     QLabel * parLabels[SettingsPageCnt];
     QLineEdit * parLineEdit[SettingsPageCnt];
+    QPushButton * parRestoreButton[SettingsPageCnt];
     QSpinBox * celsius;
     QSlider * sliderSpeed;
     QSlider * sliderForce;

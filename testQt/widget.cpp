@@ -35,20 +35,21 @@ float negativeFloatToFixed( float _number,int _integer, int _fractional )
 {
     float smallest = -pow(2,-_fractional);
     _number -= smallest;
-    unsigned short  val = 0xffff;
+    unsigned short  val = 0xffff >>( 16 - _integer- _fractional );
     unsigned short one = 0x01;
 
-    for (int i = 0; i <(_integer + _fractional - 1); i-- )
+    for (int i = _integer + _fractional - 2; i >=0; i-- )
     {
-        auto current =  smallest*pow(2,i-1);
+        auto current =  smallest*pow(2,i);
         if (current >= _number )
         {
             _number -= current;
-            val = val & (~(one << (_integer + _fractional-i + 1) ));
+            val = val & (~(one << i ));
 
         }
     }
-    return val;
+
+    return val ;
 }
 
 float negativeFixedToFloat( unsigned short _number,int _integer, int _fractional )
@@ -56,9 +57,9 @@ float negativeFixedToFloat( unsigned short _number,int _integer, int _fractional
     float smallest = -pow(2,-_fractional);
     float val = smallest;
     unsigned short one = 0x01;
-    for (int  i = 0; i < (_integer + _fractional -1);i++)
+    for (int  i = 0; i < (_integer + _fractional-1);i++)
     {
-        if ( _number & ( one << (_integer + _fractional - c + 1)) )
+        if ( (_number & ( one <<  i )) == 0)
         {
            val += smallest*pow(2,i);
         }
@@ -70,6 +71,9 @@ float negativeFixedToFloat( unsigned short _number,int _integer, int _fractional
 Widget::Widget(QWidget *parent)
     : QWidget(parent),motorRun(false)
 {
+   unsigned short a = negativeFloatToFixed(-0.5,2, 2 );
+    negativeFixedToFloat( a,2, 2);
+
 	loadedSpeedReg.resize(SettingsPageCnt);
 	loadedTemperatureReg.resize(SettingsPageCnt);
 	
@@ -158,6 +162,11 @@ Widget::Widget(QWidget *parent)
         parLineEdit[i] = new QLineEdit;
         parLineEdit[i]->setValidator(new QDoubleValidator);
         rowLayout->addWidget(parLineEdit[i]);
+        parRestoreButton[i] = new QPushButton("Reset");
+        rowLayout->addWidget(parRestoreButton[i]);
+
+        QObject::connect(parRestoreButton[i], &QPushButton::pressed,
+                         this, &Widget::resetParameter);
     }
     flashLayout->addWidget(saveFlash);
     switchSettingsView(SettingViewType::speedRegulator);
@@ -237,6 +246,25 @@ Widget::Widget(QWidget *parent)
 
 }
 
+
+void
+Widget::resetParameter()
+{
+    int idx = 0;
+    for (int i = 0 ;i < SettingsPageCnt ; i++)
+    {
+       if ( parRestoreButton[i]->isDown() )
+       {
+            idx = i;
+            break;
+       }
+    }
+
+    sendBuff[0] = (unsigned  char)CommandCodes::EraseFlashOpCode;
+    sendBuff[1] = getParameterCode(idx);
+    emit sendToHardware(sendBuff, 2);
+}
+
 /*
 auto symSet = rowToSpeedSettingCode;
 if (settingView == SettingViewType::termalRegulator)
@@ -244,10 +272,7 @@ if (settingView == SettingViewType::termalRegulator)
     symSet = rowToTemperatureSettingCode;
 }
 
-for( auto const& [key, val] : symSet )
-{
 
-}
 */
 void
 Widget::flashDataView(int _idx)
@@ -260,7 +285,7 @@ Widget::flashDataView(int _idx)
     {
         switchSettingsView(SettingViewType::termalRegulator);
     }
-
+    requestDataFromFlash(0);
 }
 
 void
@@ -291,34 +316,6 @@ Widget::switchSettingsView(SettingViewType _settingView)
 
 }
 
-/*
-
-
-dest =    -0.1221;
-smallest = -2^-(m);
-dest = dest - smallest;
-number = ones( 1,n+ m);
-
-for c =(n+m - 1):-1:1
-    current =  smallest*(2^(c-1));
-    if current >= dest
-        dest = dest - current;
-        number(n+m - c + 1) = 0;
-    end
-    
-end
-
-s2 =number
-val = smallest;
-for c = 1:(n+m -1)
-    
-    if number(n+m - c + 1) == 0
-        val = val + smallest*2^(c-1);
-    end
-end
-
-
-*/
 
 void
 Widget::serialProblem()
@@ -333,50 +330,88 @@ Widget::serialProblem()
     msgBox.exec();
 }
 
+float processFloat(  QVector<unsigned char> const & _data)
+{
+
+    auto negativeCheck = _data[1];
+    unsigned int value = (unsigned int)_data[2] +
+                         (((unsigned int)_data[1])<<8);
 
 
+    float  floatVal = 0.0;
+    if ( (negativeCheck & 0x80) > 0 )
+    {
+        floatVal = negativeFixedToFloat(value,8, 8);
+    }
+    else
+    {
+        floatVal = fixedToFloat(value);
+    }
+    return floatVal;
+}
+
+unsigned short processUnsigned(  QVector<unsigned char> const & _data)
+{
+    unsigned short value = (unsigned int)_data[2] +
+                         (((unsigned int)_data[1])<<8);
+
+    return value;
+}
 
 void
 Widget::displayFlash(FlashData const * _value)
 {
-auto negativeCheck = _value->data[1];
-if ( negativeCheck & 0x80 > 0 )
-{
-}
-else
-{
 
-}
-
-
-        unsigned int value = (unsigned int)_value->data[2] +
-    (((unsigned int)_value->data[1])<<8) +
-    (((unsigned int)_value->data[0])<<16);
-    QString  valText = QString().number(value, 16);
-    parLabels[0]->setText( valText);//flashParamsMess[idx] + valText);
+    float val = 0.0;
+    int  limit = 0;
+    unsigned int  idx =  getColumnCode(_value->idx);
 
     if (settingView == SettingViewType::speedRegulator)
     {
-        if (_value->idx >= 5)
+        if (_value->idx == (int)SettingCodes::speedOffset )
         {
-            return;
+            val = ((float)processUnsigned(_value->data))/16.0;
         }
+        else if ( _value->idx == (int)SettingCodes::maxSpeed )
+        {
+            val = processFloat(_value->data);
+        }
+        else
+        {
+            val = processFloat(_value->data);
+        }
+        loadedSpeedReg[idx] = (unsigned )val;
+        limit = 4;
       }
     else if  (settingView == SettingViewType::termalRegulator)
     {
-        if (_value->idx >= 4)
+        if (_value->idx == (int)SettingCodes::temperatureOffset )
         {
-            return;
+            val = ((float)processUnsigned(_value->data))/16.0;
         }
+        else if ( _value->idx == (int)SettingCodes::maxTemperature )
+        {
+            val = processUnsigned(_value->data);
+        }
+        else
+        {
+            val = processFloat(_value->data);
+        }
+
+        limit = 3;
+        loadedTemperatureReg[idx] = (unsigned )val;
     }
-    //  translate  back
-    //  convert  to  foat
-    int  idx = 0;
-    float val = 0.0;
+
+
+
     QString  valStr = QString().setNum(val,'g', 4);
 
     parLineEdit[idx]->setText(valStr);
-    requestDataFromFlash(_value->idx + 1);
+
+    if (idx < limit )
+    {
+        requestDataFromFlash(idx + 1);
+    }
 }
 
 void
@@ -399,6 +434,33 @@ Widget::setMeasurementChannel(int _index)
 
 }
 
+
+unsigned int Widget::getColumnCode(int _idx)
+{
+    if (settingView == SettingViewType::speedRegulator)
+    {
+        for( auto const& [key, val] : rowToSpeedSettingCode )
+        {
+            if ((int)val == _idx)
+            {
+                return key;
+            }
+        }
+        return 0;
+    }
+    else if  (settingView == SettingViewType::termalRegulator)
+    {
+        for( auto const& [key, val] : rowToTemperatureSettingCode )
+        {
+            if ((int)val == _idx)
+            {
+                return key;
+            }
+        }
+        return 0;
+    }
+    return 0;
+}
 
 unsigned char Widget::getParameterCode(int _idx)
 {
