@@ -338,7 +338,7 @@ begin
 		variable user_command : type_user_commands := tmp_sol;--disable_comm;
 		variable trigger_phase : type_init_trigger_phase;
 		variable run_motor_state : type_run_motor_state;
-		variable uart_dev_status : type_uart_dev_status  := (False,False,False);
+		variable uart_dev_status : type_uart_dev_status  := (False,False,False,uart_no_device);
 		
 		constant glob_clk_denom : integer := 1000;
 		constant send_motor_data_wait : integer := 500;
@@ -375,7 +375,7 @@ begin
 				
 
 				user_command := tmp_sol;	
-				uart_dev_status := (False,False,False);
+				uart_dev_status := (False,False,False,uart_no_device);
 				glob_clk_counter := 0;
 				glob_small_clk_counter := 0;
 				last_motor_action := 0;
@@ -663,8 +663,11 @@ begin
 	
 					if uart_any_taken(uart_dev_status) = True then
 						
-						if uart_dev_status.flash = True  then
-							if i_busy_uart = '0' then 
+						if uart_dev_status.flash = True and
+							 (uart_dev_status.serviced = uart_no_device or uart_dev_status.serviced = flash_uart_dev) then
+						
+							if i_busy_uart = '0' then
+								uart_dev_status.serviced := flash_uart_dev; 
 								case val_cnt is
 									  when 0 =>   o_to_uart <= x"05"; -- size
 									  when 1 =>   o_to_uart <= std_logic_vector(flash_data_code);
@@ -676,7 +679,7 @@ begin
 								end case;
 								enable_uart <= '1';
 							elsif val_cnt = 6 and i_busy_uart = '1' then
-									
+									uart_dev_status.serviced := uart_no_device;
 									uart_dev_status.flash := False;
 									user_command := no_command; 
 									val_cnt := 0;	
@@ -684,9 +687,11 @@ begin
 							end if;	
 						
 						
-						elsif uart_dev_status.motor = True  then
+						elsif uart_dev_status.motor = True  and
+							 (uart_dev_status.serviced = uart_no_device or uart_dev_status.serviced = motor_uart_dev) then
 						 
-							if i_busy_uart = '0' then 					
+							if i_busy_uart = '0' then 	
+								uart_dev_status.serviced := motor_uart_dev; 				
 								time_tmp := to_unsigned(glob_clk_counter, time_tmp'length );
 	
 								case val_cnt is
@@ -705,7 +710,7 @@ begin
 								end case;
 								enable_uart <= '1';
 							elsif val_cnt = 10 and i_busy_uart = '1' then
-	
+									uart_dev_status.serviced := uart_no_device;
 									uart_dev_status.motor := False;
 									
 									val_cnt := 0;	
@@ -713,12 +718,12 @@ begin
 							end if;
 						
 						
-						elsif uart_dev_status.adc_data = True  then 
+						elsif uart_dev_status.adc_data = True and
+							 (uart_dev_status.serviced = uart_no_device or uart_dev_status.serviced = termistor_uart_dev) then 
 						
-							if i_busy_uart = '0' then 
+							if i_busy_uart = '0' then
+								uart_dev_status.serviced := termistor_uart_dev; 				 
 								time_tmp := to_unsigned(glob_clk_counter, time_tmp'length );
-							
-	 
 							
 								case val_cnt is
 								  when 0 =>   o_to_uart <= x"07";
@@ -733,7 +738,7 @@ begin
 								end case;
 								enable_uart <= '1';
 							elsif val_cnt = 8 and i_busy_uart = '1' then
-								
+								uart_dev_status.serviced := uart_no_device;
 								uart_dev_status.adc_data := False; 
 								val_cnt := 0;							
 							end if;

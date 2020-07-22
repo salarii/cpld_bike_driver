@@ -5,14 +5,17 @@ use ieee.numeric_std.all;
 
 package functions is
 
+type type_uart_device is (uart_no_device,flash_uart_dev, termistor_uart_dev, motor_uart_dev);
+
+
 type type_uart_dev_status is record	
 	flash : boolean;
 	adc_data : boolean;	
-	motor : boolean;	
+	motor : boolean;
+	serviced : type_uart_device;
 end record;
 
 
-type type_uart_device is (flash_uart_dev, termistor_uart_dev, motor_uart_dev);
 
 function parity_check(data: in std_logic_vector(7 downto 0); size : in integer) return std_logic;
 
