@@ -25,6 +25,7 @@ entity flash_controller is
 			
 			o_received : out std_logic;
 			o_spi : out type_from_spi;
+			o_debug_led	: out std_logic;
 			o_busy	: out std_logic
 		);
 end flash_controller;
@@ -141,7 +142,7 @@ begin
 					received_internal <= '0';
 				end if;
 				if  i_put_bus_high = '1' then
-					io_data <= (others => 'Z');
+				--	io_data <= (others => 'Z');
 				end if;
 				
 				if i_enable = '1' or  busy_internal = '1' then	
@@ -177,16 +178,18 @@ begin
 											flash_operation := status_read;
 											write_control := wr_control_status_erase;
 										end if;
-									
+                    o_debug_led <= '0';
 								elsif write_control = wr_control_status_erase then
 										if read_status = status_conclude then
 								
 											read_status := status_idle;
 											if busy_bit = '1' then
 												flash_operation := status_read;
+												
 											else
 												flash_operation := flash_write;
 												write_control := wr_control_write;
+												
 											end if;
 										end if;
 								elsif write_control = wr_control_write then
@@ -200,6 +203,7 @@ begin
 								
 											read_status := status_idle;
 											if busy_bit = '1' then
+											o_debug_led <= '1';
 												flash_operation := status_read;
 											else
 												write_control := wr_control_idle;

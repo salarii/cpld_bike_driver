@@ -85,6 +85,7 @@ architecture behaviour of control_unit is
 					
 					o_received : out std_logic;
 					o_spi : out type_from_spi;
+					o_debug_led	: out std_logic;
 					o_busy	: out std_logic
 				);
 				
@@ -269,6 +270,8 @@ begin
 					
 					o_received => received_flash,
 					o_spi => o_flash_spi,
+					
+          o_debug_led	=> leds(0),
 					o_busy => busy_flash
 				);
 	
@@ -303,9 +306,9 @@ begin
 		
 		type type_init_trigger_phase is ( unit_step_freq_h,unit_step_freq_l, unit_step_pulse_h,unit_step_pulse_l);
 		
-		type type_flash_write_state is ( get_setting_write_id,get_flash_write_byte2, get_flash_write_byte1, get_flash_write_byte0, execute_flash_write );
+		type type_flash_write_state is ( get_setting_write_id,get_flash_write_byte2, get_flash_write_byte1, get_flash_write_byte0, execute_flash_write,reload_settings_write );
 		type type_flash_read_state is ( get_flash_read_addr, execute_flash_read,progress_flash_read, read_flash_done, send_flash_data );
-		type type_flash_erase_state is ( get_flash_erase_addr, get_flash_erase_byte2, get_flash_erase_byte1, get_flash_erase_byte0, execute_flash_erase );
+		type type_flash_erase_state is ( get_flash_erase_addr, execute_flash_erase,reload_settings_erase );
 		type type_run_motor_state is ( run_motor_get_speed, run_motor_get_pulse_width, run_motor_max_temp,run_motor_hal,run_motor_manual,execute_run_motor );
 			
 				
@@ -404,22 +407,24 @@ begin
 				 
 				if state = state_read_settings then
 				
-					
+					--leds <= (others => '0');
 					if flash_read_state = execute_flash_read  then
 						if busy_flash = '0' then
 							en_flash <= '1';
 							transaction_flash <= Read;
 							data_flash <= (others => 'Z');
 							page_address_flash <= std_logic_vector(shift_left(unsigned(setting_id), 4));
+							               
+                en_flash <= '1';
 						elsif busy_flash = '1' then
 							
 								en_flash <= '0';
 								flash_read_state := progress_flash_read;
-						
+						 
 						end if;		
 					elsif flash_read_state = progress_flash_read then
 							if received_flash = '1' then
-							
+							     
 								flash_read_state := send_flash_data;
 								setting_val(15 downto 0) := unsigned(data_flash(15 downto 0));
 								update_setting_flag := '1';
@@ -429,12 +434,15 @@ begin
                 flash_read_state := execute_flash_read;
 								setting_id := setting_id + 1;
 							else
+                
 								state := state_operate; 
-							end if;				
+							end if;	
+
 						end if;
 				
 					
 				elsif state = state_operate then
+         -- leds <= (others => '1');
 					if prev_hal /= i_hal_data then
 						hal_imp_cnt := hal_imp_cnt + 1;
 						prev_hal := i_hal_data;
@@ -465,16 +473,24 @@ begin
 					if user_command = flash_write then
 						
 						if flash_write_state = execute_flash_write then
-							en_flash <= '1';
-							transaction_flash <= Write;
-							
-							setting_val := unsigned(data_flash);
-							update_setting_flag :=  '1';
+              
 							if busy_flash = '1' then
 								en_flash <= '0';
-								user_command := no_command;
-								 
-								
+                flash_write_state := reload_settings_write;
+
+              else
+                en_flash <= '1';
+                transaction_flash <= Write;
+                
+                setting_val := unsigned(data_flash);
+							end if;
+						elsif flash_write_state = reload_settings_write then	
+							if busy_flash = '0' then
+									user_command := no_command;
+									state := state_read_settings;
+									setting_id:= x"00";
+                  flash_read_state := execute_flash_read;
+                  put_bus_high_flash <= '0';
 							end if;
 						end if;
 					elsif user_command = flash_erase then	
@@ -486,9 +502,17 @@ begin
 							elsif busy_flash = '1' then
 							
 								en_flash <= '0';
-								user_command := no_command;
-						
+                flash_erase_state := reload_settings_erase; 
 							end if;		
+							
+						elsif flash_erase_state = reload_settings_erase then	
+							if busy_flash = '0' then
+									user_command := no_command;
+									state := state_read_settings;
+									setting_id:= x"00";
+									flash_read_state := execute_flash_read;
+									put_bus_high_flash <= '0';
+							end if;
 						end if;	
 					elsif user_command = flash_read then								
 	
@@ -602,15 +626,6 @@ begin
 								
 								if flash_erase_state = get_flash_erase_addr then								
 									page_address_flash <= std_logic_vector(shift_left(unsigned(i_from_uart), 4));
-									flash_erase_state := get_flash_erase_byte2;
-								elsif flash_erase_state = get_flash_erase_byte2 then
-									data_flash(23 downto 16) <= i_from_uart;
-									flash_erase_state := get_flash_erase_byte1;
-								elsif flash_erase_state = get_flash_erase_byte1 then
-									data_flash(15 downto 8) <= i_from_uart;
-									flash_erase_state := get_flash_erase_byte0;
-								elsif flash_erase_state = get_flash_erase_byte0 then
-									data_flash(7 downto 0) <= i_from_uart;
 									flash_erase_state := execute_flash_erase;
 								end if;		
 							elsif user_command = flash_write then
@@ -758,7 +773,7 @@ begin
 	begin
 		o_en_uart <= enable_uart;
 		o_motor_transistors <= motor_transistors;
-		leds(0) <= i_pedal_imp;
+		
 		control_box_setup.enable <=   i_brk_1 and i_brk_2 and host_enable;
 	end process;
 	

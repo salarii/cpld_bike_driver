@@ -53,10 +53,12 @@ signals:
     void reqVerifyFlash(int _idx);
     void reqFlashLoad(int _idx);
 public slots:
+    void verifyFlashAfterLoad();
     void flashDataView(int _idx);
 	void initFlashLoad();
 	void verifyFlash(int _idx);
     void sendDataToFlash(int _idx);
+    void reloadCurrentFlashDataView();
     void requestDataFromFlash(int _idx);
     void displayFlash(FlashData const * _value);
     void serviceMeasurement(Measurement const * _value);
@@ -111,5 +113,7 @@ private:
     std::vector<unsigned int> loadedSpeedReg;
     std::vector<unsigned int> loadedTemperatureReg;
     unsigned int fixedVal;
+
+    int verifyIdx;
 };
 #endif // WIDGET_H

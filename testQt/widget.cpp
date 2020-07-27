@@ -5,7 +5,7 @@
 #include "data_types.h"
 #include <QDoubleValidator>
 #include <QThread>
-
+#include <QTimer>
 unsigned int const MainClockFreq = 1000000;
 
 using namespace QtCharts;
@@ -28,7 +28,7 @@ unsigned  short floatToFixed(float input)
 
 float fixedToFloat(unsigned  short input)
 {
-    return ((float)input / (float)(1 << FIXED_POINT_FRACTIONAL_BITS));
+    return ((float)((signed short)input) / (float)(1 << FIXED_POINT_FRACTIONAL_BITS));
 }
 
 
@@ -227,6 +227,7 @@ Widget::resetParameter()
     sendBuff[0] = (unsigned  char)CommandCodes::EraseFlashOpCode;
     sendBuff[1] = getParameterCode(idx);
     emit sendToHardware(sendBuff, 2);
+    QTimer::singleShot(500, this, SLOT(reloadCurrentFlashDataView()));
 }
 
 /*
@@ -238,6 +239,14 @@ if (settingView == SettingViewType::termalRegulator)
 
 
 */
+
+void
+Widget::reloadCurrentFlashDataView()
+{
+
+    requestDataFromFlash(0);
+}
+
 void
 Widget::flashDataView(int _idx)
 {
@@ -297,7 +306,7 @@ Widget::serialProblem()
 float processFloat(  QVector<unsigned char> const & _data)
 {
 
-    unsigned int value = (unsigned int)_data[2] +
+    unsigned short value = (unsigned int)_data[2] +
                          (((unsigned int)_data[1])<<8);
 
 
@@ -338,7 +347,7 @@ Widget::displayFlash(FlashData const * _value)
         {
             val = processFloat(_value->data);
         }
-        loadedSpeedReg[idx] = *((unsigned *)&val);
+        loadedSpeedReg[idx] = processUnsigned(_value->data);
         limit = 4;
       }
     else if  (settingView == SettingViewType::termalRegulator)
@@ -357,7 +366,7 @@ Widget::displayFlash(FlashData const * _value)
         }
 
         limit = 3;
-        loadedTemperatureReg[idx] = *((unsigned *)&val);
+        loadedTemperatureReg[idx] = processUnsigned(_value->data);
     }
 
 
@@ -456,12 +465,12 @@ Widget::sendDataToFlash(int _idx)
     bool bStatus = false;
    //
     int parameterCnt =getParameterCnt();
-    if (idx >= parameterCnt)
+    if (_idx >= parameterCnt)
     {
         return;
     }
 
-    unsigned char parameterIdx =getParameterCode(idx);
+    unsigned char parameterIdx =getParameterCode(_idx);
 
     QString value = parLineEdit[_idx]->text();
     value = value.replace(",", ".");
@@ -469,15 +478,31 @@ Widget::sendDataToFlash(int _idx)
     if ( bStatus == true )
     {
         fixedVal = floatToFixed(val);
+        unsigned int val;
+        if (settingView == SettingViewType::speedRegulator)
+        {
+            val = loadedSpeedReg[_idx];
+        }
+        else if  (settingView == SettingViewType::termalRegulator)
+        {
+            val = loadedTemperatureReg[_idx];
+        }
 
-        sendBuff[0] = (unsigned  char)CommandCodes::WriteFlashOpCode;
-        sendBuff[1] = parameterIdx;
-        sendBuff[2] = 0x00;
-        sendBuff[3] = (fixedVal  >> 8) & 0xff;
-        sendBuff[4] = fixedVal & 0xff;
+        if ( val != fixedVal)
+        {
+            sendBuff[0] = (unsigned  char)CommandCodes::WriteFlashOpCode;
+            sendBuff[1] = parameterIdx;
+            sendBuff[2] = 0x00;
+            sendBuff[3] = (fixedVal  >> 8) & 0xff;
+            sendBuff[4] = fixedVal & 0xff;
 
-        emit sendToHardware(sendBuff, 5);
-        emit reqVerifyFlash(idx);
+            emit sendToHardware(sendBuff, 5);
+            emit reqVerifyFlash(_idx);
+        }
+        else
+        {
+            sendDataToFlash(_idx + 1);
+        }
     }
 
 }
@@ -527,9 +552,7 @@ Widget::initFlashLoad()
 void 
 Widget::verifyFlash(int _idx)
 {
-	
-    SettingViewType settingView;
-    
+
     unsigned int  val = 0;
     
     if (settingView == SettingViewType::speedRegulator)
@@ -548,12 +571,17 @@ Widget::verifyFlash(int _idx)
     }
     else
     {
-        QThread::msleep(300);
-        emit requestDataFromFlash(idx);
-    	emit reqVerifyFlash(idx);
+        verifyIdx = _idx;
+        QTimer::singleShot(500, this, SLOT(verifyFlashAfterLoad()));
+
     }
 }
+void Widget::verifyFlashAfterLoad()
+{
+    emit requestDataFromFlash(verifyIdx);
+    emit reqVerifyFlash(verifyIdx);
 
+}
 void
 Widget::startMotor(bool _checked)
 {
