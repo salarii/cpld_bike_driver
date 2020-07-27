@@ -68,8 +68,8 @@ CHIP  "bikeDriver"  ASSIGNED TO AN: EP4CE6E22C8
 
 Pin Name/Usage               : Location  : Dir.   : I/O Standard      : Voltage : I/O Bank  : User Assignment
 -------------------------------------------------------------------------------------------------------------
-RESERVED_INPUT_WITH_WEAK_PULLUP : 1         :        :                   :         : 1         :                
-RESERVED_INPUT_WITH_WEAK_PULLUP : 2         :        :                   :         : 1         :                
+i_spi.miso                   : 1         : input  : 3.3-V LVTTL       :         : 1         : Y              
+o_spi.ss                     : 2         : output : 3.3-V LVTTL       :         : 1         : Y              
 RESERVED_INPUT_WITH_WEAK_PULLUP : 3         :        :                   :         : 1         :                
 GND                          : 4         : gnd    :                   :         :           :                
 VCCINT                       : 5         : power  :                   : 1.2V    :           :                
@@ -100,13 +100,13 @@ VCCINT                       : 29        : power  :                   : 1.2V    
 i_hal_data[2]                : 30        : input  : 3.3-V LVTTL       :         : 2         : Y              
 i_hal_data[1]                : 31        : input  : 3.3-V LVTTL       :         : 2         : Y              
 i_hal_data[0]                : 32        : input  : 3.3-V LVTTL       :         : 2         : Y              
-o_adc_spi.sck                : 33        : output : 3.3-V LVTTL       :         : 2         : Y              
-i_adc_spi.miso               : 34        : input  : 3.3-V LVTTL       :         : 2         : Y              
+o_motor_transistors.C_p      : 33        : output : 3.3-V LVTTL       :         : 2         : Y              
+o_motor_transistors.C_n      : 34        : output : 3.3-V LVTTL       :         : 2         : Y              
 VCCA1                        : 35        : power  :                   : 2.5V    :           :                
 GNDA1                        : 36        : gnd    :                   :         :           :                
 VCCD_PLL1                    : 37        : power  :                   : 1.2V    :           :                
-o_adc_spi.mosi               : 38        : output : 3.3-V LVTTL       :         : 3         : Y              
-o_adc_spi.ss                 : 39        : output : 3.3-V LVTTL       :         : 3         : Y              
+o_motor_transistors.B_p      : 38        : output : 3.3-V LVTTL       :         : 3         : Y              
+o_motor_transistors.B_n      : 39        : output : 3.3-V LVTTL       :         : 3         : Y              
 VCCIO3                       : 40        : power  :                   : 3.3V    : 3         :                
 GND                          : 41        : gnd    :                   :         :           :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 42        :        :                   :         : 3         :                
@@ -116,10 +116,10 @@ VCCINT                       : 45        : power  :                   : 1.2V    
 RESERVED_INPUT_WITH_WEAK_PULLUP : 46        :        :                   :         : 3         :                
 VCCIO3                       : 47        : power  :                   : 3.3V    : 3         :                
 GND                          : 48        : gnd    :                   :         :           :                
-RESERVED_INPUT_WITH_WEAK_PULLUP : 49        :        :                   :         : 3         :                
-o_motor_transistors.B_p      : 50        : output : 3.3-V LVTTL       :         : 3         : Y              
-o_motor_transistors.B_n      : 51        : output : 3.3-V LVTTL       :         : 3         : Y              
-RESERVED_INPUT_WITH_WEAK_PULLUP : 52        :        :                   :         : 3         :                
+o_adc_spi.sck                : 49        : output : 3.3-V LVTTL       :         : 3         : Y              
+i_adc_spi.miso               : 50        : input  : 3.3-V LVTTL       :         : 3         : Y              
+o_adc_spi.mosi               : 51        : output : 3.3-V LVTTL       :         : 3         : Y              
+o_adc_spi.ss                 : 52        : output : 3.3-V LVTTL       :         : 3         : Y              
 RESERVED_INPUT_WITH_WEAK_PULLUP : 53        :        :                   :         : 3         :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 54        :        :                   :         : 4         :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 55        :        :                   :         : 4         :                
@@ -138,8 +138,8 @@ leds[0]                      : 67        : output : 3.3-V LVTTL       :         
 leds[1]                      : 68        : output : 3.3-V LVTTL       :         : 4         : Y              
 leds[2]                      : 69        : output : 3.3-V LVTTL       :         : 4         : Y              
 leds[3]                      : 70        : output : 3.3-V LVTTL       :         : 4         : Y              
-o_motor_transistors.C_p      : 71        : output : 3.3-V LVTTL       :         : 4         : Y              
-o_motor_transistors.C_n      : 72        : output : 3.3-V LVTTL       :         : 4         : Y              
+RESERVED_INPUT_WITH_WEAK_PULLUP : 71        :        :                   :         : 4         :                
+RESERVED_INPUT_WITH_WEAK_PULLUP : 72        :        :                   :         : 4         :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 73        :        :                   :         : 5         :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 74        :        :                   :         : 5         :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 75        :        :                   :         : 5         :                
@@ -195,12 +195,12 @@ RESERVED_INPUT_WITH_WEAK_PULLUP : 124       :        :                   :      
 RESERVED_INPUT_WITH_WEAK_PULLUP : 125       :        :                   :         : 7         :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 126       :        :                   :         : 7         :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 127       :        :                   :         : 7         :                
-o_spi.mosi                   : 128       : output : 3.3-V LVTTL       :         : 8         : Y              
-o_spi.sck                    : 129       : output : 3.3-V LVTTL       :         : 8         : Y              
+RESERVED_INPUT_WITH_WEAK_PULLUP : 128       :        :                   :         : 8         :                
+RESERVED_INPUT_WITH_WEAK_PULLUP : 129       :        :                   :         : 8         :                
 VCCIO8                       : 130       : power  :                   : 3.3V    : 8         :                
 GND                          : 131       : gnd    :                   :         :           :                
-o_spi.ss                     : 132       : output : 3.3-V LVTTL       :         : 8         : Y              
-i_spi.miso                   : 133       : input  : 3.3-V LVTTL       :         : 8         : Y              
+RESERVED_INPUT_WITH_WEAK_PULLUP : 132       :        :                   :         : 8         :                
+RESERVED_INPUT_WITH_WEAK_PULLUP : 133       :        :                   :         : 8         :                
 VCCINT                       : 134       : power  :                   : 1.2V    :           :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 135       :        :                   :         : 8         :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 136       :        :                   :         : 8         :                
@@ -210,6 +210,6 @@ VCCIO8                       : 139       : power  :                   : 3.3V    
 GND                          : 140       : gnd    :                   :         :           :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 141       :        :                   :         : 8         :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 142       :        :                   :         : 8         :                
-RESERVED_INPUT_WITH_WEAK_PULLUP : 143       :        :                   :         : 8         :                
-RESERVED_INPUT_WITH_WEAK_PULLUP : 144       :        :                   :         : 8         :                
+o_spi.mosi                   : 143       : output : 3.3-V LVTTL       :         : 8         : Y              
+o_spi.sck                    : 144       : output : 3.3-V LVTTL       :         : 8         : Y              
 GND                          : EPAD      :        :                   :         :           :                

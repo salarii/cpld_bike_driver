@@ -99,7 +99,6 @@ architecture behaviour of control_unit is
 					i_temp_transistors : in unsigned(9 downto 0);
 					i_req_speed : in unsigned(7 downto 0);
 					i_speed : unsigned(15 downto 0);
-					i_req_temperature : in unsigned(7 downto 0);
 					i_control_box_setup : in type_control_box_setup;
 					i_hal_data : in std_logic_vector(2 downto 0);
 					i_settings_control_box : type_settings_control_box;
@@ -161,7 +160,6 @@ architecture behaviour of control_unit is
 		signal adc_measurement : unsigned(15 downto 0) := (others => '0');
 		signal adc_temp : unsigned(9 downto 0);
 
-		signal req_temperature : unsigned(7 downto 0) := x"40";
 		signal req_speed : unsigned(7 downto 0);
 		signal control_box_setup : type_control_box_setup :=
 			(  hal => '1',
@@ -214,7 +212,6 @@ begin
 				i_temp_transistors => adc_temp,
 				i_req_speed => req_speed,
 				i_speed => speed,
-				i_req_temperature => req_temperature,
 				i_control_box_setup => control_box_setup,
 				i_hal_data => i_hal_data,
 				i_settings_control_box => settings_control_box,
@@ -382,7 +379,6 @@ begin
 				last_adc_data_send := 0;
 				hal_imp_cnt := (others=>'0');
 				control_box_setup.hal <= '1';
-				req_temperature <= x"40";
 				flash_read_state := execute_flash_read; 
 			else
 				
@@ -584,7 +580,7 @@ begin
 									control_box_setup.pulse_trigger(7 downto 0) <= unsigned(i_from_uart);
 									run_motor_state := run_motor_max_temp;
 								elsif run_motor_state = run_motor_max_temp then
-									req_temperature <= unsigned(i_from_uart);
+									settings_control_box.max_temperature(15 downto 8) <= unsigned(i_from_uart);
 									run_motor_state := run_motor_hal;
 								elsif run_motor_state = run_motor_hal then
 									if i_from_uart = x"00" then

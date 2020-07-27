@@ -18,7 +18,6 @@ entity control_box is
 		i_temp_transistors : in unsigned(9 downto 0);
 		i_req_speed : in unsigned(7 downto 0);
 		i_speed : unsigned(15 downto 0);
-		i_req_temperature : in unsigned(7 downto 0);
 		i_control_box_setup : in type_control_box_setup;
 		i_hal_data : in std_logic_vector(2 downto 0);
 		i_settings_control_box : type_settings_control_box;
@@ -119,8 +118,7 @@ architecture behaviour of control_box is
 		signal data : std_logic_vector(upper_limit downto 0);	
 		
 
-		signal poly_temperature : signed(15  downto 0) := (others => '0');	
-		signal req_temperature : signed(15  downto 0) := (others => '0');
+		signal poly_temperature : signed(15  downto 0) := (others => '0');
 
 		signal out_trigger : std_logic;
 		signal pulse_trigger : unsigned(7 downto 0) := (others => '0');	
@@ -286,7 +284,7 @@ begin
 	
 						elsif regulator_state = regulator_init then
 							
-							in_temperature_reg <= (req_temperature - poly_temperature);
+							in_temperature_reg <= (signed(i_settings_control_box.max_temperature) - poly_temperature);
 
 							req_speed_motor <= mul_out(23 downto 8 );
 							in_reg <= signed(mul_out(23 downto 8 )) - signed(i_speed);
@@ -334,7 +332,7 @@ begin
 
 	end process;
 
-process(i_temp_transistors,i_req_temperature,motor_transistors,i_hal_data,i_control_box_setup)
+process(i_temp_transistors,motor_transistors,i_hal_data,i_control_box_setup)
 begin
 	
 	poly_temperature(15 downto 6) <= signed(i_temp_transistors);
@@ -343,7 +341,6 @@ begin
 	motor_control_setup.hal_data <= i_hal_data;
 	
 	o_motor_transistors <= motor_transistors;
-	req_temperature(15 downto 8) <= signed(i_req_temperature);
 	
 
 end process;

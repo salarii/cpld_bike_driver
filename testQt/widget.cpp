@@ -31,48 +31,12 @@ float fixedToFloat(unsigned  short input)
     return ((float)input / (float)(1 << FIXED_POINT_FRACTIONAL_BITS));
 }
 
-float negativeFloatToFixed( float _number,int _integer, int _fractional )
-{
-    float smallest = -pow(2,-_fractional);
-    _number -= smallest;
-    unsigned short  val = 0xffff >>( 16 - _integer- _fractional );
-    unsigned short one = 0x01;
-
-    for (int i = _integer + _fractional - 2; i >=0; i-- )
-    {
-        auto current =  smallest*pow(2,i);
-        if (current >= _number )
-        {
-            _number -= current;
-            val = val & (~(one << i ));
-
-        }
-    }
-
-    return val ;
-}
-
-float negativeFixedToFloat( unsigned short _number,int _integer, int _fractional )
-{
-    float smallest = -pow(2,-_fractional);
-    float val = smallest;
-    unsigned short one = 0x01;
-    for (int  i = 0; i < (_integer + _fractional-1);i++)
-    {
-        if ( (_number & ( one <<  i )) == 0)
-        {
-           val += smallest*pow(2,i);
-        }
-    }
-
-    return val;
-}
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),motorRun(false)
 {
-   unsigned short a = negativeFloatToFixed(-0.5,2, 2 );
-    negativeFixedToFloat( a,2, 2);
+
+
 
 	loadedSpeedReg.resize(SettingsPageCnt);
 	loadedTemperatureReg.resize(SettingsPageCnt);
@@ -333,20 +297,14 @@ Widget::serialProblem()
 float processFloat(  QVector<unsigned char> const & _data)
 {
 
-    auto negativeCheck = _data[1];
     unsigned int value = (unsigned int)_data[2] +
                          (((unsigned int)_data[1])<<8);
 
 
     float  floatVal = 0.0;
-    if ( (negativeCheck & 0x80) > 0 )
-    {
-        floatVal = negativeFixedToFloat(value,8, 8);
-    }
-    else
-    {
-        floatVal = fixedToFloat(value);
-    }
+
+    floatVal = fixedToFloat(value);
+
     return floatVal;
 }
 
@@ -380,7 +338,7 @@ Widget::displayFlash(FlashData const * _value)
         {
             val = processFloat(_value->data);
         }
-        loadedSpeedReg[idx] = (unsigned )val;
+        loadedSpeedReg[idx] = *((unsigned *)&val);
         limit = 4;
       }
     else if  (settingView == SettingViewType::termalRegulator)
@@ -399,7 +357,7 @@ Widget::displayFlash(FlashData const * _value)
         }
 
         limit = 3;
-        loadedTemperatureReg[idx] = (unsigned )val;
+        loadedTemperatureReg[idx] = *((unsigned *)&val);
     }
 
 
@@ -506,6 +464,7 @@ Widget::sendDataToFlash(int _idx)
     unsigned char parameterIdx =getParameterCode(idx);
 
     QString value = parLineEdit[_idx]->text();
+    value = value.replace(",", ".");
     float val = value.toFloat(&bStatus);
     if ( bStatus == true )
     {
@@ -513,10 +472,11 @@ Widget::sendDataToFlash(int _idx)
 
         sendBuff[0] = (unsigned  char)CommandCodes::WriteFlashOpCode;
         sendBuff[1] = parameterIdx;
+        sendBuff[2] = 0x00;
         sendBuff[3] = (fixedVal  >> 8) & 0xff;
         sendBuff[4] = fixedVal & 0xff;
 
-        emit sendToHardware(sendBuff, 4);
+        emit sendToHardware(sendBuff, 5);
         emit reqVerifyFlash(idx);
     }
 
@@ -588,7 +548,8 @@ Widget::verifyFlash(int _idx)
     }
     else
     {
-    	QThread::msleep(100);
+        QThread::msleep(300);
+        emit requestDataFromFlash(idx);
     	emit reqVerifyFlash(idx);
     }
 }
