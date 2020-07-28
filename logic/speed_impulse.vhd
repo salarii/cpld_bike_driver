@@ -20,6 +20,8 @@ entity speed_impulse is
 			clk : in std_logic;	
 			
 			i_impulse : in std_logic;
+			i_alfa : in  unsigned(7 downto 0);
+			
 			o_speed : out unsigned(15 downto 0)
 		);
 		
@@ -57,7 +59,6 @@ architecture behaviour of speed_impulse is
 		constant fraction : integer := 0;
 		signal enable_filter : std_logic := '0';		
 			
-		constant alfa : unsigned(7 downto 0):= x"35";
 		signal filtered : unsigned(15 downto 0) := (others => '0');
 
 		signal rotation_speed : unsigned(15 downto 0):= (others => '0');
@@ -83,7 +84,7 @@ begin
 		i_enable =>enable_filter,
 			
 		i_no_filter_val => freq,
-		i_alfa => alfa,
+		i_alfa => i_alfa,
 		o_filtered => filtered
 		);
 

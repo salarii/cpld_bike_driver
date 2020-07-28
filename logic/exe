@@ -8,5 +8,5 @@ ghdl -a --workdir=build ./tb/motor_driver_tb.vhd ./tb/spi_tb.vhd  ./tb/uart_flas
 ghdl -a --workdir=build ./tb/uart_run_motor_tb.vhd ./tb/speed_tb.vhd ./tb/div_tb.vhd
 ghdl -a --workdir=build ./tb/control_box_tb.vhd ./tb/speed_estimator_tb.vhd
 ghdl -e --workdir=build float_mul_tb
-ghdl -r float_mul_tb --vcd=func.vcd  --stop-time=2000ms --ieee-asserts=disable-at-0
-gtkwave func.vcd
+#ghdl -r float_mul_tb --vcd=func.vcd  --stop-time=2000ms --ieee-asserts=disable-at-0
+#gtkwave func.vcd

@@ -301,14 +301,14 @@ begin
 							
 							if modified_temp_reg < 0 then  
 								modified_temp_reg := (others => '0');
-							elsif modified_temp_reg > signed(wave_user_limit) then
-								modified_temp_reg := signed(wave_user_limit);
+							elsif modified_temp_reg > signed(i_settings_control_box.user_limit) then
+								modified_temp_reg := signed(i_settings_control_box.user_limit);
 							end if;
 													
 							if modified_reg < 0 then  
 								modified_reg := (others => '0');
-							elsif modified_reg > signed(wave_user_limit) then
-								modified_reg := signed(wave_user_limit);
+							elsif modified_reg > signed(i_settings_control_box.user_limit) then
+								modified_reg := signed(i_settings_control_box.user_limit);
 							end if;
 							
 							

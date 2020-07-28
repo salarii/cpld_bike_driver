@@ -25,6 +25,8 @@ entity control_unit is
 		i_brk_1 : in std_logic;
 		i_brk_2 : in std_logic;
 
+		i_control_mode : in std_logic;
+
 		i_busy_uart : in std_logic;
 		i_from_uart : in std_logic_vector(7 downto 0);
 		i_received_uart : in std_logic;
@@ -59,7 +61,7 @@ architecture behaviour of control_unit is
 					i_manu_speed : in unsigned(11 downto 0);			
 					i_throttle_meas : in unsigned(9 downto 0);
 					i_impulse : in std_logic;
-					
+					i_alfa : in  unsigned(7 downto 0);
 					o_speed : out unsigned(7 downto 0)
 				);
 				
@@ -119,6 +121,7 @@ architecture behaviour of control_unit is
 					clk : in std_logic;	
 					
 					i_impulse : in std_logic;
+					i_alfa : in  unsigned(7 downto 0);
 					
 					o_speed : out unsigned(15 downto 0)
 				);
@@ -159,6 +162,9 @@ architecture behaviour of control_unit is
 		signal adc_measurement : unsigned(15 downto 0) := (others => '0');
 		signal adc_temp : unsigned(9 downto 0);
 
+		signal  hal_err : std_logic := '0';
+		
+
 		signal req_speed : unsigned(7 downto 0);
 		signal control_box_setup : type_control_box_setup :=
 			(  hal => '1',
@@ -195,7 +201,7 @@ architecture behaviour of control_unit is
 		constant wave_limit : unsigned(15 downto 0) := x"0ff0";--255 , 100% wave equvalent
 		constant max_temperature : unsigned(15 downto 0) := x"0200";-- Celsius
 		constant offset_tmp_wave : unsigned(15 downto 0) := x"0000";--
-		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0C00";-- 50% wave user  cap
+		constant wave_user_limit : unsigned(15 downto 0) := x"0C00";-- 50% wave user  cap
 		
 		constant alfa_speed : unsigned(15 downto 0):= x"0035";
 		constant alfa_pedal_assist : unsigned(15 downto 0):= x"00a5";
@@ -203,25 +209,28 @@ architecture behaviour of control_unit is
 		signal profile_1_pid : type_settings_pid;
 		signal profile_2_pid : type_settings_pid;
 		signal	max_speed1 : unsigned(15 downto 0);
-    signal	max_speed2 : unsigned(15 downto 0);
-	
-    signal	offset_speed1 : unsigned(15 downto 0);
-    signal	offset_speed2 : unsigned(15 downto 0);  
-
-    signal	alpha_pedal_assist : unsigned(15 downto 0);
-    signal	alpha_speed : unsigned(15 downto 0);
+	    signal	max_speed2 : unsigned(15 downto 0);
 		
-		signal settings_control_box : type_settings_control_box :=
-			(  
-				settings_pid => (Kp =>Kp_pid, Ki =>Ki_pid, Kd =>Kd_pid),
-				settings_pd => (Kp =>Kp_pd, Kd =>Kd_pd),
-				max_speed =>max_speed,
-				max_temperature =>max_temperature,
-				
-				offset_speed =>offset_speed_wave,
-				offset_term =>offset_tmp_wave,
-        user_limit => wave_user_limit
-				);
+	    signal	offset_speed1 : unsigned(15 downto 0);
+	    signal	offset_speed2 : unsigned(15 downto 0);  
+	
+	    signal	alpha_pedal_assist : unsigned(15 downto 0);
+	    signal	alpha_speed : unsigned(15 downto 0);
+		
+		
+		
+		signal settings_control_box : type_settings_control_box;
+--		 :=
+--			(  
+--				settings_pid => (Kp =>Kp_pid, Ki =>Ki_pid, Kd =>Kd_pid),
+--				settings_pd => (Kp =>Kp_pd, Kd =>Kd_pd),
+--				max_speed =>max_speed,
+--				max_temperature =>max_temperature,
+--				
+--				offset_speed =>offset_speed_wave,
+--				offset_term =>offset_tmp_wave,
+--				user_limit => wave_user_limit
+--				);
 begin	
 	
 	module_control_box: control_box
@@ -252,7 +261,7 @@ begin
 					i_manu_speed(7 downto  0) =>manu_speed,			
 					i_throttle_meas => throttle,
 					i_impulse => i_pedal_imp,
-					
+					i_alfa => alpha_speed(7 downto 0),
 					o_speed => req_speed
 				);
 
@@ -267,7 +276,7 @@ begin
 					clk => clk,	
 					
 					i_impulse => speed_impulse_sig,
-					
+					i_alfa => alpha_pedal_assist(7 downto 0),
 					o_speed => speed
 					);
 
@@ -358,6 +367,8 @@ begin
 		variable run_motor_state : type_run_motor_state;
 		variable uart_dev_status : type_uart_dev_status  := (False,False,False,uart_no_device);
 		
+		variable	hal_work : unsigned(4 downto 0);
+		
 		constant glob_clk_denom : integer := 1000;
 		constant send_motor_data_wait : integer := 500;
 		constant send_adc_data_wait : integer := 500;
@@ -399,18 +410,10 @@ begin
 				last_adc_data_send := 0;
 				hal_imp_cnt := (others=>'0');
 				control_box_setup.hal <= '1';
-				flash_read_state := execute_flash_read; 
+				flash_read_state := execute_flash_read;
+				hal_err <= '0'; 
 			else
 				
-				
-				
-						signal  : type_settings_pid;
-		signal profile_2_pid : type_settings_pid;
-		signal	max_speed1 : unsigned(15 downto 0);
-    signal	max_speed2 : unsigned(15 downto 0);
-	
-    signal	offset_speed1 : unsigned(15 downto 0);
-    signal	offset_speed1 : unsigned(15 downto 0);
 				
 				if  update_setting_flag = '1'  then
 					if setting_val(15 downto 0) /= x"ffff" then
@@ -431,8 +434,8 @@ begin
 							when x"0c" =>  settings_control_box.max_temperature <= unsigned(setting_val(15 downto 0));
 							when x"0d" =>  settings_control_box.offset_term <= unsigned(setting_val(15 downto 0));
 							when x"0e" =>  settings_control_box.user_limit <= unsigned(setting_val(15 downto 0));
-              when x"0f" =>  settings_control_box.alpha_pedal_assist <= unsigned(setting_val(15 downto 0));
-              when x"10" =>  settings_control_box.alpha_speed <= unsigned(setting_val(15 downto 0));
+							when x"0f" =>  alpha_pedal_assist <= unsigned(setting_val(15 downto 0));
+							when x"10" =>  alpha_speed <= unsigned(setting_val(15 downto 0));
 							when others => update_setting_flag :=  '0';
 						end case;
 					else
@@ -453,8 +456,8 @@ begin
 							when x"0c" =>  settings_control_box.max_temperature <= max_temperature;
 							when x"0d" =>  settings_control_box.offset_term <= offset_tmp_wave;
 							when x"0e" =>  settings_control_box.user_limit <= wave_user_limit;
-              when x"0f" =>  settings_control_box.alpha_pedal_assist <= alfa_pedal_assist;
-              when x"10" =>  settings_control_box.alpha_speed <= alfa_speed;
+							when x"0f" =>  alpha_pedal_assist <= alfa_pedal_assist;
+							when x"10" =>  alpha_speed <= alfa_speed;
 							when others => update_setting_flag :=  '0';
 						end case;
 					end if;
@@ -472,7 +475,7 @@ begin
 							data_flash <= (others => 'Z');
 							page_address_flash <= std_logic_vector(shift_left(unsigned(setting_id), 4));
 							               
-                en_flash <= '1';
+                			en_flash <= '1';
 						elsif busy_flash = '1' then
 							
 								en_flash <= '0';
@@ -488,7 +491,7 @@ begin
 							end if;
 						elsif flash_read_state = send_flash_data then
 							if setting_id <= x"08" then
-                flash_read_state := execute_flash_read;
+								flash_read_state := execute_flash_read;
 								setting_id := setting_id + 1;
 							else
                 
@@ -499,7 +502,7 @@ begin
 				
 					
 				elsif state = state_operate then
-         leds(3 downto 1) <= (others => '1');
+					leds(3 downto 1) <= (others => '1');
 					if prev_hal /= i_hal_data then
 						hal_imp_cnt := hal_imp_cnt + 1;
 						prev_hal := i_hal_data;
@@ -533,20 +536,20 @@ begin
               
 							if busy_flash = '1' then
 								en_flash <= '0';
-                flash_write_state := reload_settings_write;
+								flash_write_state := reload_settings_write;
 
-              else
-                en_flash <= '1';
-                transaction_flash <= Write;
-                
-                setting_val := unsigned(data_flash);
+							else
+				                en_flash <= '1';
+				                transaction_flash <= Write;
+				                
+				                setting_val := unsigned(data_flash);
 							end if;
 						elsif flash_write_state = reload_settings_write then	
 							if busy_flash = '0' then
-									user_command := no_command;
-									state := state_read_settings;
-									setting_id:= x"00";
-                  flash_read_state := execute_flash_read;
+								user_command := no_command;
+								state := state_read_settings;
+								setting_id:= x"00";
+								flash_read_state := execute_flash_read;
 							end if;
 						end if;
 					elsif user_command = flash_erase then	
@@ -558,7 +561,7 @@ begin
 							elsif busy_flash = '1' then
 							
 								en_flash <= '0';
-                flash_erase_state := reload_settings_erase; 
+								flash_erase_state := reload_settings_erase; 
 							end if;		
 							
 						elsif flash_erase_state = reload_settings_erase then	
@@ -702,16 +705,24 @@ begin
 									setting_id := unsigned(i_from_uart);
 									
 									case setting_id is
-										when x"00" =>  setting_val(15 downto 0) := unsigned(settings_control_box.settings_pid.Kp);
-										when x"01" =>  setting_val(15 downto 0) := unsigned(settings_control_box.settings_pid.Ki);
-										when x"02" =>  setting_val(15 downto 0) := unsigned(settings_control_box.settings_pid.Kd);
-										when x"03" =>  setting_val(15 downto 0) := unsigned(settings_control_box.settings_pd.Kp);
-										when x"04" =>  setting_val(15 downto 0) := unsigned(settings_control_box.settings_pid.Kd); 
-										when x"05" =>  setting_val(15 downto 0) := unsigned(settings_control_box.max_speed);
-										when x"06" =>  setting_val(15 downto 0) := unsigned(settings_control_box.max_temperature);
-										when x"07" =>  setting_val(15 downto 0) := unsigned(settings_control_box.offset_speed);
-										when x"08" =>  setting_val(15 downto 0) := unsigned(settings_control_box.offset_term);
-										when others => update_setting_flag :=  '0';
+										when x"00" =>  setting_val(15 downto 0) := unsigned(profile_1_pid.Kp);
+										when x"01" =>  setting_val(15 downto 0) := unsigned(profile_2_pid.Kp);							
+										when x"02" =>  setting_val(15 downto 0) := unsigned(profile_1_pid.Ki);
+										when x"03" =>  setting_val(15 downto 0) := unsigned(profile_2_pid.Ki);							
+										when x"04" =>  setting_val(15 downto 0) := unsigned(profile_1_pid.Kd);
+										when x"05" =>  setting_val(15 downto 0) := unsigned(profile_2_pid.Kd);
+										when x"06" =>  setting_val(15 downto 0) := unsigned(max_speed1);
+										when x"07" =>  setting_val(15 downto 0) := unsigned(max_speed2);
+										when x"08" =>  setting_val(15 downto 0) := unsigned(offset_speed1);	
+										when x"09" =>  setting_val(15 downto 0) := unsigned(offset_speed2);
+										when x"0a" =>  setting_val(15 downto 0) := unsigned(settings_control_box.settings_pd.Kp);
+										when x"0b" =>  setting_val(15 downto 0) := unsigned(settings_control_box.settings_pid.Kd); 
+										when x"0c" =>  setting_val(15 downto 0) := unsigned(settings_control_box.max_temperature);
+										when x"0d" =>  setting_val(15 downto 0) := unsigned(settings_control_box.offset_term);
+										when x"0e" =>  setting_val(15 downto 0) := unsigned(settings_control_box.user_limit);
+										when x"0f" =>  setting_val(15 downto 0) := unsigned(alpha_pedal_assist);
+										when x"10" =>  setting_val(15 downto 0) := unsigned(alpha_speed);
+										when others => update_setting_flag :=  update_setting_flag;
 									end case;
 								
 									uart_dev_status.flash := True;
@@ -818,15 +829,72 @@ begin
 			end if;
 		end if;
 
+
+		case i_hal_data is
+			when "101" =>  
+				if hal_work = "00000" or hal_work = "10000" then
+					hal_work := "10000";	
+				else
+					hal_err <= '1';
+				end if;
+			when "100"  =>  
+				if hal_work = "10000" or hal_work = "11000" then
+					hal_work := "11000";	
+				else
+					hal_err <= '1';
+				end if;
+			when "110"  =>  
+				if hal_work = "11000" or hal_work = "11100" then
+					hal_work := "11100";	
+				else
+					hal_err <= '1';
+				end if;
+			when "010"  =>  
+				if hal_work = "11100" or hal_work = "11110" then
+					hal_work := "11110";	
+				else
+					hal_err <= '1';
+				end if;
+			when "011"  =>  
+				if hal_work = "11110" or hal_work = "11111" then
+					hal_work := "11111";	
+				else
+					hal_err <= '1';
+				end if;
+			when "001"  =>  
+				
+				if hal_work = "11111" then
+									    	
+					hal_err <= '0';
+				else
+						hal_err <= '1';
+				end if;
+				hal_work := "00000";
+			when others => 
+				hal_err <= '1';
+			end case;
+
 	end process;
 	
 
-	process(  enable_uart,motor_transistors,i_pedal_imp,host_enable, i_brk_1, i_brk_2)
+	process( i_control_mode, enable_uart,motor_transistors,i_pedal_imp,host_enable, i_brk_1, i_brk_2)
 	begin
 		o_en_uart <= enable_uart;
 		o_motor_transistors <= motor_transistors;
 		
 		control_box_setup.enable <=   i_brk_1 and i_brk_2 and host_enable;
+		case i_control_mode is
+		   when '1' =>
+				settings_control_box.settings_pid <= profile_1_pid;
+				settings_control_box.max_speed <= max_speed1;				
+				settings_control_box.offset_speed <= offset_speed1;
+		   when '0' =>
+				settings_control_box.settings_pid <= profile_2_pid;
+				settings_control_box.max_speed <= max_speed2;				
+				settings_control_box.offset_speed <= offset_speed2;
+  			when others => settings_control_box.max_speed <= max_speed1;
+		end case; 
+	
 	end process;
 	
 end behaviour;

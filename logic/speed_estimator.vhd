@@ -20,6 +20,7 @@ entity speed_estimator is
 			i_manu_speed : in unsigned(11 downto 0);			
 			i_throttle_meas : in unsigned(9 downto 0);
 			i_impulse : in std_logic;
+			i_alfa : in  unsigned(7 downto 0);
 			
 			o_speed : out unsigned(7 downto 0)
 		);
@@ -40,6 +41,8 @@ architecture behaviour of speed_estimator is
 				clk : in std_logic;	
 				
 				i_impulse : in std_logic;
+				i_alfa : in  unsigned(7 downto 0);
+				
 				o_speed : out unsigned(15 downto 0)
 			);
 			
@@ -102,6 +105,8 @@ begin
 				clk => clk,
 				
 				i_impulse => i_impulse,
+				i_alfa => i_alfa,
+				
 				o_speed => pedals_speed
 		);
 
