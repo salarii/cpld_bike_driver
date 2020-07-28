@@ -21,7 +21,6 @@ entity flash_controller is
 			i_transaction : in transaction_type;
 			i_enable : in std_logic;
 			i_spi : in type_to_spi;
-			i_put_bus_high : in std_logic;
 			
 			o_received : out std_logic;
 			o_spi : out type_from_spi;
@@ -140,9 +139,6 @@ begin
 		
 				if  received_internal = '1' then
 					received_internal <= '0';
-				end if;
-				if  i_put_bus_high = '1' then
-				--	io_data <= (others => 'Z');
 				end if;
 				
 				if i_enable = '1' or  busy_internal = '1' then	

@@ -86,6 +86,8 @@ type type_settings_control_box is record
 	offset_speed : unsigned(15 downto 0);
 	offset_term : unsigned(15 downto 0);
 
+	user_limit : unsigned(15 downto 0);
+
 end record;
 
 

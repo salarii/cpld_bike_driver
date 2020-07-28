@@ -19,18 +19,31 @@ struct Measurement;
 struct FlashData;
 const unsigned char  polyBase = 0x0;
 
-enum class SettingViewType{ speedRegulator = 0, termalRegulator = 1 };
-enum class SettingCodes{ speedKp = 0,speedKi= 1, speedKd = 2,
-                         temperatureKp = 3, temperatureKd = 4,
-                         maxSpeed =5, maxTemperature = 6,
-                         speedOffset = 7, temperatureOffset = 8};
+enum class SettingViewType{ speedRegulatorProfile1 = 0,speedRegulatorProfile2 = 1, termalRegulator = 2, otherStuff = 3 };
 
-const std::map<int, SettingCodes> rowToSpeedSettingCode = {
-        {0,SettingCodes::speedKp},
-        {1,SettingCodes::speedKi},
-        {2,SettingCodes::speedKd},
-        {3,SettingCodes::maxSpeed},
-        {4,SettingCodes::speedOffset}
+enum class SettingCodes{ speedKp1 = 0,speedKp2 =1,
+                         speedKi1= 2, speedKi2= 3,
+                         speedKd1 = 4, speedKd2 = 5,
+                         maxSpeed1 =6, maxSpeed2 =7,
+                         speedOffset1 = 8, speedOffset2 = 9,
+                         temperatureKp = 10, temperatureKd = 11,
+                         maxTemperature = 12, temperatureOffset = 13,
+                         userLimit =14, alphaPedalAssist = 15, alphaSpeed = 16,last = 17};
+
+const std::map<int, SettingCodes> rowToSpeed1SettingCode = {
+        {0,SettingCodes::speedKp1},
+        {1,SettingCodes::speedKi1},
+        {2,SettingCodes::speedKd1},
+        {3,SettingCodes::maxSpeed1},
+        {4,SettingCodes::speedOffset1}
+};
+
+const std::map<int, SettingCodes> rowToSpeed2SettingCode = {
+        {0,SettingCodes::speedKp2},
+        {1,SettingCodes::speedKi2},
+        {2,SettingCodes::speedKd2},
+        {3,SettingCodes::maxSpeed2},
+        {4,SettingCodes::speedOffset2}
 };
 
 const std::map<int, SettingCodes> rowToTemperatureSettingCode = {
@@ -38,6 +51,12 @@ const std::map<int, SettingCodes> rowToTemperatureSettingCode = {
         {1,SettingCodes::temperatureKd},
         {2,SettingCodes::maxTemperature},
         {3,SettingCodes::temperatureOffset}
+};
+
+const std::map<int, SettingCodes> rowToOtherSettingCode = {
+        {0,SettingCodes::userLimit},
+        {1,SettingCodes::alphaPedalAssist},
+        {2,SettingCodes::alphaSpeed}
 };
 
 class Widget : public QWidget
@@ -110,8 +129,7 @@ private:
     int rotation_cnt;
     int speed;
     SettingViewType settingView;
-    std::vector<unsigned int> loadedSpeedReg;
-    std::vector<unsigned int> loadedTemperatureReg;
+    std::vector<unsigned int> loadedDataReg;
     unsigned int fixedVal;
 
     int verifyIdx;

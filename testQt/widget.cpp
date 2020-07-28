@@ -37,11 +37,8 @@ Widget::Widget(QWidget *parent)
 {
 
 
+    loadedDataReg.resize((int)SettingCodes::last);
 
-	loadedSpeedReg.resize(SettingsPageCnt);
-	loadedTemperatureReg.resize(SettingsPageCnt);
-	
-	
     rotation_cnt =0;
     sendBuff = new unsigned char(10);
 
@@ -133,8 +130,7 @@ Widget::Widget(QWidget *parent)
                          this, &Widget::resetParameter);
     }
     flashLayout->addWidget(saveFlash);
-    switchSettingsView(SettingViewType::speedRegulator);
-
+    switchSettingsView(SettingViewType::speedRegulatorProfile1);
 
     QWidget * blcdWidget = new QWidget;
     QVBoxLayout *blcdLayout = new QVBoxLayout;
@@ -252,11 +248,19 @@ Widget::flashDataView(int _idx)
 {
     if (_idx == 0)
     {
-        switchSettingsView(SettingViewType::speedRegulator);
+        switchSettingsView(SettingViewType::speedRegulatorProfile1);
     }
     else if(_idx == 1)
     {
+        switchSettingsView(SettingViewType::speedRegulatorProfile2);
+    }
+    else if(_idx == 2)
+    {
         switchSettingsView(SettingViewType::termalRegulator);
+    }
+    else if(_idx == 3)
+    {
+        switchSettingsView(SettingViewType::otherStuff);
     }
     requestDataFromFlash(0);
 }
@@ -267,7 +271,8 @@ Widget::switchSettingsView(SettingViewType _settingView)
     if ( _settingView != settingView )
     {
         settingView = _settingView;
-        if (_settingView == SettingViewType::speedRegulator)
+        if (_settingView == SettingViewType::speedRegulatorProfile1 ||
+            _settingView == SettingViewType::speedRegulatorProfile2 )
         {
             parLabels[0]->setText("Kp");
             parLabels[1]->setText("Ki");
@@ -283,6 +288,14 @@ Widget::switchSettingsView(SettingViewType _settingView)
             parLabels[1]->setText("Kd");
             parLabels[2]->setText("Reg offset");
             parLabels[3]->setText("Maximum temperature (celsius)");
+            parLabels[4]->setText("");
+        }
+        else if ( _settingView == SettingViewType::otherStuff )
+        {
+            parLabels[0]->setText("user limit");
+            parLabels[1]->setText("alpha pedal assist");
+            parLabels[2]->setText("alpha speed");
+            parLabels[3]->setText("");
             parLabels[4]->setText("");
         }
     }
@@ -333,13 +346,18 @@ Widget::displayFlash(FlashData const * _value)
     int  limit = 0;
     unsigned int  idx =  getColumnCode(_value->idx);
 
-    if (settingView == SettingViewType::speedRegulator)
+    loadedDataReg[_value->idx] = processUnsigned(_value->data);
+
+    if (settingView == SettingViewType::speedRegulatorProfile1 ||
+        settingView == SettingViewType::speedRegulatorProfile2 )
     {
-        if (_value->idx == (int)SettingCodes::speedOffset )
+        if (_value->idx == (int)SettingCodes::speedOffset1 ||
+            _value->idx == (int)SettingCodes::speedOffset2 )
         {
             val = ((float)processUnsigned(_value->data))/16.0;
         }
-        else if ( _value->idx == (int)SettingCodes::maxSpeed )
+        else if ( _value->idx == (int)SettingCodes::maxSpeed1 ||
+                  _value->idx == (int)SettingCodes::maxSpeed2 )
         {
             val = processFloat(_value->data);
         }
@@ -347,9 +365,8 @@ Widget::displayFlash(FlashData const * _value)
         {
             val = processFloat(_value->data);
         }
-        loadedSpeedReg[idx] = processUnsigned(_value->data);
         limit = 4;
-      }
+    }
     else if  (settingView == SettingViewType::termalRegulator)
     {
         if (_value->idx == (int)SettingCodes::temperatureOffset )
@@ -366,9 +383,20 @@ Widget::displayFlash(FlashData const * _value)
         }
 
         limit = 3;
-        loadedTemperatureReg[idx] = processUnsigned(_value->data);
     }
+    else if (settingView == SettingViewType::otherStuff)
+    {
+        if (_value->idx == (int)SettingCodes::userLimit )
+        {
+            val = ((float)processUnsigned(_value->data))/16.0;
+        }
+        else
+        {
+            val = processUnsigned(_value->data);
+        }
 
+        limit = 2;
+      }
 
 
     QString  valStr = QString().setNum(val,'g', 4);
@@ -404,9 +432,20 @@ Widget::setMeasurementChannel(int _index)
 
 unsigned int Widget::getColumnCode(int _idx)
 {
-    if (settingView == SettingViewType::speedRegulator)
+    if (settingView == SettingViewType::speedRegulatorProfile1)
     {
-        for( auto const& [key, val] : rowToSpeedSettingCode )
+        for( auto const& [key, val] : rowToSpeed1SettingCode )
+        {
+            if ((int)val == _idx)
+            {
+                return key;
+            }
+        }
+        return 0;
+    }
+    else if  (settingView == SettingViewType::speedRegulatorProfile2)
+    {
+        for( auto const& [key, val] : rowToSpeed2SettingCode )
         {
             if ((int)val == _idx)
             {
@@ -426,27 +465,50 @@ unsigned int Widget::getColumnCode(int _idx)
         }
         return 0;
     }
+    else if  (settingView == SettingViewType::otherStuff)
+    {
+        for( auto const& [key, val] : rowToOtherSettingCode )
+        {
+            if ((int)val == _idx)
+            {
+                return key;
+            }
+        }
+        return 0;
+    }
     return 0;
 }
 
 unsigned char Widget::getParameterCode(int _idx)
 {
-    if (settingView == SettingViewType::speedRegulator)
+    if (settingView == SettingViewType::speedRegulatorProfile1)
     {
-        return (unsigned char)rowToSpeedSettingCode.find(_idx)->second;
+        return (unsigned char)rowToSpeed1SettingCode.find(_idx)->second;
 
+    }
+    else if  (settingView == SettingViewType::speedRegulatorProfile2)
+    {
+
+        return (unsigned char)rowToSpeed2SettingCode.find(_idx)->second;
     }
     else if  (settingView == SettingViewType::termalRegulator)
     {
 
         return (unsigned char)rowToTemperatureSettingCode.find(_idx)->second;
     }
+    else if  (settingView == SettingViewType::otherStuff)
+    {
+
+        return (unsigned char)rowToOtherSettingCode.find(_idx)->second;
+    }
+
     return 0;
 }
 
 int Widget::getParameterCnt()
 {
-    if (settingView == SettingViewType::speedRegulator)
+    if (settingView == SettingViewType::speedRegulatorProfile1 ||
+        settingView == SettingViewType::speedRegulatorProfile2 )
     {
         return 5;
 
@@ -454,6 +516,10 @@ int Widget::getParameterCnt()
     else if  (settingView == SettingViewType::termalRegulator)
     {
         return 4;
+    }
+    else if  (settingView == SettingViewType::otherStuff)
+    {
+        return 3;
     }
     return 0;
 }
@@ -478,15 +544,7 @@ Widget::sendDataToFlash(int _idx)
     if ( bStatus == true )
     {
         fixedVal = floatToFixed(val);
-        unsigned int val;
-        if (settingView == SettingViewType::speedRegulator)
-        {
-            val = loadedSpeedReg[_idx];
-        }
-        else if  (settingView == SettingViewType::termalRegulator)
-        {
-            val = loadedTemperatureReg[_idx];
-        }
+        unsigned int val =loadedDataReg[getParameterCode(_idx)];
 
         if ( val != fixedVal)
         {
@@ -552,17 +610,8 @@ Widget::initFlashLoad()
 void 
 Widget::verifyFlash(int _idx)
 {
+    unsigned int  val = loadedDataReg[getParameterCode(_idx)];
 
-    unsigned int  val = 0;
-    
-    if (settingView == SettingViewType::speedRegulator)
-    {
-    	val = loadedSpeedReg[_idx];
-    }
-    else if  (settingView == SettingViewType::termalRegulator)
-    {
-    	val = loadedTemperatureReg[_idx];
-    }
     
     if (fixedVal == val)
     {

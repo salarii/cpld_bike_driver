@@ -129,8 +129,6 @@ architecture behaviour of control_box is
 		signal enable_div : std_logic;
 		signal valid : std_logic;
 		
-		
-		constant wave_user_limit : unsigned(upper_limit downto 0) := x"0C00";-- 50% wave user  cap
 
 		signal req_speed_motor : unsigned(upper_limit downto 0):=(others=>'0');
 		signal motor_control_setup : type_motor_control_setup;
