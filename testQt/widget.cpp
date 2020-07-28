@@ -94,7 +94,7 @@ Widget::Widget(QWidget *parent)
 
 
     parameterList = new QComboBox();
-    QStringList params = { "speed regulator", "temperature regulator"};
+    QStringList params = { "road profile", "terrain profile","temperature regulator", "other settings"};
     parameterList->addItems(params);
     QPushButton * saveFlash= new QPushButton("save to flash");
 

@@ -26,6 +26,8 @@ architecture t_behaviour of uart_run_motor_tb is
       i_brk_1 : in std_logic;
       i_brk_2 : in std_logic;
 
+      i_control_mode : in std_logic;
+
       i_busy_uart : in std_logic;
       i_from_uart : in std_logic_vector(7 downto 0);
       i_received_uart : in std_logic;
@@ -108,7 +110,6 @@ architecture t_behaviour of uart_run_motor_tb is
 		signal rx_uart : std_logic;
 		signal err_uart : std_logic;		
 
-
 		signal to_spi : type_to_spi;
 		signal from_spi : type_from_spi;
 		signal to_adc_spi : type_to_spi;
@@ -133,6 +134,8 @@ architecture t_behaviour of uart_run_motor_tb is
 
         i_brk_1 => '1',
         i_brk_2 => '1',
+
+        i_control_mode => '1',
 
 				leds => leds,
 		
@@ -170,7 +173,7 @@ architecture t_behaviour of uart_run_motor_tb is
 				--res <= '0';	
 				res <= '1';
 				to_spi.miso <= '1';
-				wait for 700 us;				
+				wait for 1200 us;				
 				
         pedal_imp <= '0';
 				-- run motor
