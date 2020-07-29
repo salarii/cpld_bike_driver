@@ -277,8 +277,8 @@ Widget::switchSettingsView(SettingViewType _settingView)
             parLabels[0]->setText("Kp");
             parLabels[1]->setText("Ki");
             parLabels[2]->setText("Kd");
-            parLabels[3]->setText("Reg offset");
-            parLabels[4]->setText("Maximum speed \nkm/h(0.36 m radius)");
+            parLabels[3]->setText("Maximum speed \nkm/h(0.36 m radius)");
+            parLabels[4]->setText("Reg offset");
 
 
         }
@@ -354,16 +354,17 @@ Widget::displayFlash(FlashData const * _value)
         if (_value->idx == (int)SettingCodes::speedOffset1 ||
             _value->idx == (int)SettingCodes::speedOffset2 )
         {
-            val = ((float)processUnsigned(_value->data))/16.0;
+            val = ((float)processFloat(_value->data))/16.0;
         }
         else if ( _value->idx == (int)SettingCodes::maxSpeed1 ||
                   _value->idx == (int)SettingCodes::maxSpeed2 )
         {
             val = processFloat(_value->data);
+            val = ((float)processFloat(_value->data))*2.26*3.6;// revolution *  circumference * 2* pi
         }
         else
         {
-            val = processFloat(_value->data);
+            val = ((float)processFloat(_value->data));
         }
         limit = 4;
     }
@@ -371,15 +372,15 @@ Widget::displayFlash(FlashData const * _value)
     {
         if (_value->idx == (int)SettingCodes::temperatureOffset )
         {
-            val = ((float)processUnsigned(_value->data))/16.0;
+            val = ((float)processFloat(_value->data))/16.0;
         }
         else if ( _value->idx == (int)SettingCodes::maxTemperature )
         {
-            val = processUnsigned(_value->data);
+            val = processFloat(_value->data);
         }
         else
         {
-            val = processFloat(_value->data);
+            val = ((float)processFloat(_value->data));
         }
 
         limit = 3;
@@ -388,18 +389,19 @@ Widget::displayFlash(FlashData const * _value)
     {
         if (_value->idx == (int)SettingCodes::userLimit )
         {
-            val = ((float)processUnsigned(_value->data))/16.0;
+            val = ((float)processFloat(_value->data))/16.0;
         }
         else
         {
-            val = processUnsigned(_value->data);
+            val = processFloat(_value->data);
+
         }
 
         limit = 2;
       }
 
 
-    QString  valStr = QString().setNum(val,'g', 4);
+    QString  valStr = QString().setNum(val,'g', 5);
 
     parLineEdit[idx]->setText(valStr);
 
@@ -524,7 +526,54 @@ int Widget::getParameterCnt()
     return 0;
 }
 
+float
+Widget::settingToDevVal(int _idx,float _val)
+{
+    float  val = 0.0;
+    int  idx = getParameterCode(_idx);
+    if (settingView == SettingViewType::speedRegulatorProfile1 ||
+        settingView == SettingViewType::speedRegulatorProfile2 )
+    {
+        if (idx == (int)SettingCodes::speedOffset1 ||
+            idx == (int)SettingCodes::speedOffset2 )
+        {
+            val = _val*16.0;
+        }
+        else if ( idx == (int)SettingCodes::maxSpeed1 ||
+                  idx == (int)SettingCodes::maxSpeed2 )
+        {
+            val = _val/(2.26*3.6);// revolution *  circumference * 2* pi
+        }
+        else
+        {
+            val = _val;
+        }
+    }
+    else if  (settingView == SettingViewType::termalRegulator)
+    {
+        if (idx == (int)SettingCodes::temperatureOffset )
+        {
+            val = _val*16.0;
+        }
+        else
+        {
+            val = _val;
+        }
+    }
+    else if (settingView == SettingViewType::otherStuff)
+    {
+        if (idx == (int)SettingCodes::userLimit )
+        {
+            val = _val*16.0;
+        }
+        else
+        {
+            val = _val;
+        }
 
+      }
+        return val;
+}
 void
 Widget::sendDataToFlash(int _idx)
 {
@@ -543,10 +592,10 @@ Widget::sendDataToFlash(int _idx)
     float val = value.toFloat(&bStatus);
     if ( bStatus == true )
     {
-        fixedVal = floatToFixed(val);
-        unsigned int val =loadedDataReg[getParameterCode(_idx)];
+        fixedVal = floatToFixed(settingToDevVal(_idx,val));
+        unsigned int valStored =loadedDataReg[getParameterCode(_idx)];
 
-        if ( val != fixedVal)
+        if ( valStored != fixedVal)
         {
             sendBuff[0] = (unsigned  char)CommandCodes::WriteFlashOpCode;
             sendBuff[1] = parameterIdx;

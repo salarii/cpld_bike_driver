@@ -179,16 +179,16 @@ begin
 						data(7 downto 0) := unsigned(o_data_spi);
 						case channel_cnt is
 					 		when 0 =>  channels_data( 9 downto 0 ) <= data;
+				  					   throttle <= data;
 				  			when 1 =>  channels_data( 19 downto 10 ) <= data;
 				  			when 2 =>  channels_data( 29 downto 20 ) <= data;
 				  			when 3 =>  channels_data( 39 downto 30 ) <= data;
-				  					   throttle <= data;
 				  			when others => channels_data <= (others => '0');
 						end case;
 
 
 						state := calculate_temperature;
-						if channel_cnt = 0 then
+						if channel_cnt = 1 then
 							poly_enable <= '1';	
 						end if;
 					else
@@ -203,7 +203,7 @@ begin
 							state := wait_adc;
 						
 						else
-							if channel_cnt = 0 then
+							if channel_cnt = 1 then
 								if poly_enable = '1' then
 									poly_enable <= '0';
 	

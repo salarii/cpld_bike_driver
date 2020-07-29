@@ -96,6 +96,8 @@ private:
     unsigned char getParameterCode(int _idx);
     int getParameterCnt();
     unsigned int getColumnCode(int _idx);
+    float settingToDevVal(int _idx,float _val);
+
 private:
     bool motorRun;
     QLineSeries* series;
