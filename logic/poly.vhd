@@ -28,12 +28,12 @@ architecture behaviour of poly is
 		signal out_mul_2 : signed (IntPart + FracPart - 1  downto 0);
 		signal result : signed (IntPart + FracPart - 1  downto 0) := (others=>'0');
 		signal calculated : std_logic := '0';
-		---    0.8444  56.9365  -12.7778  1.3186          
-		
-		constant par_0 : signed(IntPart + FracPart - 1  downto 0) := "000000000000110110000010";
-		constant par_1 : signed(IntPart + FracPart - 1  downto 0) := "000000111000111011111011";
-		constant par_2 : signed(IntPart + FracPart - 1  downto 0) := "111111110011001110001111";
-		constant par_3 : signed(IntPart + FracPart - 1  downto 0) := "000000000001010100011000";
+		---   -1.3627   20.6549 -120.0451  351.2185         
+		   
+		constant par_0 : signed(IntPart + FracPart - 1  downto 0) := x"15f37e";
+		constant par_1 : signed(IntPart + FracPart - 1  downto 0) := x"f87f48";
+		constant par_2 : signed(IntPart + FracPart - 1  downto 0) := x"014a7a";
+		constant par_3 : signed(IntPart + FracPart - 1  downto 0) := x"ffea33";
 
 		component two_com_mul
 			generic (CONSTANT IntPart : integer;
