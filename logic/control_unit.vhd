@@ -86,7 +86,6 @@ architecture behaviour of control_unit is
 					
 					o_received : out std_logic;
 					o_spi : out type_from_spi;
-					o_debug_led	: out std_logic;
 					o_busy	: out std_logic
 				);
 				
@@ -298,7 +297,6 @@ begin
 					o_received => received_flash,
 					o_spi => o_flash_spi,
 					
-          o_debug_led	=> leds(0),
 					o_busy => busy_flash
 				);
 	
@@ -399,7 +397,6 @@ begin
 				enable_pc_write := '0';
 				enable_uart <= '0';
 				host_enable <= '1';
-				--leds(4 downto 2) <= (others=>'1');
 				
 
 				user_command := tmp_sol;	
@@ -467,7 +464,7 @@ begin
 				 
 				if state = state_read_settings then
 				
-					leds(3 downto 1) <= (others => '0');
+					--leds(0) <= '0';
 					if flash_read_state = execute_flash_read  then
 						if busy_flash = '0' then
 							en_flash <= '1';
@@ -502,7 +499,7 @@ begin
 				
 					
 				elsif state = state_operate then
-					leds(3 downto 1) <= (others => '1');
+					--leds(0) <= '1';
 					if prev_hal /= i_hal_data then
 						hal_imp_cnt := hal_imp_cnt + 1;
 						prev_hal := i_hal_data;
@@ -826,53 +823,56 @@ begin
 					cnt := cnt - 1;	
 					
 				end if;
+					
+			case i_hal_data is
+				when "101" =>  
+					if hal_work = "00000" or hal_work = "10000" then
+						hal_work := "10000";	
+					else
+						hal_err <= '1';
+					end if;
+				when "100"  =>  
+					if hal_work = "10000" or hal_work = "11000" then
+						hal_work := "11000";	
+					else
+						hal_err <= '1';
+					end if;
+				when "110"  =>  
+					if hal_work = "11000" or hal_work = "11100" then
+						hal_work := "11100";	
+					else
+						hal_err <= '1';
+					end if;
+				when "010"  =>  
+					if hal_work = "11100" or hal_work = "11110" then
+						hal_work := "11110";	
+					else
+						hal_err <= '1';
+					end if;
+				when "011"  =>  
+					if hal_work = "11110" or hal_work = "11111" then
+						hal_work := "11111";	
+					else
+						hal_err <= '1';
+					end if;
+				when "001"  =>  
+					
+					if hal_work = "11111" then
+												
+						hal_err <= '0';
+					elsif hal_work /= "00000" then 
+					
+							hal_err <= '1';
+					end if;
+					hal_work := "00000";
+				when others => 
+					hal_err <= '0';
+				end case;
+				
+				
 			end if;
 		end if;
 
-
-		case i_hal_data is
-			when "101" =>  
-				if hal_work = "00000" or hal_work = "10000" then
-					hal_work := "10000";	
-				else
-					hal_err <= '1';
-				end if;
-			when "100"  =>  
-				if hal_work = "10000" or hal_work = "11000" then
-					hal_work := "11000";	
-				else
-					hal_err <= '1';
-				end if;
-			when "110"  =>  
-				if hal_work = "11000" or hal_work = "11100" then
-					hal_work := "11100";	
-				else
-					hal_err <= '1';
-				end if;
-			when "010"  =>  
-				if hal_work = "11100" or hal_work = "11110" then
-					hal_work := "11110";	
-				else
-					hal_err <= '1';
-				end if;
-			when "011"  =>  
-				if hal_work = "11110" or hal_work = "11111" then
-					hal_work := "11111";	
-				else
-					hal_err <= '1';
-				end if;
-			when "001"  =>  
-				
-				if hal_work = "11111" then
-									    	
-					hal_err <= '0';
-				else
-						hal_err <= '1';
-				end if;
-				hal_work := "00000";
-			when others => 
-				hal_err <= '1';
-			end case;
 
 
 			
@@ -881,11 +881,14 @@ begin
 
 	process( i_control_mode,enable_uart,motor_transistors,i_pedal_imp,
           profile_1_pid,profile_2_pid,host_enable, i_brk_1, i_brk_2,
-          offset_speed1,offset_speed2,max_speed1,max_speed2)
+          offset_speed1,offset_speed2,max_speed1,max_speed2,hal_err,
+			 i_hal_data )
 	begin
+		leds(3) <= hal_err;
 		o_en_uart <= enable_uart;
 		o_motor_transistors <= motor_transistors;
-		
+		--leds(2) <= i_brk_1 and i_brk_2 and host_enable;
+		leds(2 downto 0 ) <= i_hal_data;
 		control_box_setup.enable <=   i_brk_1 and i_brk_2 and host_enable;
 
 				case i_control_mode is

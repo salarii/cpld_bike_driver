@@ -110,7 +110,7 @@ begin
 				res => res,
 				clk => clk,
 				i_enable => poly_enable,
-				i_val	=> std_logic_vector(channels_data( 9 downto 0 )),
+				i_val	=> std_logic_vector(channels_data( 19 downto 10 )),
 				o_calculated => poly_calculated,
 				unsigned(o_temp) => poly_temp_out
 			);	

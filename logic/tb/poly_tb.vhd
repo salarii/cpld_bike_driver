@@ -12,9 +12,9 @@ architecture t_behaviour of poly_tb is
 		signal clk :  std_logic := '0';
 		signal start :  std_logic;
 
-		
+		signal calculated :  std_logic;
 		signal in_val :  unsigned(9  downto 0);
-		signal temp :  unsigned(7  downto 0);
+		signal temp :  unsigned(9  downto 0);
 
 
 		
@@ -23,11 +23,12 @@ architecture t_behaviour of poly_tb is
 		   			 CONSTANT FracPart : integer);
 		
 			port(
-				res : in std_logic;
-				clk : in std_logic;
-				i_enable : in std_logic;
-				i_val	: in  std_logic_vector(9  downto 0);
-				o_temp : out std_logic_vector(7  downto 0)
+			res : in std_logic;
+			clk : in std_logic;
+			i_enable : in std_logic;
+			i_val	: in  std_logic_vector(9  downto 0);
+			o_calculated : out std_logic;
+			o_temp : out std_logic_vector(9  downto 0)
 				);
 		end component;
 
@@ -45,6 +46,7 @@ architecture t_behaviour of poly_tb is
 		res => res,
 		clk => clk,
 		i_enable => start,
+		o_calculated => calculated,
 		i_val	=> std_logic_vector(in_val),
 		unsigned(o_temp) => temp );
 
@@ -57,7 +59,7 @@ architecture t_behaviour of poly_tb is
 				res <= '1';
 				start <= '1';
 				wait for 2 ns;
-				in_val  <= "0100101100";
+				in_val  <= "1111000000";
 		
 				wait for 4 ns;
 				start <= '0';

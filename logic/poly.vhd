@@ -99,12 +99,9 @@ begin
 				  when 2 => mul2_in <= par_3;
 				  when others => mul2_in <= (others=>'0');
 				end case;
+			
+				result <= result + out_mul_2;
 				
-				if result + out_mul_2 > 0 then
-					result <= result + out_mul_2;
-				else
-					result <= (others => '0'); 
-				end if;
 				
 				if cnt = 3 then
 					stored_val_power <= one;
@@ -123,7 +120,7 @@ begin
 	process(result,i_val,calculated)
 	begin
 		translated_input(14 downto 5) <= signed(i_val);
-		o_temp <= std_logic_vector(result(IntPart + FracPart - 5  downto FracPart-2));
+		o_temp <= std_logic_vector(result(FracPart+7  downto FracPart-2));
 		o_calculated <= calculated;
 
 	end process;
