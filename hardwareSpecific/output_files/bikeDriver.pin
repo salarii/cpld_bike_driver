@@ -30,7 +30,7 @@
  --                  Bank 2:       3.3V
  --                  Bank 3:       3.3V
  --                  Bank 4:       3.3V
- --                  Bank 5:       3.3V
+ --                  Bank 5:       2.5V
  --                  Bank 6:       3.3V
  --                  Bank 7:       3.3V
  --                  Bank 8:       3.3V
@@ -148,7 +148,7 @@ RESERVED_INPUT_WITH_WEAK_PULLUP : 77        :        :                   :      
 VCCINT                       : 78        : power  :                   : 1.2V    :           :                
 GND                          : 79        : gnd    :                   :         :           :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 80        :        :                   :         : 5         :                
-VCCIO5                       : 81        : power  :                   : 3.3V    : 5         :                
+VCCIO5                       : 81        : power  :                   : 2.5V    : 5         :                
 GND                          : 82        : gnd    :                   :         :           :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 83        :        :                   :         : 5         :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 84        :        :                   :         : 5         :                
@@ -156,8 +156,8 @@ RESERVED_INPUT_WITH_WEAK_PULLUP : 85        :        :                   :      
 RESERVED_INPUT_WITH_WEAK_PULLUP : 86        :        :                   :         : 5         :                
 RESERVED_INPUT_WITH_WEAK_PULLUP : 87        :        :                   :         : 5         :                
 GND+                         : 88        :        :                   :         : 5         :                
-i_control_mode               : 89        : input  : 3.3-V LVTTL       :         : 5         : Y              
-GND+                         : 90        :        :                   :         : 6         :                
+GND+                         : 89        :        :                   :         : 5         :                
+i_control_mode               : 90        : input  : 3.3-V LVTTL       :         : 6         : Y              
 GND+                         : 91        :        :                   :         : 6         :                
 CONF_DONE                    : 92        :        :                   :         : 6         :                
 VCCIO6                       : 93        : power  :                   : 3.3V    : 6         :                

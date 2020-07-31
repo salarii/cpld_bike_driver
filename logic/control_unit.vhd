@@ -178,7 +178,7 @@ architecture behaviour of control_unit is
 		signal speed_impulse_sig : std_logic := '0';	
 		
 		signal manu_speed : unsigned(7 downto 0);
-		signal host_enable : std_logic := '0';
+		signal host_enable : std_logic := '1';
 
 		constant Kp_pid_1 : signed(15 downto 0) := x"ffe1";
 		constant Ki_pid_1 : signed(15 downto 0) := x"001f";
@@ -198,7 +198,7 @@ architecture behaviour of control_unit is
 		constant max_speed_2 : unsigned(15 downto 0) := x"0200";--512 /256 hal clicks 2 round per sec
 
 		constant wave_limit : unsigned(15 downto 0) := x"0ff0";--255 , 100% wave equvalent
-		constant max_temperature : unsigned(15 downto 0) := x"0200";-- Celsius
+		constant max_temperature : unsigned(15 downto 0) := x"4000";-- Celsius
 		constant offset_tmp_wave : unsigned(15 downto 0) := x"0000";--
 		constant wave_user_limit : unsigned(15 downto 0) := x"0C00";-- 50% wave user  cap
 		
@@ -887,8 +887,9 @@ begin
 		leds(3) <= hal_err;
 		o_en_uart <= enable_uart;
 		o_motor_transistors <= motor_transistors;
-		--leds(2) <= i_brk_1 and i_brk_2 and host_enable;
-		leds(2 downto 0 ) <= i_hal_data;
+		leds(2) <= i_brk_1 and i_brk_2 and host_enable;
+
+		--leds(2 downto 0 ) <= i_hal_data;
 		control_box_setup.enable <=   i_brk_1 and i_brk_2 and host_enable;
 
 				case i_control_mode is

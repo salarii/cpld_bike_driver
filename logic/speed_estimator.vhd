@@ -60,7 +60,7 @@ architecture behaviour of speed_estimator is
 			
 		constant  a1: unsigned(7 downto 0) := x"79";
 		constant  a0: signed(11 downto 0):= x"f7f";
-		constant  mod_imp_speed: unsigned(7 downto 0):= x"32";
+		constant  mod_imp_speed: unsigned(7 downto 0):= x"16";
 		signal throttle_val : unsigned(19  downto 0);
 		signal imp_val : unsigned(19  downto 0);
 		signal pedals_speed : unsigned(15 downto 0);

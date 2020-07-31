@@ -49,8 +49,8 @@ const std::map<int, SettingCodes> rowToSpeed2SettingCode = {
 const std::map<int, SettingCodes> rowToTemperatureSettingCode = {
         {0,SettingCodes::temperatureKp},
         {1,SettingCodes::temperatureKd},
-        {2,SettingCodes::maxTemperature},
-        {3,SettingCodes::temperatureOffset}
+        {2,SettingCodes::temperatureOffset},
+        {3,SettingCodes::maxTemperature}
 };
 
 const std::map<int, SettingCodes> rowToOtherSettingCode = {

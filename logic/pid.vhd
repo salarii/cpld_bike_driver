@@ -120,6 +120,10 @@ begin
 					regt1 <= regt1 + mul1_out + mul2_out + mul3_out;
 					et1 <= signed(i_val);
 					et2 <= signed(et1);
+					if regt1 > x"1600" then
+						regt1<= x"1600";
+					end if;
+					
 				end if;
 			end if;
 		end if;
