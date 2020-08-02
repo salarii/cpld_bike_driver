@@ -123,7 +123,10 @@ begin
 					if regt1 > x"1600" then
 						regt1<= x"1600";
 					end if;
-					
+				else
+					et1 <= (others=>'0');
+					et2 <= (others=>'0');
+					regt1 <= (others=>'0');
 				end if;
 			end if;
 		end if;

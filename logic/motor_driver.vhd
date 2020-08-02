@@ -87,7 +87,7 @@ architecture behaviour of motor_driver is
 		signal motor_transistors : type_motor_transistors := ('0','0','0','0','0','0');
 begin	
 
-generate_no_hal_controel: if generate_no_hal_control = true generate
+generate_no_hal_controler: if generate_no_hal_control = true generate
 		module_div: div
 		generic map(
 		 size => size)
@@ -161,7 +161,7 @@ end generate;
 									when "101" =>  
 									     set_transistors(A_B);
 								  	when "100"  =>  
-							      		 set_transistors(A_C);
+											set_transistors(A_C);
 								  	when "110"  =>  
 									     set_transistors(B_C);
 								  	when "010"  =>  
@@ -195,13 +195,13 @@ end generate;
 								if cnt = 0 then
 								  case transistors_path is
 								  	when No_path => 
-								   	     set_transistors(No_path);
+								   	  set_transistors(No_path);
 									     transistors_path := A_B;
 									when A_B =>  
 									     set_transistors(transistors_path);
 								  	     transistors_path := A_C;
 								  	when A_C  =>  
-							      		     set_transistors(transistors_path);
+							      	  set_transistors(transistors_path);
 								  	     transistors_path := B_C;
 								  	when B_C  =>  
 									     set_transistors(transistors_path);
@@ -210,7 +210,7 @@ end generate;
 									     set_transistors(transistors_path);
 								  	     transistors_path := C_A;
 								  	when C_A  =>  
-								    	     set_transistors(transistors_path);
+								    	  set_transistors(transistors_path);
 								  	     transistors_path := C_B;
 								  	when C_B  =>  
 									     set_transistors(transistors_path);
