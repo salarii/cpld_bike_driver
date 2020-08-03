@@ -759,11 +759,11 @@ Wire Wire Line
 Wire Wire Line
 	1600 2600 1750 2600
 Wire Wire Line
-	1600 2200 1850 2200
+	1950 2200 2200 2200
 Wire Wire Line
-	1600 2300 1850 2300
+	1950 2300 2200 2300
 Wire Wire Line
-	1600 2400 1850 2400
+	1950 2400 2200 2400
 $Comp
 L power:GND #PWR077
 U 1 1 5E61A74F
@@ -791,11 +791,11 @@ Text Label 7900 2950 3    50   ~ 0
 temp
 Text Label 2450 7250 2    50   ~ 0
 spare_2
-Text Label 1800 2200 2    50   ~ 0
+Text Label 2150 2200 2    50   ~ 0
 hal_A
-Text Label 1800 2300 2    50   ~ 0
+Text Label 2150 2300 2    50   ~ 0
 hal_B
-Text Label 1800 2400 2    50   ~ 0
+Text Label 2150 2400 2    50   ~ 0
 hal_C
 Text Label 1150 1250 2    50   ~ 0
 brk_1
@@ -2597,4 +2597,52 @@ NoConn ~ 2600 5800
 NoConn ~ 2600 5900
 NoConn ~ 2600 6000
 NoConn ~ 2600 6100
+$Comp
+L Device:R R?
+U 1 1 5F4C512B
+P 1800 2200
+AR Path="/5F4C512B" Ref="R?"  Part="1" 
+AR Path="/5E3A0664/5F4C512B" Ref="R?"  Part="1" 
+AR Path="/5E3A0905/5F4C512B" Ref="R83"  Part="1" 
+F 0 "R83" H 1870 2246 50  0000 L CNN
+F 1 "10k" H 1870 2155 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric" V 1730 2200 50  0001 C CNN
+F 3 "~" H 1800 2200 50  0001 C CNN
+	1    1800 2200
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 5F502751
+P 1800 2300
+AR Path="/5F502751" Ref="R?"  Part="1" 
+AR Path="/5E3A0664/5F502751" Ref="R?"  Part="1" 
+AR Path="/5E3A0905/5F502751" Ref="R84"  Part="1" 
+F 0 "R84" H 1870 2346 50  0000 L CNN
+F 1 "10k" H 1870 2255 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric" V 1730 2300 50  0001 C CNN
+F 3 "~" H 1800 2300 50  0001 C CNN
+	1    1800 2300
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Device:R R?
+U 1 1 5F52107C
+P 1800 2400
+AR Path="/5F52107C" Ref="R?"  Part="1" 
+AR Path="/5E3A0664/5F52107C" Ref="R?"  Part="1" 
+AR Path="/5E3A0905/5F52107C" Ref="R85"  Part="1" 
+F 0 "R85" H 1870 2446 50  0000 L CNN
+F 1 "10k" H 1870 2355 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric" V 1730 2400 50  0001 C CNN
+F 3 "~" H 1800 2400 50  0001 C CNN
+	1    1800 2400
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	1600 2200 1650 2200
+Wire Wire Line
+	1600 2300 1650 2300
+Wire Wire Line
+	1600 2400 1650 2400
 $EndSCHEMATC
