@@ -931,14 +931,14 @@ Connection ~ 2950 3250
 $Comp
 L Device:CP C?
 U 1 1 5ECB7A1F
-P 3200 4800
+P 3200 4850
 AR Path="/5ECB7A1F" Ref="C?"  Part="1" 
 AR Path="/5E4C3088/5ECB7A1F" Ref="C17"  Part="1" 
-F 0 "C17" H 3318 4846 50  0000 L CNN
-F 1 "220u" H 3318 4755 50  0000 L CNN
-F 2 "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm" H 3238 4650 50  0001 C CNN
-F 3 "~" H 3200 4800 50  0001 C CNN
-	1    3200 4800
+F 0 "C17" H 3318 4896 50  0000 L CNN
+F 1 "220u" H 3318 4805 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm" H 3238 4700 50  0001 C CNN
+F 3 "~" H 3200 4850 50  0001 C CNN
+	1    3200 4850
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -994,7 +994,7 @@ $EndComp
 Wire Wire Line
 	2800 5100 2800 5000
 Wire Wire Line
-	3200 5100 3200 4950
+	3200 5100 3200 5000
 Wire Wire Line
 	2800 4250 2800 4300
 Wire Wire Line
@@ -1076,9 +1076,6 @@ Wire Wire Line
 	2850 4100 3200 4100
 Wire Wire Line
 	3200 4100 3200 4250
-Connection ~ 3200 4250
-Wire Wire Line
-	3200 4250 3200 4650
 Wire Wire Line
 	10100 2950 10100 3000
 $Comp
@@ -1273,4 +1270,26 @@ Wire Wire Line
 	2800 2750 2800 2850
 Wire Wire Line
 	1350 1450 1350 1550
+Connection ~ 3200 5000
+Wire Wire Line
+	3200 5000 3200 4950
+$Comp
+L Device:R R?
+U 1 1 5F649CC1
+P 3200 4450
+AR Path="/5F649CC1" Ref="R?"  Part="1" 
+AR Path="/5E3A0664/5F649CC1" Ref="R?"  Part="1" 
+AR Path="/5E4C3088/5F649CC1" Ref="R22"  Part="1" 
+F 0 "R22" H 3270 4496 50  0000 L CNN
+F 1 "1" H 3270 4405 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric" V 3130 4450 50  0001 C CNN
+F 3 "~" H 3200 4450 50  0001 C CNN
+	1    3200 4450
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	3200 4250 3200 4300
+Connection ~ 3200 4250
+Wire Wire Line
+	3200 4600 3200 4700
 $EndSCHEMATC
