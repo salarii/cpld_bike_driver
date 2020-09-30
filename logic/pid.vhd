@@ -99,31 +99,33 @@ begin
 
 		variable fracRange : integer := IntPart + FracPart;
 		variable cnt : integer range 3 downto 0 := 0;
-
+		variable tmp : signed (IntPart + FracPart - 1  downto 0);
 
 	begin
 			
-		if  res = '0' then
-			et1 <= (others=>'0');
-			et2 <= (others=>'0');
-			regt1 <= (others=>'0');
-
-		elsif  rising_edge(clk) then
-			
-			if i_n_clear = '0' then
+		if  rising_edge(clk) then
+			if  res = '0' then
+				et1 <= (others=>'0');
+				et2 <= (others=>'0');
+				regt1 <= (others=>'0');
+			else 
+				if i_n_clear = '0' then
 					et1 <= (others=>'0');
 					et2 <= (others=>'0');
 					regt1 <= (others=>'0');
-			else
-				if i_enable = '1' then
-
-					regt1 <= regt1 + mul1_out + mul2_out + mul3_out;
-					et1 <= signed(i_val);
-					et2 <= signed(et1);
-					if regt1 > x"1600" then
-						regt1<= x"1600";
+				else
+					if i_enable = '1' then
+						tmp := regt1 + mul1_out + mul2_out + mul3_out;
+						if tmp > x"0ff0" then
+							regt1<= x"0ff0";
+						else
+							regt1<= tmp;
+						end if;
+						et1 <= signed(i_val);
+						et2 <= signed(et1);
+				
 					end if;
-				end if;
+				end if;	
 			end if;
 		end if;
 		

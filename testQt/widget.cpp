@@ -354,7 +354,7 @@ Widget::displayFlash(FlashData const * _value)
         if (_value->idx == (int)SettingCodes::speedOffset1 ||
             _value->idx == (int)SettingCodes::speedOffset2 )
         {
-            val = ((float)processFloat(_value->data))/16.0;
+            val = ((float)processFloat(_value->data))/fixedToFloat(maxControl);
         }
         else if ( _value->idx == (int)SettingCodes::maxSpeed1 ||
                   _value->idx == (int)SettingCodes::maxSpeed2 )
@@ -372,7 +372,7 @@ Widget::displayFlash(FlashData const * _value)
     {
         if (_value->idx == (int)SettingCodes::temperatureOffset )
         {
-            val = ((float)processFloat(_value->data))/16.0;
+            val = ((float)processFloat(_value->data))/fixedToFloat(maxControl);
         }
         else if ( _value->idx == (int)SettingCodes::maxTemperature )
         {
@@ -389,7 +389,7 @@ Widget::displayFlash(FlashData const * _value)
     {
         if (_value->idx == (int)SettingCodes::userLimit )
         {
-            val = ((float)processFloat(_value->data))/16.0;
+            val = ((float)processFloat(_value->data))/fixedToFloat(maxControl);
         }
         else
         {
@@ -537,7 +537,7 @@ Widget::settingToDevVal(int _idx,float _val)
         if (idx == (int)SettingCodes::speedOffset1 ||
             idx == (int)SettingCodes::speedOffset2 )
         {
-            val = _val*16.0;
+            val = _val*fixedToFloat(maxControl);
         }
         else if ( idx == (int)SettingCodes::maxSpeed1 ||
                   idx == (int)SettingCodes::maxSpeed2 )
@@ -553,7 +553,7 @@ Widget::settingToDevVal(int _idx,float _val)
     {
         if (idx == (int)SettingCodes::temperatureOffset )
         {
-            val = _val*16.0;
+            val = _val*fixedToFloat(maxControl);
         }
         else
         {
@@ -564,7 +564,7 @@ Widget::settingToDevVal(int _idx,float _val)
     {
         if (idx == (int)SettingCodes::userLimit )
         {
-            val = _val*16.0;
+            val = _val*fixedToFloat(maxControl);
         }
         else
         {

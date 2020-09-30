@@ -133,7 +133,7 @@ private:
     SettingViewType settingView;
     std::vector<unsigned int> loadedDataReg;
     unsigned int fixedVal;
-
+    const int maxControl = 0xff0;
     int verifyIdx;
 };
 #endif // WIDGET_H

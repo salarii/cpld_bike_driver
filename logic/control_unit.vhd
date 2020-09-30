@@ -177,7 +177,7 @@ architecture behaviour of control_unit is
 		signal motor_transistors : type_motor_transistors;
 		signal speed_impulse_sig : std_logic := '0';	
 		
-		signal manu_speed : unsigned(7 downto 0);
+		signal manu_speed : unsigned(7 downto 0):= (others => '0');
 		signal host_enable : std_logic := '1';
 
 		constant Kp_pid_1 : signed(15 downto 0) := x"ffe1";
@@ -383,12 +383,12 @@ begin
 		variable setting_val : unsigned(23 downto 0);
 		variable setting_id : unsigned(7 downto 0) := x"00";
 		variable update_setting_flag : std_logic;	
-		
-  
+	
 	begin
 
 		if rising_edge(clk)  then
 			if res = '0' then
+				
 				state := state_read_settings;
 				setting_id:= x"00";
 				cnt :=0;
@@ -408,7 +408,9 @@ begin
 				control_box_setup.hal <= '1';
 				control_box_setup.manual <= '0';
 				flash_read_state := execute_flash_read;
-				hal_err <= '0'; 
+				hal_err <= '0';
+				manu_speed <= (others => '0');
+				
 			else
 				
 				
@@ -512,7 +514,9 @@ begin
 						glob_small_clk_counter := 0;
 						glob_clk_counter := glob_clk_counter + 1; 
 					else  
-						glob_small_clk_counter := glob_small_clk_counter + 1; 				
+						glob_small_clk_counter := glob_small_clk_counter + 1;
+		
+	
 					end if;
 	
 						
@@ -880,18 +884,20 @@ begin
 	
 
 	process( i_control_mode,enable_uart,motor_transistors,i_pedal_imp,
-          profile_1_pid,profile_2_pid,host_enable, i_brk_1, i_brk_2,
+          profile_1_pid,profile_2_pid,host_enable, i_brk_1 , i_brk_2,
           offset_speed1,offset_speed2,max_speed1,max_speed2,hal_err,
 			 i_hal_data )
 	begin
 		leds(3) <= hal_err;
 		o_en_uart <= enable_uart;
 		o_motor_transistors <= motor_transistors;
-		--leds(2) <= i_brk_1 and i_brk_2 and host_enable;
-
-		leds(2 downto 0 ) <= i_hal_data;
-		control_box_setup.enable <=   i_brk_1 and i_brk_2 and host_enable;
-
+		leds(2) <= i_brk_1;
+		--i_brk_1 and i_brk_2 and host_enable;
+		leds(1) <= i_brk_2;
+		
+		--leds(2 downto 0 ) <= i_hal_data;
+		control_box_setup.enable <= i_brk_1 and i_brk_2 and host_enable;--  ;
+		leds(0) <= control_box_setup.enable;
 				case i_control_mode is
 		   when '1' =>
 				settings_control_box.settings_pid <= profile_1_pid;
