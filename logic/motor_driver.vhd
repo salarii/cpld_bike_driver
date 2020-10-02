@@ -82,7 +82,7 @@ architecture behaviour of motor_driver is
 		signal quotient : unsigned(size - 1  downto 0);	
 		signal o_valid : std_logic;
 		signal enable_div : std_logic;
-		signal safety : std_logic;		
+		signal safety : std_logic := '1';		
 		
 		signal motor_transistors : type_motor_transistors := ('0','0','0','0','0','0');
 begin	
@@ -268,7 +268,7 @@ end generate;
 		
 	
 	end  process;
-	process(motor_transistors,i_work_wave)
+	process(motor_transistors,i_work_wave,safety)
  		function drop_wave_on_transistors( transistors : type_motor_transistors; wave : std_logic; safety_sig : std_logic) return type_motor_transistors  is
 			variable motor_transistors_internal : type_motor_transistors;
 		begin
