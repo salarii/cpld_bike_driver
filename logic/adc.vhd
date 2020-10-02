@@ -84,6 +84,7 @@ architecture behaviour of adc is
 		signal busy_spi : std_logic;
 		signal en_spi : std_logic;
 		signal received_spi : std_logic;
+		signal poly_in : unsigned( 9 downto 0 );
 begin	
 	
 		spi_function : spi
@@ -110,7 +111,7 @@ begin
 				res => res,
 				clk => clk,
 				i_enable => poly_enable,
-				i_val	=> std_logic_vector(channels_data( 19 downto 10 )),
+				i_val	=> std_logic_vector(poly_in),
 				o_calculated => poly_calculated,
 				unsigned(o_temp) => poly_temp_out
 			);	
@@ -189,6 +190,10 @@ begin
 
 						state := calculate_temperature;
 						if channel_cnt = 1 then
+							poly_in <= channels_data( 19 downto 10 );
+							poly_enable <= '1';	
+						elsif  channel_cnt = 2 then
+							poly_in <= channels_data( 29 downto 20 );
 							poly_enable <= '1';	
 						end if;
 					else
@@ -201,9 +206,10 @@ begin
 						if channel_cnt = 3 then
 							channel_cnt :=  0;
 							state := wait_adc;
-						
+							o_temp <= unsigned(poly_temperature);
 						else
 							if channel_cnt = 1 or channel_cnt = 2  then
+							
 								if poly_enable = '1' then
 									poly_enable <= '0';
 	
@@ -232,10 +238,10 @@ begin
 
 	end process;
 
-	process(poly_temperature,throttle)
+	process(throttle)
 	begin
 		o_throttle <= throttle;	
-		o_temp <= unsigned(poly_temperature);
+		
 	end process;
 	
 end behaviour;

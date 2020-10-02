@@ -74,7 +74,7 @@ Widget::Widget(QWidget *parent)
     adcChannelList->addItems(channels);
 
     celsius = new QSpinBox();
-    celsius->setRange(30, 120);
+    celsius->setRange(10, 120);
     celsius->setSingleStep(1);
     celsius->setValue(40);
     auto unit = new QLabel(" °C ");

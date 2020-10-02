@@ -891,13 +891,13 @@ begin
 		leds(3) <= hal_err;
 		o_en_uart <= enable_uart;
 		o_motor_transistors <= motor_transistors;
-		leds(2) <= i_brk_1;
+		--leds(2) <= i_brk_1;
 		--i_brk_1 and i_brk_2 and host_enable;
-		leds(1) <= i_brk_2;
+		--leds(1) <= i_brk_2;
 		
-		--leds(2 downto 0 ) <= i_hal_data;
+		leds(2 downto 0 ) <= i_hal_data;
 		control_box_setup.enable <= i_brk_1 and i_brk_2 and host_enable;--  ;
-		leds(0) <= control_box_setup.enable;
+		--leds(0) <= control_box_setup.enable;
 				case i_control_mode is
 		   when '1' =>
 				settings_control_box.settings_pid <= profile_1_pid;
