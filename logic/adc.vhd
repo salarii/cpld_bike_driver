@@ -203,12 +203,17 @@ begin
 							state := wait_adc;
 						
 						else
-							if channel_cnt = 1 then
+							if channel_cnt = 1 or channel_cnt = 2  then
 								if poly_enable = '1' then
 									poly_enable <= '0';
 	
 								elsif poly_calculated = '1' then	
-									poly_temperature <= poly_temp_out;
+									if channel_cnt = 1 then
+										poly_temperature <= poly_temp_out;
+									elsif unsigned(poly_temperature) < unsigned(poly_temp_out) then
+										poly_temperature <= poly_temp_out;
+									end if;
+									
 									state := setup_adc;
 									channel_cnt := channel_cnt +1;	
 								end if;

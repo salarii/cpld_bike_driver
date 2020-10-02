@@ -82,7 +82,7 @@ architecture behaviour of motor_driver is
 		signal quotient : unsigned(size - 1  downto 0);	
 		signal o_valid : std_logic;
 		signal enable_div : std_logic;
-		
+		signal safety : std_logic;		
 		
 		signal motor_transistors : type_motor_transistors := ('0','0','0','0','0','0');
 begin	
@@ -145,6 +145,9 @@ end generate;
 		variable tick_cnt  : integer range tick_period downto 0 := 0;
 		
 		variable transistors_path : type_on_transistors_path;
+		variable prev_hal : std_logic_vector(2 downto 0);
+		variable safety_cnt  : integer range 100 downto 0 := 0;
+		
 	begin
 			
 			
@@ -154,9 +157,22 @@ end generate;
 				status := initialise_control;
 				transistors_path := No_path;
 				set_transistors(No_path);
+				safety_cnt := 0;
 			else
 				if i_motor_control_setup.enable = '1' then
 					if i_motor_control_setup.hal = '1' then
+						  if prev_hal /= i_motor_control_setup.hal_data then
+						  	safety_cnt := 0;
+						  end if;
+						  prev_hal := i_motor_control_setup.hal_data;
+					
+						  if safety_cnt = 100 then  
+						  	safety <= '1';
+						  else
+						  	safety_cnt := safety_cnt + 1;
+						  	safety <= '0';
+						  end if;
+						  
 						  case i_motor_control_setup.hal_data is
 									when "101" =>  
 									     set_transistors(A_B);
@@ -253,19 +269,19 @@ end generate;
 	
 	end  process;
 	process(motor_transistors,i_work_wave)
- 		function drop_wave_on_transistors( transistors : type_motor_transistors; wave : std_logic) return type_motor_transistors  is
+ 		function drop_wave_on_transistors( transistors : type_motor_transistors; wave : std_logic; safety_sig : std_logic) return type_motor_transistors  is
 			variable motor_transistors_internal : type_motor_transistors;
 		begin
 			
-			motor_transistors_internal.A_n := not(transistors.A_n );
-			motor_transistors_internal.B_n := not(transistors.B_n );
-			motor_transistors_internal.C_n := not(transistors.C_n );			
-			motor_transistors_internal.A_p := not(transistors.A_p and wave);
-			motor_transistors_internal.B_p := not(transistors.B_p and wave);
-			motor_transistors_internal.C_p := not(transistors.C_p and wave);	
+			motor_transistors_internal.A_n := not(transistors.A_n and safety_sig);
+			motor_transistors_internal.B_n := not(transistors.B_n and safety_sig);
+			motor_transistors_internal.C_n := not(transistors.C_n and safety_sig);			
+			motor_transistors_internal.A_p := not(transistors.A_p and wave and safety_sig);
+			motor_transistors_internal.B_p := not(transistors.B_p and wave and safety_sig);
+			motor_transistors_internal.C_p := not(transistors.C_p and wave and safety_sig);	
 			return motor_transistors_internal;
 		end function;
 	begin
-		o_motor_transistors <= drop_wave_on_transistors(motor_transistors,i_work_wave);
+		o_motor_transistors <= drop_wave_on_transistors(motor_transistors,i_work_wave,safety);
 	end  process;
 end behaviour;
