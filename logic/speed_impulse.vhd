@@ -119,7 +119,7 @@ begin
 					
 				end if;
 				
-        			if state = multiply  then
+        		if state = multiply  then
 				
 					state := filter;
 					enable_filter <= '1';

@@ -48,7 +48,18 @@ architecture behaviour of speed_estimator is
 			
 	end component speed_impulse;
 	
-		
+	component low_pass is
+		port(
+			res : in std_logic;		
+			clk : in std_logic;		
+			i_enable : in std_logic;		
+			
+			i_no_filter_val  : in unsigned(15 downto 0);
+			i_alfa : in  unsigned(7 downto 0);
+			o_filtered : out  unsigned(15 downto 0)
+			);
+	end component low_pass;
+	
 	component mul
 		generic (CONSTANT IntPart : integer;
 	  			 CONSTANT FracPart : integer );
@@ -109,6 +120,18 @@ begin
 				
 				o_speed => pedals_speed
 		);
+
+--	module_filter : low_pass 
+--			
+--	port map(
+--		res => res,
+--		clk => clk,	
+--		i_enable =>enable_filter,
+--			
+--		i_no_filter_val => freq,
+--		i_alfa => i_alfa,
+--		o_filtered => filtered
+--		);
 
 process(clk)
 		variable speed : signed(11 downto 0);

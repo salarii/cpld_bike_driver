@@ -65,7 +65,8 @@ architecture t_behaviour of control_box_tb is
 		constant max_temperature : unsigned(15 downto 0) := x"4000";-- Celsius
 		constant offset_tmp_wave : unsigned(15 downto 0) := x"0000";--
 		constant wave_user_limit : unsigned(15 downto 0) := x"0C00";-- 50% wave user  cap
-		
+		constant start_limit : unsigned(15 downto 0) := x"0010";
+				
 		constant alfa_speed : unsigned(15 downto 0):= x"0035";
 		constant alfa_pedal_assist : unsigned(15 downto 0):= x"00a5";
 
@@ -87,7 +88,8 @@ architecture t_behaviour of control_box_tb is
 --				
 		offset_speed =>offset_speed_wave_1,
 		offset_term =>offset_tmp_wave,
-user_limit => wave_user_limit
+		user_limit => wave_user_limit,
+		start_limit => start_limit
 		);
 
 

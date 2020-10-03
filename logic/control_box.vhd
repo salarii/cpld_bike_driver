@@ -93,22 +93,22 @@ architecture behaviour of control_box is
 		end component motor_driver;
 
 
-
-		component pid is
-			generic (CONSTANT IntPart : integer := 8;
-		   			 CONSTANT FracPart : integer := 8);
-		
-			port(
-				res : in std_logic;
-				clk : in std_logic;
-				i_enable : in std_logic;
-				i_n_clear : in std_logic;
-				i_val	: in  signed(IntPart + FracPart -1  downto 0);
-				i_settings_pid : type_settings_pid;
-				
-				o_reg : out signed(IntPart + FracPart -1  downto 0)
-				);
-		end component pid;
+--
+--		component pid is
+--			generic (CONSTANT IntPart : integer := 8;
+--		   			 CONSTANT FracPart : integer := 8);
+--		
+--			port(
+--				res : in std_logic;
+--				clk : in std_logic;
+--				i_enable : in std_logic;
+--				i_n_clear : in std_logic;
+--				i_val	: in  signed(IntPart + FracPart -1  downto 0);
+--				i_settings_pid : type_settings_pid;
+--				
+--				o_reg : out signed(IntPart + FracPart -1  downto 0)
+--				);
+--		end component pid;
 
 		constant IntPart : integer := 8;
 		constant FracPart : integer := 8;
@@ -156,16 +156,16 @@ architecture behaviour of control_box is
 begin	
 	
 
-			
-	module_mul_1: mul
-	generic map(
-			 IntPart =>16,
-			 FracPart => 16
-		 )
-		port map (
-			A => mul_a,
-			B => mul_b,
-			outMul => mul_out);
+--			
+--	module_mul_1: mul
+--	generic map(
+--			 IntPart =>16,
+--			 FracPart => 16
+--		 )
+--		port map (
+--			A => mul_a,
+--			B => mul_b,
+--			outMul => mul_out);
 
 
 
@@ -183,20 +183,20 @@ begin
 			o_reg => out_temperature_reg
 			);
 
-	motor_pid_module : pid 
-	generic map (
-		 	IntPart => IntPart,
-			FracPart => FracPart )
-		
-	port map (
-			res =>res,
-			clk =>clk,
-			i_enable =>enable_pid,
-			i_n_clear => i_control_box_setup.enable,
-			i_val => in_reg,
-			i_settings_pid => i_settings_control_box.settings_pid,
-			o_reg => out_reg
-			);
+--	motor_pid_module : pid 
+--	generic map (
+--		 	IntPart => IntPart,
+--			FracPart => FracPart )
+--		
+--	port map (
+--			res =>res,
+--			clk =>clk,
+--			i_enable =>enable_pid,
+--			i_n_clear => i_control_box_setup.enable,
+--			i_val => in_reg,
+--			i_settings_pid => i_settings_control_box.settings_pid,
+--			o_reg => out_reg
+--			);
 
 	trigger_func : trigger	
 		port map(
@@ -223,7 +223,7 @@ begin
 	process(clk)
 		variable uart_sized : boolean := False; 
 	
-		type type_regulator_state is ( regulator_idle,regulator_speed_check,regulator_init,regulator_valid );
+		type type_regulator_state is ( regulator_idle, determine_start_limit,regulator_speed_check,regulator_init,regulator_valid );
 			
 		constant config_register_h : unsigned(7 downto 0) := "01000100";
 		constant config_register_l : unsigned(7 downto 0) := "01100011";
@@ -273,19 +273,19 @@ begin
 							
 		
 						if regulator_state = regulator_speed_check  then
-							mul_a <= (others => '0');
-							mul_b <= (others => '0');
-							mul_a(23 downto 8) <= i_settings_control_box.max_speed;
-							mul_b(15 downto 8) <= i_req_speed;
-								
+							--mul_a <= (others => '0');
+							--mul_b <= (others => '0');
+							--mul_a(23 downto 8) <= i_settings_control_box.max_speed;
+							--mul_b(15 downto 8) <= i_req_speed;
+							req_speed_motor(7 downto 0)<= i_req_speed;
 							regulator_state := regulator_init;	
 	
 						elsif regulator_state = regulator_init then
 							
 							in_temperature_reg <= (signed(i_settings_control_box.max_temperature) - poly_temperature);
 
-							req_speed_motor <= mul_out(23 downto 8 );
-							in_reg <= signed(mul_out(23 downto 8 )) - signed(i_speed);
+							--req_speed_motor <= mul_out(23 downto 8 );
+							--in_reg <= signed(mul_out(23 downto 8 )) - signed(i_speed);
 							
 							if enable_pid = '1' then
 								regulator_state := regulator_valid;
@@ -294,9 +294,16 @@ begin
 								enable_pid <= '1';
 							end if;
 							
+							
+							if i_settings_control_box.start_limit + i_speed <  req_speed_motor  then
+								req_speed_motor<= i_settings_control_box.start_limit + i_speed;
+
+							end if;
+							
+							
 						elsif regulator_state = regulator_valid then
 								
-							modified_reg := out_reg + signed(i_settings_control_box.offset_speed);
+							modified_reg := signed(req_speed_motor) + signed(i_settings_control_box.offset_speed);
 							modified_temp_reg := out_temperature_reg + signed(i_settings_control_box.offset_term);
 							
 							if modified_temp_reg < 0 then  
