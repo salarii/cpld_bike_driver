@@ -80,6 +80,7 @@ architecture t_behaviour of control_box_tb is
 			Kp => Kp_pd,
 			Kd => Kd_pd		
 		);
+		
 		signal settings_control_box : type_settings_control_box := (
 		settings_pid => settings_pid,
 		settings_pd => settings_pd,

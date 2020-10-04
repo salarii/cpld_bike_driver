@@ -71,12 +71,16 @@ architecture behaviour of speed_estimator is
 			
 		constant  a1: unsigned(7 downto 0) := x"79";
 		constant  a0: signed(11 downto 0):= x"f7f";
-		constant  mod_imp_speed: unsigned(7 downto 0):= x"16";
+		constant  mod_imp_speed: unsigned(7 downto 0):= x"30";
 		signal throttle_val : unsigned(19  downto 0);
 		signal imp_val : unsigned(19  downto 0);
 		signal pedals_speed : unsigned(15 downto 0);
-		signal sum_speed : signed(11 downto 0):= (others=>'0');
-
+		signal sum_speed : unsigned(11 downto 0):= (others=>'0');
+		signal filtered : unsigned(15 downto 0);
+		signal enable_filter : std_logic := '0';
+		
+		constant period_max : integer := main_clock/work_period;
+		
 begin	
 
 	module_mul_prv_val: mul
@@ -121,20 +125,23 @@ begin
 				o_speed => pedals_speed
 		);
 
---	module_filter : low_pass 
---			
---	port map(
---		res => res,
---		clk => clk,	
---		i_enable =>enable_filter,
---			
---		i_no_filter_val => freq,
---		i_alfa => i_alfa,
---		o_filtered => filtered
---		);
+	module_filter : low_pass 
+			
+	port map(
+		res => res,
+		clk => clk,	
+		i_enable =>enable_filter,
+			
+		i_no_filter_val(11 downto 0) => sum_speed,
+		i_no_filter_val(15 downto 12) => (others => '0'),
+		i_alfa => x"50",
+		o_filtered => filtered
+		);
 
 process(clk)
 		variable speed : signed(11 downto 0);
+		variable cnt_time_tick : integer  range period_max downto 0 := 0;
+		
 begin
 	
 		
@@ -142,6 +149,8 @@ begin
 			
 			if res = '0' then
 				sum_speed <= (others =>'0');
+				enable_filter <= '0';
+				cnt_time_tick := 0;
 			else
 				speed := (others =>'0');
 				speed := signed(throttle_val(19 downto 8)) + a0;
@@ -154,8 +163,16 @@ begin
 					speed(7 downto 0):= (others => '1'); 
 				end if;
 			
-				sum_speed <= speed;
-				
+				sum_speed <= filtered(11 downto 0);
+				if 	cnt_time_tick = period_max then
+					
+					cnt_time_tick := 0; 
+					enable_filter <= '1';
+		
+				else
+					enable_filter <= '0';
+					cnt_time_tick := cnt_time_tick + 1;
+				end if;
 			end if;
 				
 		end if;

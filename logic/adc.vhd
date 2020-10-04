@@ -96,6 +96,8 @@ architecture behaviour of adc is
 		signal en_spi : std_logic;
 		signal received_spi : std_logic;
 		signal poly_in : unsigned( 9 downto 0 );
+		signal enable_filter : std_logic := '0';
+		signal filtered : unsigned(15  downto 0);
 begin	
 	
 		spi_function : spi
@@ -128,17 +130,18 @@ begin
 			);	
 	
 	
---		module_filter : low_pass 
---				
---		port map(
---			res => res,
---			clk => clk,	
---			i_enable =>enable_filter,
---				
---			i_no_filter_val => freq,
---			i_alfa => i_alfa,
---			o_filtered => filtered
---			);
+		module_filter : low_pass 
+				
+		port map(
+			res => res,
+			clk => clk,	
+			i_enable =>enable_filter,
+				
+			i_no_filter_val(9  downto 0) => poly_temperature,
+			i_no_filter_val(15 downto 10) =>(others =>'0'),
+			i_alfa => x"D0",
+			o_filtered => filtered
+			);
 	
 	process(clk)
 		variable uart_sized : boolean := False; 
@@ -160,6 +163,7 @@ begin
 				cnt :=0;
 				channel_cnt := 0;
 				channels_data <= (others => '0');
+				enable_filter <= '0';
 			else
 			
 			
@@ -229,7 +233,7 @@ begin
 						if channel_cnt = 3 then
 							channel_cnt :=  0;
 							state := wait_adc;
-							o_temp <= unsigned(poly_temperature);
+							o_temp <= filtered(9 downto 0);
 						else
 							if channel_cnt = 1 or channel_cnt = 2  then
 							
@@ -239,12 +243,20 @@ begin
 								elsif poly_calculated = '1' then	
 									if channel_cnt = 1 then
 										poly_temperature <= poly_temp_out;
-									elsif unsigned(poly_temperature) < unsigned(poly_temp_out) then
-										poly_temperature <= poly_temp_out;
+									elsif channel_cnt = 2 then
+										if unsigned(poly_temperature) < unsigned(poly_temp_out) then
+											poly_temperature <= poly_temp_out;
+										end if;
+										enable_filter <= '1';
 									end if;
 									
+										
+								end if;
+								
+								if enable_filter = '1' then
 									state := setup_adc;
-									channel_cnt := channel_cnt +1;	
+									channel_cnt := channel_cnt +1;
+									enable_filter <= '0';
 								end if;
 							else
 								state := setup_adc;

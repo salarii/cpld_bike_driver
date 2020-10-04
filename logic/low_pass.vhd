@@ -42,27 +42,50 @@ architecture behaviour of low_pass is
 		B : in  unsigned(IntPart + FracPart - 1  downto 0);
 		outMul : out unsigned(IntPart + FracPart - 1  downto 0));
 	end component;
+	
+	component embed_16_mul is
+
+	port(
+			A		: IN signed (15 DOWNTO 0);
+			B		: IN signed (15 DOWNTO 0);
+			outMul		: OUT signed (15 DOWNTO 0)
+	);
+				
+	end component embed_16_mul;
 
 begin	
-		module_mul_prv_val: mul
-		generic map(
-			 IntPart => integral,
-			 FracPart => fraction
-		 )
-		port map (
-			A => alpha_full,
-			B => prev_val,
-			outMul => prev_comp);
+--		module_mul_prv_val: mul
+--		generic map(
+--			 IntPart => integral,
+--			 FracPart => fraction
+--		 )
+--		port map (
+--			A => alpha_full,
+--			B => prev_val,
+--			outMul => prev_comp);
 
-		module_mul_new_val: mul
-		generic map(
-			 IntPart => integral,
-			 FracPart => fraction
-		 )
+		module_mul_prv_val: embed_16_mul
 		port map (
-			A => alpha_complement,
-			B => i_no_filter_val,
-			outMul => now_comp);
+			A => signed(alpha_full),
+			B => signed(prev_val),
+			unsigned(outMul) => prev_comp);
+
+
+		module_mul_new_val: embed_16_mul
+		port map (
+			A => signed(alpha_complement),
+			B => signed(i_no_filter_val),
+			unsigned(outMul) => now_comp);
+
+--		module_mul_new_val: mul
+--		generic map(
+--			 IntPart => integral,
+--			 FracPart => fraction
+--		 )
+--		port map (
+--			A => alpha_complement,
+--			B => i_no_filter_val,
+--			outMul => now_comp);
 
 process(clk)
 	
