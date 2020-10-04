@@ -160,10 +160,11 @@ begin
 				
 				speed := speed+  signed(i_manu_speed) + signed(imp_val(19 downto 8));
 				if speed > x"0ff" then
-					speed(7 downto 0):= (others => '1'); 
+					speed(7 downto 0):= (others => '1');
+					speed(11 downto 8):= (others => '0'); 
 				end if;
 			
-				sum_speed <= filtered(11 downto 0);
+				sum_speed <= unsigned(speed);
 				if 	cnt_time_tick = period_max then
 					
 					cnt_time_tick := 0; 
@@ -182,7 +183,7 @@ end  process;
 
 process(sum_speed)
 begin
-	o_speed <= unsigned(sum_speed(7 downto 0));
+	o_speed <= unsigned(filtered(7 downto 0));
 end process;
 
 
