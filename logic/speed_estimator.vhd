@@ -181,7 +181,7 @@ begin
 
 end  process;
 
-process(sum_speed)
+process(filtered)
 begin
 	o_speed <= unsigned(filtered(7 downto 0));
 end process;

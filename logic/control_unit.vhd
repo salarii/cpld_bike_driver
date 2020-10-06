@@ -412,7 +412,7 @@ begin
 				manu_speed <= (others => '0');
 				
 			else
-				
+				settings_control_box.start_limit <= x"0010";
 				
 				if  update_setting_flag = '1'  then
 					if setting_val(15 downto 0) /= x"ffff" then

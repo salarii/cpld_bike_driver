@@ -249,13 +249,12 @@ begin
 										end if;
 										enable_filter <= '1';
 									end if;
-									
-										
+									state := setup_adc;
+									channel_cnt := channel_cnt +1;
 								end if;
 								
 								if enable_filter = '1' then
-									state := setup_adc;
-									channel_cnt := channel_cnt +1;
+
 									enable_filter <= '0';
 								end if;
 							else

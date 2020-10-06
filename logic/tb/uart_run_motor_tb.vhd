@@ -173,6 +173,7 @@ architecture t_behaviour of uart_run_motor_tb is
 				--res <= '0';	
 				res <= '1';
 				to_spi.miso <= '1';
+to_adc_spi.miso <= '1';
 				wait for 1200 us;				
 				
         pedal_imp <= '0';

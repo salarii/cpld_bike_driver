@@ -248,6 +248,7 @@ begin
 	
 		variable modified_reg : signed(upper_limit  downto 0);
 		variable modified_temp_reg : signed(upper_limit  downto 0);
+		variable tmp : unsigned(upper_limit downto 0):= (others => '0');
 	begin
 
 	--i_settings_control_box.max_temperature ;
@@ -277,7 +278,7 @@ begin
 							--mul_b <= (others => '0');
 							--mul_a(23 downto 8) <= i_settings_control_box.max_speed;
 							--mul_b(15 downto 8) <= i_req_speed;
-							req_speed_motor(7 downto 0)<= i_req_speed;
+							tmp(7 downto 0):= i_req_speed;
 							regulator_state := regulator_init;	
 	
 						elsif regulator_state = regulator_init then
@@ -295,11 +296,11 @@ begin
 							end if;
 							
 							
-							if i_settings_control_box.start_limit + i_speed <  req_speed_motor  then
-								req_speed_motor<= i_settings_control_box.start_limit + i_speed;
+							if i_settings_control_box.start_limit + i_speed <  tmp  then
+								tmp:= i_settings_control_box.start_limit + i_speed;
 
 							end if;
-							
+							req_speed_motor <= shift_left(unsigned(tmp), 4);
 							
 						elsif regulator_state = regulator_valid then
 								
@@ -328,7 +329,8 @@ begin
 							regulator_state := regulator_idle;
 						end if;
 					end if;
-				
+				else
+					pulse_trigger <= (others => '0');
 				end if;
 					
 			end if;
