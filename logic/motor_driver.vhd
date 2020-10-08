@@ -273,12 +273,12 @@ end generate;
 			variable motor_transistors_internal : type_motor_transistors;
 		begin
 			
-			motor_transistors_internal.A_n := not(transistors.A_n and safety_sig);
-			motor_transistors_internal.B_n := not(transistors.B_n and safety_sig);
-			motor_transistors_internal.C_n := not(transistors.C_n and safety_sig);			
-			motor_transistors_internal.A_p := not(transistors.A_p and wave and safety_sig);
-			motor_transistors_internal.B_p := not(transistors.B_p and wave and safety_sig);
-			motor_transistors_internal.C_p := not(transistors.C_p and wave and safety_sig);	
+			motor_transistors_internal.A_n := not(transistors.A_n and wave and safety_sig);
+			motor_transistors_internal.B_n := not(transistors.B_n and wave and safety_sig);
+			motor_transistors_internal.C_n := not(transistors.C_n and wave and safety_sig);			
+			motor_transistors_internal.A_p := not(transistors.A_p  and safety_sig);
+			motor_transistors_internal.B_p := not(transistors.B_p  and safety_sig);
+			motor_transistors_internal.C_p := not(transistors.C_p  and safety_sig);	
 			return motor_transistors_internal;
 		end function;
 	begin

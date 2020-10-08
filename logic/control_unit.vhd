@@ -364,8 +364,8 @@ begin
 		variable run_motor_state : type_run_motor_state;
 		variable uart_dev_status : type_uart_dev_status  := (False,False,False,uart_no_device);
 		
-		variable	hal_work : unsigned(4 downto 0);
-		
+		variable hal_work : unsigned(4 downto 0):= "00000";
+		variable reverse_hal_work : unsigned(4 downto 0):= "00000";		
 		constant glob_clk_denom : integer := 1000;
 		constant send_motor_data_wait : integer := 500;
 		constant send_adc_data_wait : integer := 500;
@@ -383,7 +383,7 @@ begin
 		variable setting_val : unsigned(23 downto 0);
 		variable setting_id : unsigned(7 downto 0) := x"00";
 		variable update_setting_flag : std_logic;	
-	
+		variable allow_speed : boolean := False;
 	begin
 
 		if rising_edge(clk)  then
@@ -502,10 +502,66 @@ begin
 					
 				elsif state = state_operate then
 					--leds(0) <= '1';
+					
+
+
+
+				case i_hal_data is
+				when "101" =>  
+					if hal_work = "00000" or hal_work = "10000" then
+						hal_work := "10000";	
+						allow_speed := True;
+					else
+						allow_speed := False;
+					end if;
+				when "001"  =>  
+					if hal_work = "10000" or hal_work = "11000" then
+						hal_work := "11000";	
+						allow_speed := True;
+					else
+						allow_speed := False;
+					end if;
+				when "011"  =>  
+					if hal_work = "11000" or hal_work = "11100" then
+						hal_work := "11100";	
+						allow_speed := True;
+					else
+						allow_speed := False;
+					end if;
+				when "010"  =>  
+					if hal_work = "11100" or hal_work = "11110" then
+						hal_work := "11110";	
+						allow_speed := True;
+					else
+						allow_speed := False;
+
+					end if;
+				when "110"  =>  
+					if hal_work = "11110" or hal_work = "11111" then
+						hal_work := "11111";	
+						allow_speed := True;
+					else
+						allow_speed := False;
+
+					end if;
+				when "100"  =>  
+					
+					if hal_work = "11111" then
+						allow_speed := True;	
+					elsif hal_work /= "00000" then 
+						allow_speed := False;
+					end if;
+					hal_work := "00000";
+				when others => 
+					allow_speed := False;
+				end case;
+
 					if prev_hal /= i_hal_data then
 						hal_imp_cnt := hal_imp_cnt + 1;
 						prev_hal := i_hal_data;
-						speed_impulse_sig <= '1';
+						if allow_speed = True then
+							speed_impulse_sig <= '1';
+						end if;
 					else
 						speed_impulse_sig <= '0';
 					end if;
@@ -827,48 +883,51 @@ begin
 					cnt := cnt - 1;	
 					
 				end if;
-					
+				
+
+
+	
 			case i_hal_data is
 				when "101" =>  
-					if hal_work = "00000" or hal_work = "10000" then
-						hal_work := "10000";	
+					if reverse_hal_work = "00000" or reverse_hal_work = "10000" then
+						reverse_hal_work := "10000";	
 					else
 						hal_err <= '1';
 					end if;
 				when "100"  =>  
-					if hal_work = "10000" or hal_work = "11000" then
-						hal_work := "11000";	
+					if reverse_hal_work = "10000" or reverse_hal_work = "11000" then
+						reverse_hal_work := "11000";	
 					else
 						hal_err <= '1';
 					end if;
 				when "110"  =>  
-					if hal_work = "11000" or hal_work = "11100" then
-						hal_work := "11100";	
+					if reverse_hal_work = "11000" or reverse_hal_work = "11100" then
+						reverse_hal_work := "11100";	
 					else
 						hal_err <= '1';
 					end if;
 				when "010"  =>  
-					if hal_work = "11100" or hal_work = "11110" then
-						hal_work := "11110";	
+					if reverse_hal_work = "11100" or reverse_hal_work = "11110" then
+						reverse_hal_work := "11110";	
 					else
 						hal_err <= '1';
 					end if;
 				when "011"  =>  
-					if hal_work = "11110" or hal_work = "11111" then
-						hal_work := "11111";	
+					if reverse_hal_work = "11110" or reverse_hal_work = "11111" then
+						reverse_hal_work := "11111";	
 					else
 						hal_err <= '1';
 					end if;
 				when "001"  =>  
 					
-					if hal_work = "11111" then
+					if reverse_hal_work = "11111" then
 												
 						hal_err <= '0';
-					elsif hal_work /= "00000" then 
+					elsif reverse_hal_work /= "00000" then 
 					
 							hal_err <= '1';
 					end if;
-					hal_work := "00000";
+					reverse_hal_work := "00000";
 				when others => 
 					hal_err <= '0';
 				end case;
