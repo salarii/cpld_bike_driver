@@ -514,14 +514,14 @@ begin
 					else
 						allow_speed := False;
 					end if;
-				when "001"  =>  
+				when "100"  =>  
 					if hal_work = "10000" or hal_work = "11000" then
 						hal_work := "11000";	
 						allow_speed := True;
 					else
 						allow_speed := False;
 					end if;
-				when "011"  =>  
+				when "110"  =>  
 					if hal_work = "11000" or hal_work = "11100" then
 						hal_work := "11100";	
 						allow_speed := True;
@@ -536,7 +536,7 @@ begin
 						allow_speed := False;
 
 					end if;
-				when "110"  =>  
+				when "011"  =>  
 					if hal_work = "11110" or hal_work = "11111" then
 						hal_work := "11111";	
 						allow_speed := True;
@@ -544,7 +544,7 @@ begin
 						allow_speed := False;
 
 					end if;
-				when "100"  =>  
+				when "001"  =>  
 					
 					if hal_work = "11111" then
 						allow_speed := True;	
@@ -553,7 +553,7 @@ begin
 					end if;
 					hal_work := "00000";
 				when others => 
-					allow_speed := False;
+					--allow_speed := False;
 				end case;
 
 					if prev_hal /= i_hal_data then

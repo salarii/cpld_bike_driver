@@ -139,7 +139,7 @@ begin
 				
 			i_no_filter_val(9  downto 0) => poly_temperature,
 			i_no_filter_val(15 downto 10) =>(others =>'0'),
-			i_alfa => x"D0",
+			i_alfa => x"Fc",
 			o_filtered => filtered
 			);
 	
